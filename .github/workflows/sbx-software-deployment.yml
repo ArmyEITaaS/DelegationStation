@@ -69,6 +69,7 @@ jobs:
        run: |
          dotnet build "${{ env.SRC_DIR }}/DelegationStationLibrary" --configuration ${{ env.CONFIGURATION }} --no-restore
          dotnet build "${{ env.SRC_DIR }}/DelegationStation" --configuration ${{ env.CONFIGURATION }} --no-restore
+         dotnet build "${{ env.SRC_DIR }}/UpdateDevices" --configuration ${{ env.CONFIGURATION }} --no-restore
          dotnet build "${{ env.SRC_DIR }}/IntuneEnrollment" --configuration ${{ env.CONFIGURATION }} --no-restore
 
     #  - name: Unit Test Setup
