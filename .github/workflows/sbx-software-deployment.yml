@@ -2,6 +2,9 @@ name: sbx-software-deployment
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - 'add_software_build_deploy'
   # push:
   #   branches:
   #     - 'feature/**'
