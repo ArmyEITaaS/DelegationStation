@@ -63,11 +63,7 @@ jobs:
        run: dotnet restore "${{ env.SRC_DIR }}"
 
      - name: Build
-       run: |
-         
-        # Copy runsettings from template prior to build to ensure file is included
-        #  copy "${{ env.TEST_DIR }}\Test.runsettings.template.json" "${{ env.TEST_DIR }}\Test.runsettings.json"
-        dotnet build "${{ env.SRC_DIR }}" --configuration ${{ env.CONFIGURATION }} --no-restore
+       run: dotnet build "${{ env.SRC_DIR }}" --configuration ${{ env.CONFIGURATION }} --no-restore
 
     #  - name: Unit Test Setup
     #    shell: pwsh
