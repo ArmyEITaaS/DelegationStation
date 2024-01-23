@@ -66,7 +66,10 @@ jobs:
        run: dotnet restore "${{ env.SRC_DIR }}"
 
      - name: Build
-       run: dotnet build "${{ env.SRC_DIR }}" --configuration ${{ env.CONFIGURATION }} --no-restore
+       run: |
+         dotnet build "${{ env.SRC_DIR }}/DelegationStationLibrary" --configuration ${{ env.CONFIGURATION }} --no-restore
+         dotnet build "${{ env.SRC_DIR }}/DelegationStation" --configuration ${{ env.CONFIGURATION }} --no-restore
+         dotnet build "${{ env.SRC_DIR }}/IntuneEnrollment" --configuration ${{ env.CONFIGURATION }} --no-restore
 
     #  - name: Unit Test Setup
     #    shell: pwsh
