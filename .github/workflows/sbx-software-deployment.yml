@@ -27,8 +27,7 @@ on:
 env:
   AZ_ENVIRONMENT: AzureUSGovernment
   CONFIGURATION: Release
-  DOTNET_FUNCTION_VERSION: 6.0.x
-  DOTNET_APP_VERSION: 8.0.x
+  DOTNET_CORE_VERSION: 8.0.x
 
   AZURE_UPDATE_FUNCTION_NAME: sbx-netcom-winget-fn
   AZURE_UPDATE_FUNCTION_PACKAGE_PATH: .\published
@@ -41,9 +40,9 @@ env:
   SRC_DIR: .
   # TEST_DIR: ./src/WinGet.RestSource.UnitTest
   # AZ_STORAGE_KEY:          ${{ secrets.ARTIFACT_STORAGE_KEY }}
-  # ARM_CLIENT_ID:           ${{ secrets.AZURE_S_EITAAS_NETCOM_SP_CLIENT_ID }}
-  # ARM_CLIENT_SECRET:       ${{ secrets.AZURE_S_EITAAS_NETCOM_SP_CLIENT_SECRET }}
-  # ARM_TENANT_ID:           ${{ secrets.AZURE_EITAAS_TENANT_ID }}
+  ARM_CLIENT_ID:           ${{ secrets.AZURE_S_EITAAS_NETCOM_SP_CLIENT_ID }}
+  ARM_CLIENT_SECRET:       ${{ secrets.AZURE_S_EITAAS_NETCOM_SP_CLIENT_SECRET }}
+  ARM_TENANT_ID:           ${{ secrets.AZURE_EITAAS_TENANT_ID }}
   
 jobs:
 
@@ -52,19 +51,15 @@ jobs:
      steps:
      - uses: actions/checkout@v3
 
-     - name: Setup .NET6 SDK
+     - name: Setup .NET SDK
        uses: actions/setup-dotnet@v3
        with:
-         dotnet-version: ${{ env.DOTNET_FUNCTION_VERSION }}
-
-     - name: Setup .NET8 SDK
-       uses: actions/setup-dotnet@v3
-       with:
-         dotnet-version: ${{ env.DOTNET_APP_VERSION }}
+         dotnet-version: ${{ env.DOTNET_CORE_VERSION }}
 
      - name: Restore
        run: dotnet restore "${{ env.SRC_DIR }}"
 
+       # FIXME:  Building each project separately to avoid failure caused by DelegationStationTests.  
      - name: Build
        run: |
          dotnet build "${{ env.SRC_DIR }}/DelegationStationLibrary" --configuration ${{ env.CONFIGURATION }} --no-restore
@@ -111,34 +106,34 @@ jobs:
          path: ${{ env.AZURE_APP_PACKAGE_PATH }}
 
 
-  #  deploy:
-  #    runs-on: ubuntu-latest
-  #    needs: build-test
+   deploy:
+     runs-on: ubuntu-latest
+     needs: build-test
 
-  #    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
-  #    defaults:
-  #      run:
-  #        shell: bash
+     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+     defaults:
+       run:
+         shell: bash
 
-  #    steps:
+     steps:
 
-  #    - name: Download Artifact
-  #      uses: actions/download-artifact@v3
-  #      with:
-  #        name: ${{ env.AZURE_UPDATE_FUNCTION_PKG_NAME}}
-  #        path: ${{ env.AZURE_UPDATE_FUNCTION_PACKAGE_PATH }}
+     - name: Download Artifact
+       uses: actions/download-artifact@v3
+       with:
+         name: ${{ env.AZURE_UPDATE_FUNCTION_PKG_NAME}}
+         path: ${{ env.AZURE_UPDATE_FUNCTION_PACKAGE_PATH }}
 
-  #     # Logging in via Linux command line instead of using 
-  #     # GitHub action due to bug in azure/login action with 
-  #     # some client secrets
-  #    - name: Azure Login 
-  #      run: |
-  #           az cloud set --name "${{ env.AZ_ENVIRONMENT }}"
-  #           az login --service-principal -u ${{ env.ARM_CLIENT_ID }} -p=${{ env.ARM_CLIENT_SECRET}} --tenant ${{ env.ARM_TENANT_ID}} 
+      # Logging in via Linux command line instead of using 
+      # GitHub action due to bug in azure/login action with 
+      # some client secrets
+     - name: Azure Login 
+       run: |
+            az cloud set --name "${{ env.AZ_ENVIRONMENT }}"
+            az login --service-principal -u ${{ env.ARM_CLIENT_ID }} -p=${{ env.ARM_CLIENT_SECRET}} --tenant ${{ env.ARM_TENANT_ID}} 
 
-  #    - name: Deploy to Azure Function App
-  #      uses: Azure/functions-action@v1
-  #      with:
-  #        app-name: ${{ env.AZURE_UPDATE_FUNCTION_NAME }}
-  #        package: ${{ env.AZURE_UPDATE_FUNCTION_PACKAGE_PATH }}
+     - name: Deploy to Azure Function App
+       uses: Azure/functions-action@v1
+       with:
+         app-name: ${{ env.AZURE_UPDATE_FUNCTION_NAME }}
+         package: ${{ env.AZURE_UPDATE_FUNCTION_PACKAGE_PATH }}
 
