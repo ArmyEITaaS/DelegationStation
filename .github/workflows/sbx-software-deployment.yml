@@ -39,9 +39,9 @@ env:
 
   SRC_DIR: .
   # TEST_DIR: ./src/WinGet.RestSource.UnitTest
-  # AZ_STORAGE_KEY:          ${{ secrets.ARTIFACT_STORAGE_KEY }}
   ARM_CLIENT_ID:           ${{ secrets.AZURE_S_EITAAS_NETCOM_SP_CLIENT_ID }}
   ARM_CLIENT_SECRET:       ${{ secrets.AZURE_S_EITAAS_NETCOM_SP_CLIENT_SECRET }}
+  AZURE_E_NETCOM_SP_CREDS: ${{ secrets.AZURE_S_EITAAS_NETCOM_SP }}
   ARM_TENANT_ID:           ${{ secrets.AZURE_EITAAS_TENANT_ID }}
   
 jobs:
@@ -126,10 +126,17 @@ jobs:
       # Logging in via Linux command line instead of using 
       # GitHub action due to bug in azure/login action with 
       # some client secrets
-     - name: Azure Login 
-       run: |
-            az cloud set --name "${{ env.AZ_ENVIRONMENT }}"
-            az login --service-principal -u ${{ env.ARM_CLIENT_ID }} -p=${{ env.ARM_CLIENT_SECRET}} --tenant ${{ env.ARM_TENANT_ID}} 
+    #  - name: Azure Login 
+    #    run: |
+    #         az cloud set --name "${{ env.AZ_ENVIRONMENT }}"
+    #         az login --service-principal -u ${{ env.ARM_CLIENT_ID }} -p=${{ env.ARM_CLIENT_SECRET}} --tenant ${{ env.ARM_TENANT_ID}} 
+
+     - name: Connect to Azure
+       uses:  azure/login@v1.4.7
+       with:
+        creds: ${{ env.AZURE_E_NETCOM_SP_CREDS }}
+        environment: ${{ env.AZURE_ENVIRONMENT}}
+        enable-AzPSSession: true
 
      - name: Deploy to Azure UpdateDevices Function App
        uses: Azure/functions-action@v1
