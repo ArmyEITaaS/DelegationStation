@@ -4,8 +4,6 @@ using System.Net.Http.Headers;
 using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Microsoft.Azure.Cosmos;
@@ -18,28 +16,34 @@ using UpdateDevices.Models;
 using Microsoft.Graph.Models;
 using System.Text.RegularExpressions;
 using DelegationStationShared.Models;
-using System.Runtime.CompilerServices;
+using Microsoft.Azure.Functions.Worker;
 
 namespace UpdateDevices
 {
     public class UpdateDevices
     {
-        private static ILogger _logger;
         private static string _guidRegex = "^([0-9A-Fa-f]{8}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{12})$";
         private static Microsoft.Azure.Cosmos.Container _container = null;
         private GraphServiceClient _graphClient;
 
-        [FunctionName("UpdateDevices")]
-        public async Task Run([TimerTrigger("%TriggerTime%")] TimerInfo myTimer, ILogger log)
+        private readonly ILogger _logger;
+
+        public UpdateDevices(ILoggerFactory loggerFactory)
+        {
+            _logger = loggerFactory.CreateLogger<UpdateDevices>();
+        }
+
+        [Function("UpdateDevices")]
+        public async Task Run([TimerTrigger("%TriggerTime%")] TimerInfo timerInfo)
         {
             MethodBase method = System.Reflection.MethodBase.GetCurrentMethod();
             string methodName = method.Name;
             string className = method.ReflectedType.Name;
             string fullMethodName = className + "." + methodName;
 
-            _logger = log;
-
             _logger.LogInformation($"C# Timer trigger function {fullMethodName} executed at: {DateTime.Now}");
+            _logger.LogInformation($"Next timer schedule at: {timerInfo.ScheduleStatus.Next}");
+
 
             ConnectToCosmosDb();
             ConnectToGraph();
@@ -332,7 +336,7 @@ namespace UpdateDevices
         }
 
         
-        private static async Task<FunctionSettings> GetFunctionSettings()
+        private async Task<FunctionSettings> GetFunctionSettings()
         {
             MethodBase method = System.Reflection.MethodBase.GetCurrentMethod();
             string methodName = method.Name;
@@ -365,7 +369,7 @@ namespace UpdateDevices
             return settings;
         }
 
-        private static async Task UpdateFunctionSettings()
+        private async Task UpdateFunctionSettings()
         {
             MethodBase method = System.Reflection.MethodBase.GetCurrentMethod();
             string methodName = method.Name;
@@ -384,7 +388,7 @@ namespace UpdateDevices
             }
         }
 
-        private static void ConnectToCosmosDb()
+        private void ConnectToCosmosDb()
         {
             var databaseName = "DelegationStation";
             var containerName = "DeviceData";
@@ -481,5 +485,22 @@ namespace UpdateDevices
                 _graphClient = new GraphServiceClient(clientSecretCredential);
             }
         }
+
+        public class TimerInfo
+        {
+            public TimerScheduleStatus ScheduleStatus { get; set; }
+
+            public bool IsPastDue { get; set; }
+        }
+
+        public class TimerScheduleStatus
+        {
+            public DateTime Last { get; set; }
+
+            public DateTime Next { get; set; }
+
+            public DateTime LastUpdated { get; set; }
+        }
     }
+
 }
