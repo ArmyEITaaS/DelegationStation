@@ -29,12 +29,12 @@ env:
   CONFIGURATION: Release
   DOTNET_CORE_VERSION: 8.0.x
 
-  AZURE_UPDATE_FUNCTION_NAME: sbx-netcom-winget-fn
-  AZURE_UPDATE_FUNCTION_PACKAGE_PATH: .\published
+  AZURE_UPDATE_FUNCTION_NAME: sbx-netcom-delstation-update-fn
+  AZURE_UPDATE_FUNCTION_PACKAGE_PATH: .\published_update_function
   AZURE_UPDATE_FUNCTION_PKG_NAME: deploy.zip
 
-  AZURE_APP_NAME: sbx-netcom-winget-fn
-  AZURE_APP_PACKAGE_PATH: .\published
+  AZURE_APP_NAME: sbx-netcom-delstation-app
+  AZURE_APP_PACKAGE_PATH: .\published_app
   AZURE_APP_PKG_NAME: deploy.zip
 
   SRC_DIR: .
@@ -131,9 +131,17 @@ jobs:
             az cloud set --name "${{ env.AZ_ENVIRONMENT }}"
             az login --service-principal -u ${{ env.ARM_CLIENT_ID }} -p=${{ env.ARM_CLIENT_SECRET}} --tenant ${{ env.ARM_TENANT_ID}} 
 
-     - name: Deploy to Azure Function App
+     - name: Deploy to Azure UpdateDevices Function App
        uses: Azure/functions-action@v1
        with:
          app-name: ${{ env.AZURE_UPDATE_FUNCTION_NAME }}
          package: ${{ env.AZURE_UPDATE_FUNCTION_PACKAGE_PATH }}
+
+     - name: Deploy Azure Web App
+       uses: Azure/webapps-deploy@v2
+       with: 
+         app-name: ${{ env.AZURE_APP_NAME }}
+         package: ${{ env.AZURE_APP_PACKAGE_PATH }}
+
+        
 
