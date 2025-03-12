@@ -1,4 +1,7 @@
 ﻿using DelegationStationShared;
+using DelegationStationShared.Extensions;
+using DelegationStationShared.Models;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -6,9 +9,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using UpdateDevices.Interfaces;
 using UpdateDevices.Models;
-using DelegationStationShared.Extensions;
-using DelegationStationShared.Models;
-using Microsoft.Azure.Cosmos;
 
 namespace UpdateDevices.Services
 {
@@ -167,5 +167,139 @@ namespace UpdateDevices.Services
         _logger.DSLogException("Unable to update function settings.", ex, fullMethodName);
       }
     }
-  }
+
+        public async Task<Straggler> GetStraggler(string managedDeviceID)
+        {
+            string methodName = ExtensionHelper.GetMethodName();
+            string className = this.GetType().Name;
+            string fullMethodName = className + "." + methodName;
+
+            Straggler straggler = null;
+
+            QueryDefinition query = new QueryDefinition("SELECT * FROM c WHERE c.PartitionKey= \"Straggler\" AND c.ManagedDeviceID = @managedDeviceID")
+                .WithParameter("@managedDeviceID", managedDeviceID);
+            var queryIterator = _container.GetItemQueryIterator<Straggler>(query);
+
+            List<Straggler> results = new List<Straggler>();
+            try
+            {
+                while (queryIterator.HasMoreResults)
+                {
+                    var response = await queryIterator.ReadNextAsync();
+                    results.AddRange(response.ToList());
+                }
+                straggler = results.FirstOrDefault();
+            }
+            catch (Exception ex)
+            {
+                _logger.DSLogException("Failure querying Cosmos DB for Straggler (ManagedDeviceID " + managedDeviceID + "):\n", ex, fullMethodName);
+            }
+
+            return straggler;
+        }
+
+        // This method is intended specifically for use by UpdateDevices
+           public async Task AddOrUpdateStraggler(Microsoft.Graph.Models.ManagedDevice managedDevice)
+        {
+            Straggler straggler = await GetStraggler(managedDevice.Id);
+            if (straggler == null)
+            {
+                straggler = new Straggler();
+                straggler.ManagedDeviceID = managedDevice.Id;
+                straggler.EnrollmentDateTime = managedDevice.EnrolledDateTime.Value.UtcDateTime;
+                straggler.LastUDUpdateDateTime = DateTime.UtcNow;
+                straggler.LastSeenDateTime = DateTime.UtcNow;
+            }
+            else
+            {
+                straggler.UDAttemptCount++;
+                straggler.LastUDUpdateDateTime = DateTime.UtcNow;
+                straggler.LastSeenDateTime = DateTime.UtcNow;
+            }
+
+            await _container.UpsertItemAsync<Straggler>(straggler, new PartitionKey(straggler.PartitionKey));
+        }
+
+        // This method is intended specifically for use by the StragglerHandler
+        public async Task UpdateStraggler(Straggler straggler)
+        {
+            straggler.LastSeenDateTime = DateTime.UtcNow;
+            straggler.LastSHAttemptDateTime = DateTime.UtcNow;
+            straggler.SHAttemptCount++;
+            await _container.UpsertItemAsync<Straggler>(straggler, new PartitionKey(straggler.PartitionKey));
+        }
+
+        public async Task UpdateStragglerAsErrored(Straggler straggler)
+        {
+            straggler.SHErrorCount++;
+            straggler.LastSeenDateTime = DateTime.UtcNow;
+            straggler.LastSHAttemptDateTime = DateTime.UtcNow;
+            await _container.UpsertItemAsync<Straggler>(straggler, new PartitionKey(straggler.PartitionKey));
+        }
+
+        public async Task DeleteStraggler(Straggler straggler)
+        {
+            await _container.DeleteItemAsync<Straggler>(straggler.id.ToString(), new PartitionKey(straggler.PartitionKey));
+        }
+
+        public async Task<List<Straggler>> GetStragglerList(int minCount)
+        {
+            string methodName = ExtensionHelper.GetMethodName();
+            string className = this.GetType().Name;
+            string fullMethodName = className + "." + methodName;
+
+            QueryDefinition query = new QueryDefinition("SELECT * FROM c WHERE c.PartitionKey= \"Straggler\" AND c.UDAttemptCount>=@count")
+                .WithParameter("@count", minCount);
+            var queryIterator = _container.GetItemQueryIterator<Straggler>(query);
+
+            List<Straggler> results = new List<Straggler>();
+            try
+            {
+                while (queryIterator.HasMoreResults)
+                {
+                    var response = await queryIterator.ReadNextAsync();
+                    results.AddRange(response.ToList());
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.DSLogException("Failure querying Cosmos DB for Straggler: ", ex, fullMethodName);
+            }
+
+            return results;
+        }
+
+        // Removes entries that were enrolled over a day ago and have less than the max number 
+        // retries indicating UpdateDevices was able to process them before it stopped retrying
+        public async Task<List<Straggler>> GetStragglersProcessedByUD(int minCount)
+        {
+            string methodName = ExtensionHelper.GetMethodName();
+            string className = this.GetType().Name;
+            string fullMethodName = className + "." + methodName;
+
+            DateTime aDayAgo = DateTime.UtcNow.AddDays(-1);
+
+            QueryDefinition query = new QueryDefinition("SELECT * FROM c WHERE c.PartitionKey= \"Straggler\" AND c.UDAttemptCount < @count AND c.EnrollmentDateTime < @oneDayAgo")
+                .WithParameter("@count", minCount)
+                .WithParameter("@oneDayAgo", aDayAgo);
+            var queryIterator = _container.GetItemQueryIterator<Straggler>(query);
+
+            List<Straggler> results = new List<Straggler>();
+            try
+            {
+                while (queryIterator.HasMoreResults)
+                {
+                    var response = await queryIterator.ReadNextAsync();
+                    results.AddRange(response.ToList());
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.DSLogException("Failure querying Cosmos DB for Straggler: ", ex, fullMethodName);
+            }
+
+            return results;
+        }
+
+    }
 }

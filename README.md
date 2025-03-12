@@ -29,6 +29,9 @@
 This repository contains 3 applications:  
 * Web Application 
 * UpdateDevices function app
+  * UpdateDevices function: applies configuration changes for devices in Delegation Station following enrollment
+  * StragglerHandler function: re-attempts updates for devices that enrolled but could not be processed due to delays in InTune updating hardware information
+  * Cleanup function:  Cleans up old DB entries related to the hand-off between the UpdateDevices and StragglerHandler functions 
 * (WIP) InTuneEnrollment function app
 
 These applications can be deployed into Azure App Services (Windows or Linux) or Container Instances via Azure CLI, Visual Studio, or GitHub Actions.
@@ -45,7 +48,7 @@ The software utilizes a CosmosDB to maintain application data.
   * Name: DeviceData  
   * PartitionKey: /PartitionKey
 
- *Note:  You can use a different different DB and Container name, but you will need to update related configuration values for each of the apps.*
+ *Note:  You can use a different  DB and Container name, but you will need to update related configuration values for each of the apps.*
 
 ### App Registration (Web Application)
 
@@ -97,7 +100,7 @@ Once done, ensure that you have been Granted Admin Consent for these permissions
 
 This assumes you already have a certificate you will be using for authentication.  
 You will need a .CER/.CRT/.PEM file with the public key for the App Registration.
-But you will also need a PFX with the private key (and a set passphrase) to configure in the Application
+But you will also need a PFX with the private key (and a set pass phrase) to configure in the Application
 
 - Click on **Certificates** 
 - Click on **Upload Certificate**
@@ -160,7 +163,7 @@ Reduced permissions for monitoring without changes (will log changes, but not ha
 
 This assumes you already have a certificate you will be using for authentication.  
 You will need a .CER/.CRT/.PEM file with the public key for the App Registration.
-But you will also need a PFX with the private key (and a set passphrase) to configure in the Application
+But you will also need a PFX with the private key (and a set pass phrase) to configure in the Application
 
 - Click on **Certificates** 
 - Click on **Upload Certificate**
@@ -306,7 +309,13 @@ Can be found in the Azure Portal under the Cosmos DB -> Keys -> Primary Connecti
 (Optional) The name of the Cosmos DB container. Default is "DeviceData"
 
 <b>"TriggerTime": "0 */15 * * * *"</b><br/>
-Must be set to a cron expression to change the frequency of the function. The example is every 15 minutes.
+Cron expression for the frequency of the primary UpdateDevices function. The recommendation is every 15 minutes.
+
+<b>"SHTriggerTime": "0 0 */4 * * *"</b><br/>"
+Cron expression for the frequency of the StragglerHandler function.  The recommendation is every 4 hours.
+
+<b>"CleanupTriggerTime": "0 0 */12 * * *"</b><br/>
+Cron expression for the frequency of the Cleanup function.  The recommendation is to run this twice a day.
 
 <b>"AzureAd:TenantId" : ""</b><br/>
 Can be found in the Azure Portal under Azure Active Directory -> Properties -> Directory ID
@@ -332,6 +341,14 @@ For example, "https://graph.microsoft.com/"
 
 <b>"DefaultActionDisable": "false"</b><br/>
 (Optional) Can be set to "true" to disable the device if not found in the database. If set to "false" the device will be allowed to connect if not found in the database.
+
+<b>"MaxUpdateDeviceAttempts": "5"</b><br/>
+(Optional, set with caution)  This setting is used by the StragglerHandler and does not determine the number of attempts for the UpdateDevices function.
+This setting is so the StragglerHandler does not start processing a device before UpdateDevices has completed it's attempts.
+The default is 5, which is the correct value for using the default UpdateDevices frequency of every 15 minutes.
+
+<b>"MaxStragglerAttempts": "5"</b><br/>
+(Optional)  The number of times the Straggler Handler will re-attempt to process a device if it encounters errors during processing.  Defaults to 5.
 
 ### Certificate Configuration
 

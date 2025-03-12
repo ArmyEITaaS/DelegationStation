@@ -8,6 +8,8 @@
     "COSMOS_DATABASE_NAME": "DelegationStationData",
     "COSMOS_CONTAINER_NAME": "DeviceData",
     "TriggerTime": "0 */15 * * * *",
+    "CleanupTriggerTime": "0 0 */12 * * *",
+    "SHTriggerTime": "0 0 */4 * * *",
     "DefaultActionDisable": "false",
     "CertificateDistinguishedName": "",
     "AzureAd:TenantId": "",

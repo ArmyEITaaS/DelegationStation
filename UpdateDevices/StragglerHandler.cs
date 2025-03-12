@@ -1,32 +1,29 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using System.Linq;
-using UpdateDevices.Models;
-using System.Text.RegularExpressions;
-using DelegationStationShared.Models;
 using DelegationStationShared;
 using DelegationStationShared.Extensions;
+using DelegationStationShared.Models;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Logging;
+using Microsoft.Graph.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using UpdateDevices.Interfaces;
-
-
 
 namespace UpdateDevices
 {
-    public class UpdateDevices
+    public class StragglerHandler
     {
-        private int _lastRunDays = 30;
-
         private readonly ILogger _logger;
         private readonly ICosmosDbService _dbService;
         private readonly IGraphService _graphService;
+        private readonly int _maxUDAttempts;
+        private readonly int _maxSHAttempts;
 
-
-        public UpdateDevices(ILoggerFactory loggerFactory, ICosmosDbService dbService, IGraphService graphService)
+        public StragglerHandler(ILoggerFactory loggerFactory, ICosmosDbService dbService, IGraphService graphService)
         {
-            _logger = loggerFactory.CreateLogger<UpdateDevices>();
+            _logger = loggerFactory.CreateLogger<StragglerHandler>();
             _dbService = dbService;
             _graphService = graphService;
 
@@ -34,50 +31,118 @@ namespace UpdateDevices
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
-            bool parseConfig = int.TryParse(Environment.GetEnvironmentVariable("FirstRunPastDays", EnvironmentVariableTarget.Process), out _lastRunDays);
+            bool parseConfig = int.TryParse(Environment.GetEnvironmentVariable("MaxUpdateDeviceAttempts", EnvironmentVariableTarget.Process), out _maxUDAttempts);
             if (!parseConfig)
             {
-                _lastRunDays = 30;
-                _logger.DSLogWarning("FirstRunPastDays environment variable not set. Defaulting to 30 days", fullMethodName);
+                _maxUDAttempts = 5;
+                _logger.DSLogWarning("MaxUpdateDeviceAttempts environment variable not set. Defaulting to 5 attempts.", fullMethodName);
             }
-
+            
+            bool parseConfig2 = int.TryParse(Environment.GetEnvironmentVariable("MaxStragglerHandlerAttempts", EnvironmentVariableTarget.Process), out _maxSHAttempts);
+            if (!parseConfig2)
+            {
+                _maxSHAttempts = 5;
+                _logger.DSLogWarning("MaxStragglerHandlerAttempts environment variable not set. Defaulting to 5 attempts.", fullMethodName);
+            }
         }
 
-        [Function("UpdateDevices")]
-        public async Task Run([TimerTrigger("%TriggerTime%")] TimerInfo timerInfo)
+        [Function("StragglerHandler")]
+        public async Task RunAsync([TimerTrigger("%SHTriggerTime%")] TimerInfo myTimer)
         {
             string methodName = ExtensionHelper.GetMethodName();
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
             _logger.DSLogInformation("C# Timer trigger function executed at: " + DateTime.Now, fullMethodName);
-            _logger.DSLogInformation("Next timer schedule at: " + timerInfo.ScheduleStatus.Next, fullMethodName);
 
-            FunctionSettings settings = await _dbService.GetFunctionSettings();
-
-            // If not set, use current time - value set for last run days 
-            // Otherwise subtract one hour from date saved in DB
-            DateTime lastRun = settings.LastRun == null ? DateTime.UtcNow.AddDays(-_lastRunDays) : ((DateTime)settings.LastRun).AddHours(-1);
-
-            // Grabbing date before we pull devices to save off when function completes
-            DateTime thisRun = DateTime.UtcNow;
-
-            List<Microsoft.Graph.Models.ManagedDevice> devices = await _graphService.GetNewDeviceManagementObjectsAsync(lastRun);
-
-            if (devices == null)
+            if (myTimer.ScheduleStatus is not null)
             {
-                _logger.DSLogError("Failed to get new devices, exiting", fullMethodName);
-                return;
-            }
-            foreach (Microsoft.Graph.Models.ManagedDevice device in devices)
-            {
-                await RunDeviceUpdateActionsAsync(device);
+                _logger.DSLogInformation($"Next timer schedule at: {myTimer.ScheduleStatus.Next}", fullMethodName);
             }
 
-            await _dbService.UpdateFunctionSettings(thisRun);
+            await ProcessStragglers();
+
+        }
+        private async Task ProcessStragglers()
+        { 
+            string methodName = ExtensionHelper.GetMethodName();
+            string className = this.GetType().Name;
+            string fullMethodName = className + "." + methodName;
+
+            _logger.DSLogInformation("Processing stragglers...", fullMethodName);
+
+            // Get Stragglers from DB with count > # retries attempted by UpdateDevices
+            List<Straggler> stragglers = await _dbService.GetStragglerList(_maxUDAttempts);
+
+            // For each device
+            foreach (Straggler straggler in stragglers)
+            {
+
+                // Use Managed ID to get the device object from Graph
+                ManagedDevice device = null;
+                try
+                {
+                    device = await _graphService.GetManagedDevice(straggler.ManagedDeviceID);
+                }
+                catch (Exception ex)
+                {
+                    _logger.DSLogException("Error getting ManagedDevice for Straggler.  Will retry. " + straggler.ManagedDeviceID, ex, fullMethodName);
+                    continue;
+                }
+
+                if (device == null)
+                {
+                    _logger.DSLogWarning("Device is no longer in the system. Removing from straggler list: " + straggler.ManagedDeviceID, fullMethodName);
+                }
+
+                // If Hardware info is still missing
+                if (String.IsNullOrEmpty(device.Manufacturer) || String.IsNullOrEmpty(device.Model) || String.IsNullOrEmpty(device.SerialNumber))
+                {
+                    //Update Straggler count +1 and set LastCheckDateTime
+                    await _dbService.UpdateStraggler(straggler);
+
+                    // Elevate logs if hardware in is still missing 24 hours after enrollment
+                    TimeSpan timespan = straggler.LastSeenDateTime - straggler.EnrollmentDateTime;
+                    if (timespan.TotalHours < 24)
+                    {
+                        _logger.DSLogWarning("Straggler " + straggler.ManagedDeviceID + " has been missing M/M/SN for " + timespan.TotalHours + " hours", fullMethodName);
+                    }
+                    else
+                    {
+                        _logger.DSLogError("Straggler " + straggler.ManagedDeviceID + " has been missing M/M/SN for " + timespan.TotalHours + " hours", fullMethodName);
+                    }
+
+                }
+                else
+                {
+                    // Try applying changes
+                    bool result = await RunDeviceUpdateActionsAsync(device);
+
+                    // If successful -> delete straggler
+                    if(result)
+                    {
+                        await _dbService.DeleteStraggler(straggler);
+                    }
+                    else
+                    {
+                        if (straggler.SHErrorCount < (_maxSHAttempts - 1))
+                        {
+                            _logger.DSLogError("Error was identified during application of updates to device: '" + device.Id + "' '" + device.Manufacturer + "' '" + device.Model + "' '" + device.SerialNumber + "'.  Leaving in DB in order to retry.", fullMethodName);
+                            await _dbService.UpdateStragglerAsErrored(straggler);
+                        }
+                        else
+                        {
+                            _logger.DSLogError("Error was identified during application of updates to device: '" + device.Id + "' '" + device.Manufacturer + "' '" + device.Model + "' '" + device.SerialNumber + "'.  Retries have run out.", fullMethodName);
+                            await _dbService.DeleteStraggler(straggler);
+                        }
+                    }
+                    
+                }
+            }
         }
 
-        private async Task RunDeviceUpdateActionsAsync(Microsoft.Graph.Models.ManagedDevice device)
+
+        private async Task<bool> RunDeviceUpdateActionsAsync(ManagedDevice device)
         {
             string methodName = ExtensionHelper.GetMethodName();
             string className = this.GetType().Name;
@@ -85,20 +150,12 @@ namespace UpdateDevices
 
             _logger.DSLogInformation("Processing enrolled device: '" + device.Id + "' '" + device.Manufacturer + "' '" + device.Model + "' '" + device.SerialNumber + "'.", fullMethodName);
 
-            // If InTune has not been updated with hardware info, the device cannot be processed.
-            // We're going to add it to a separate DB entry to be checked by the StragglerHandler
-            if (String.IsNullOrEmpty(device.Manufacturer) || String.IsNullOrEmpty(device.Model) || String.IsNullOrEmpty(device.SerialNumber))
-            {
-                _logger.DSLogWarning("Device " + device.Id + " does not have Manufacturer, Model, or Serial Number. Adding to Straggler list.", fullMethodName);
-                await _dbService.AddOrUpdateStraggler(device);
+            bool result = true;
 
-                return;
-            }
 
             List<DeviceUpdateAction> actions = new List<DeviceUpdateAction>();
 
             var defaultActionDisable = Environment.GetEnvironmentVariable("DefaultActionDisable", EnvironmentVariableTarget.Process);
-
             if (String.IsNullOrEmpty(defaultActionDisable))
             {
                 _logger.DSLogWarning("DefaultActionDisable environment variable not set. Defaulting to false.", fullMethodName);
@@ -110,22 +167,25 @@ namespace UpdateDevices
             {
                 _logger.DSLogWarning("Did not find any matching devices in DB for: '" + device.Id + "' '" + device.Manufacturer + "' '" + device.Model + "' '" + device.SerialNumber + "'.", fullMethodName);
 
-
-                // TODO make personal / add to group / update attribute
                 if (defaultActionDisable == "true")
                 {
                     _logger.DSLogInformation("DefaultActionDisable is true. Disabling device in AAD '" + device.AzureADDeviceId + "' '" + device.Manufacturer + "' '" + device.Model + "' '" + device.SerialNumber + "'", fullMethodName);
                     await _graphService.UpdateAttributesOnDeviceAsync(device.Id, device.AzureADDeviceId, new List<DeviceUpdateAction> { new DeviceUpdateAction() { ActionType = DeviceUpdateActionType.Attribute, Name = "AccountEnabled", Value = "false" } });
                 }
-                return;
+
+                // Return failure in case error is retryable
+                return false;
             }
+
             _logger.DSLogInformation("Found matching device in DB for: '" + device.Id + "' '" + device.Manufacturer + "' '" + device.Model + "' '" + device.SerialNumber + "'.", fullMethodName);
 
             string deviceObjectID = await _graphService.GetDeviceObjectID(device.AzureADDeviceId);
             if (String.IsNullOrEmpty(deviceObjectID))
             {
                 _logger.DSLogError("Failed to retrieve graph device ID using .\n", fullMethodName);
-                return;
+                
+                // return as failure in case it's a retryable error
+                return false;
             }
             _logger.DSLogInformation("Retrieved Entra Object ID '" + deviceObjectID + "' for device. DeviceID: '" + device.AzureADDeviceId + "', ManagedDeviceID: '" + device.Id + "'", fullMethodName);
 
@@ -134,8 +194,10 @@ namespace UpdateDevices
                 DeviceTag tag = await _dbService.GetDeviceTag(tagId);
                 if (tag == null)
                 {
-                    _logger.DSLogError("Device " + device.Id + " is assigned to tag " + tagId + " which does not exist. No updates applied.", fullMethodName);
-                    return;
+                    _logger.DSLogError("Device " + device.Id + " is assigned to tag " + tagId + " which could not be retrieved from DB. No updates applied.", fullMethodName);
+                    
+                    //return as failure in case it's a retryable error
+                    return false;
                 }
 
                 //
@@ -151,20 +213,26 @@ namespace UpdateDevices
                         if (!Regex.IsMatch(device.UserPrincipalName, tag.AllowedUserPrincipalName))
                         {
                             _logger.DSLogWarning("Primary user " + device.UserPrincipalName + " on ManagedDevice Id " + device.Id + " does not match Tag " + tag.Name + " allowed user principal names regex '" + tag.AllowedUserPrincipalName + "'.", fullMethodName);
-                            return;
+
+                            // Return as successful since no changes should be applied
+                            return true;
                         }
                     }
                 }
                 catch (Exception ex)
                 {
                     _logger.DSLogException("UserPrincipalName " + device.UserPrincipalName + " on ManagedDevice Id " + device.Id + " on " + tag.Id + " allowed user principal names " + tag.AllowedUserPrincipalName + ".", ex, fullMethodName);
-                    return;
+                    
+                    // returning failure to retry - unsure what would cause this 
+                    return false;
                 }
 
                 if (tag.UpdateActions == null || tag.UpdateActions.Count < 1)
                 {
                     _logger.DSLogWarning("No update actions configured for " + tag.Name + ".  No updates applied for device " + device.Id + ".", fullMethodName);
-                    return;
+
+                    // return as successful since no changes need to be applied
+                    return true;
                 }
 
 
@@ -173,7 +241,8 @@ namespace UpdateDevices
                 // 
                 _logger.DSLogInformation("Apply update actions to device " + device.Id + " configured for tag " + tag.Name + "...", fullMethodName);
 
-
+                // for now treating these as successful if they fail, since typically it's a permissions/configuration issue
+                // may need to revisit
                 foreach (DeviceUpdateAction deviceUpdateAction in tag.UpdateActions.Where(t => t.ActionType == DeviceUpdateActionType.AdministrativeUnit))
                 {
                     try
@@ -183,6 +252,9 @@ namespace UpdateDevices
                     catch (Exception ex)
                     {
                         _logger.DSLogException("Unable to add Device " + device.Id + " (as " + deviceObjectID + ") to Administrative Unit: " + deviceUpdateAction.Name + " (" + deviceUpdateAction.Value + ").", ex, fullMethodName);
+
+                        // mark failure to trigger retry
+                        result = false;
                     }
                 }
 
@@ -191,6 +263,9 @@ namespace UpdateDevices
                     try
                     {
                         await _graphService.AddDeviceToAzureADGroup(device.Id, deviceObjectID, deviceUpdateAction);
+
+                        // mark failure to trigger retry
+                        result = false;
                     }
                     catch (Exception ex)
                     {
@@ -206,11 +281,13 @@ namespace UpdateDevices
                 catch (Exception ex)
                 {
                     _logger.DSLogException("Unable to update attributes for device " + device.Id + " (as " + deviceObjectID + ").", ex, fullMethodName);
+
+                    // mark failure to trigger retry
+                    result = false;
                 }
             }
+
+            return result;
         }
-
-
     }
-
 }
