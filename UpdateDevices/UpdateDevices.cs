@@ -55,7 +55,7 @@ namespace UpdateDevices
 
             FunctionSettings settings = await _dbService.GetFunctionSettings();
 
-            // If not set, use current time - value set for last run days 
+            // If not set, use current time - value set for last run days
             // Otherwise subtract one hour from date saved in DB
             DateTime lastRun = settings.LastRun == null ? DateTime.UtcNow.AddDays(-_lastRunDays) : ((DateTime)settings.LastRun).AddHours(-1);
 
@@ -142,16 +142,24 @@ namespace UpdateDevices
                 // To prevent PAWs from being updated, check the enrollment user and ensure there is a match to permitted regex
                 // Intended to protect against PAW users using this to apply changes to their PAW
                 // Allow any where the user is not set
-                // 
+                //
                 try
                 {
                     if (!string.IsNullOrEmpty(tag.AllowedUserPrincipalName))
                     {
                         // If the user principal name is not in the allowed list, skip the tag
-                        if (!Regex.IsMatch(device.UserPrincipalName, tag.AllowedUserPrincipalName))
+                        if (!string.IsNullOrEmpty(device.UserPrincipalName))
                         {
-                            _logger.DSLogWarning("Primary user " + device.UserPrincipalName + " on ManagedDevice Id " + device.Id + " does not match Tag " + tag.Name + " allowed user principal names regex '" + tag.AllowedUserPrincipalName + "'.", fullMethodName);
-                            return;
+                            if(!Regex.IsMatch(device.UserPrincipalName, tag.AllowedUserPrincipalName))
+                            {
+                                _logger.DSLogWarning("Primary user " + device.UserPrincipalName + " on ManagedDevice Id " + device.Id + " does not match Tag " + tag.Name + " allowed user principal names regex '" + tag.AllowedUserPrincipalName + "'.", fullMethodName);
+                                return;
+                            }
+                            _logger.DSLogInformation("Primary user " + device.UserPrincipalName + " on ManagedDevice Id " + device.Id + " matches Tag " + tag.Name + " allowed user principal names regex '" + tag.AllowedUserPrincipalName + "'.", fullMethodName);
+                        }
+                        else
+                        {
+                            _logger.DSLogInformation("Primary user was null or empty indicating bulk enrollment of Managed Device Id: " + device.Id, fullMethodName);
                         }
                     }
                 }
@@ -170,7 +178,7 @@ namespace UpdateDevices
 
                 //
                 // Applying update actions based on tag
-                // 
+                //
                 _logger.DSLogInformation("Apply update actions to device " + device.Id + " configured for tag " + tag.Name + "...", fullMethodName);
 
 

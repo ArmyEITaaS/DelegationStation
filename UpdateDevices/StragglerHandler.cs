@@ -37,7 +37,7 @@ namespace UpdateDevices
                 _maxUDAttempts = 5;
                 _logger.DSLogWarning("MaxUpdateDeviceAttempts environment variable not set. Defaulting to 5 attempts.", fullMethodName);
             }
-            
+
             bool parseConfig2 = int.TryParse(Environment.GetEnvironmentVariable("MaxStragglerHandlerAttempts", EnvironmentVariableTarget.Process), out _maxSHAttempts);
             if (!parseConfig2)
             {
@@ -64,7 +64,7 @@ namespace UpdateDevices
 
         }
         private async Task ProcessStragglers()
-        { 
+        {
             string methodName = ExtensionHelper.GetMethodName();
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
@@ -145,7 +145,7 @@ namespace UpdateDevices
                             await _dbService.DeleteStraggler(straggler);
                         }
                     }
-                    
+
                 }
             }
         }
@@ -192,7 +192,7 @@ namespace UpdateDevices
             if (String.IsNullOrEmpty(deviceObjectID))
             {
                 _logger.DSLogError("Failed to retrieve graph device ID using .\n", fullMethodName);
-                
+
                 // return as failure in case it's a retryable error
                 return false;
             }
@@ -204,7 +204,7 @@ namespace UpdateDevices
                 if (tag == null)
                 {
                     _logger.DSLogError("Device " + device.Id + " is assigned to tag " + tagId + " which could not be retrieved from DB. No updates applied.", fullMethodName);
-                    
+
                     //return as failure in case it's a retryable error
                     return false;
                 }
@@ -213,26 +213,32 @@ namespace UpdateDevices
                 // To prevent PAWs from being updated, check the enrollment user and ensure there is a match to permitted regex
                 // Intended to protect against PAW users using this to apply changes to their PAW
                 // Allow any where the user is not set
-                // 
+                //
                 try
                 {
                     if (!string.IsNullOrEmpty(tag.AllowedUserPrincipalName))
                     {
                         // If the user principal name is not in the allowed list, skip the tag
-                        if (!Regex.IsMatch(device.UserPrincipalName, tag.AllowedUserPrincipalName))
+                        if (!string.IsNullOrEmpty(device.UserPrincipalName))
                         {
-                            _logger.DSLogWarning("Primary user " + device.UserPrincipalName + " on ManagedDevice Id " + device.Id + " does not match Tag " + tag.Name + " allowed user principal names regex '" + tag.AllowedUserPrincipalName + "'.", fullMethodName);
-
-                            // Return as successful since no changes should be applied
-                            return true;
+                            if(!Regex.IsMatch(device.UserPrincipalName, tag.AllowedUserPrincipalName))
+                            {
+                                _logger.DSLogWarning("Primary user " + device.UserPrincipalName + " on ManagedDevice Id " + device.Id + " does not match Tag " + tag.Name + " allowed user principal names regex '" + tag.AllowedUserPrincipalName + "'.", fullMethodName);
+                                return true;
+                            }
+                            _logger.DSLogInformation("Primary user " + device.UserPrincipalName + " on ManagedDevice Id " + device.Id + " matches Tag " + tag.Name + " allowed user principal names regex '" + tag.AllowedUserPrincipalName + "'.", fullMethodName);
+                        }
+                        else
+                        {
+                            _logger.DSLogInformation("Primary user was null or empty indicating bulk enrollment of Managed Device Id: " + device.Id, fullMethodName);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
                     _logger.DSLogException("UserPrincipalName " + device.UserPrincipalName + " on ManagedDevice Id " + device.Id + " on " + tag.Id + " allowed user principal names " + tag.AllowedUserPrincipalName + ".", ex, fullMethodName);
-                    
-                    // returning failure to retry - unsure what would cause this 
+
+                    // returning failure to retry - unsure what would cause this
                     return false;
                 }
 
@@ -247,7 +253,7 @@ namespace UpdateDevices
 
                 //
                 // Applying update actions based on tag
-                // 
+                //
                 _logger.DSLogInformation("Apply update actions to device " + device.Id + " configured for tag " + tag.Name + "...", fullMethodName);
 
                 // for now treating these as successful if they fail, since typically it's a permissions/configuration issue
