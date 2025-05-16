@@ -32,7 +32,8 @@
                     @{
                         foreach (var attr in Enum.GetValues(typeof(AllowedAttributes)))
                         {
-                            if ((AllowedAttributes)attr == AllowedAttributes.All)
+                            if ((AllowedAttributes)attr == AllowedAttributes.All ||
+                            (AllowedAttributes)attr == AllowedAttributes.None)
                             {
                                 continue;
                             }

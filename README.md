@@ -241,6 +241,9 @@ Can be found in the Azure Portal under the App Registration -> Certificates & se
 <b>"COSMOS_CONNECTION_STRING": ""</b><br/>
 Can be found in the Azure Portal under the Cosmos DB -> Keys -> Primary Connection String
 
+<b>"COSMOS_ENDPOINT": ""</b><br/>
+Use this setting when using managed-identity based authentication to CosmosDB.  This is the URL of the CosmosDB instance.
+
 <b>"COSMOS_DATABASE_NAME" : ""</b><br/>
 (Optional) The name of the Cosmos DB database. Default is "DelegationStationData"
 
@@ -301,6 +304,9 @@ When deploying to Azure, these will go in your Configuration Settings or Environ
 
 <b>"COSMOS_CONNECTION_STRING": ""</b><br/>
 Can be found in the Azure Portal under the Cosmos DB -> Keys -> Primary Connection String
+
+<b>"COSMOS_ENDPOINT": ""</b><br/>
+Use this setting when using managed-identity based authentication to CosmosDB.  This is the URL of the CosmosDB instance.
 
 <b>"COSMOS_DATABASE_NAME" : ""</b><br/>
 (Optional) The name of the Cosmos DB database. Default is "DelegationStationData"
