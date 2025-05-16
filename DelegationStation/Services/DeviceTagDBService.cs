@@ -1,3 +1,5 @@
+using Azure.Core;
+using Azure.Identity;
 using DelegationStation.Interfaces;
 using DelegationStationShared.Models;
 using Microsoft.Azure.Cosmos;
@@ -17,9 +19,13 @@ namespace DelegationStation.Services
             {
                 throw new Exception("DeviceDBService appsettings configuration is null.");
             }
-            if (string.IsNullOrEmpty(configuration.GetSection("COSMOS_CONNECTION_STRING").Value))
+
+            string cosmosEndpoint = configuration.GetSection("COSMOS_ENDPOINT").Value ?? "";
+            string cosmosConnectionString = configuration.GetSection("COSMOS_CONNECTION_STRING").Value ?? "";
+
+            if (string.IsNullOrEmpty(cosmosConnectionString) && string.IsNullOrEmpty(cosmosEndpoint))
             {
-                throw new Exception("DeviceDBService appsettings COSMOS_CONNECTION_STRING is null or empty");
+                throw new Exception("DeviceDBService appsettings COSMOS_CONNECTION_STRING and COSMOS_ENDPOINT settings are both null or empty. At least one must be set.");
             }
             if (string.IsNullOrEmpty(configuration.GetSection("DefaultAdminGroupObjectId").Value))
             {
@@ -38,9 +44,20 @@ namespace DelegationStation.Services
             string containerName = string.IsNullOrEmpty(configuration.GetSection("COSMOS_CONTAINER_NAME").Value) ? "DeviceData" : configuration.GetSection("COSMOS_CONTAINER_NAME").Value!;
 
 
-            CosmosClient client = new(
-                connectionString: configuration.GetSection("COSMOS_CONNECTION_STRING").Value!
-            );
+            CosmosClient client;
+            if (!string.IsNullOrEmpty(cosmosEndpoint))
+            {
+                logger.LogInformation("Using Managed Identity to connect to CosmosDB");
+                TokenCredential credential = new ManagedIdentityCredential();
+                client = new CosmosClient(cosmosEndpoint, credential);
+            }
+            else
+            {
+                logger.LogInformation("Using Connection String to connect to CosmosDB");
+                client = new(
+                    connectionString: configuration.GetSection("COSMOS_CONNECTION_STRING").Value!
+                );
+            }
             ConfigureCosmosDatabase(client, dbName, containerName);
             this._container = client.GetContainer(dbName, containerName);
             _DefaultGroup = configuration.GetSection("DefaultAdminGroupObjectId").Value;
@@ -242,11 +259,7 @@ namespace DelegationStation.Services
         }
 
 
-        public async Task<DeviceTag> AddOrUpdateDeviceTagAsync(DeviceTag deviceTag)
-        {
-            ItemResponse<DeviceTag> response = await this._container.UpsertItemAsync<DeviceTag>(deviceTag);
-            return response;
-        }
+       
 
         public async Task<int> GetDeviceCountByTagIdAsync(string tagId)
         {
@@ -269,6 +282,12 @@ namespace DelegationStation.Services
 
             return response.Resource.FirstOrDefault<int>();
 
+        }
+
+        public async Task<DeviceTag> AddOrUpdateDeviceTagAsync(DeviceTag deviceTag)
+        {
+            ItemResponse<DeviceTag> response = await this._container.UpsertItemAsync<DeviceTag>(deviceTag);
+            return response;
         }
 
         public async Task DeleteDeviceTagAsync(DeviceTag deviceTag)

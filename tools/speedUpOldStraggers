@@ -1,0 +1,74 @@
+//
+//  This stored procedure looks for older stragglers that never reached max 
+//  attempts and bumps up the UD Attempt count so that they will be picked up
+//  by StragglerHandler function.
+//
+//  The scenario where this is needed is:
+//  UpdatedDevices is run manually to ensure pickup of devices enrolled earlier.
+//  Stragglers will have entries creaated, but they won't get processed by 
+//  UpdateDevices again without manual intervention.
+//  This script prevents requiring additional manual runs of UpdateDevices.
+//
+//
+//  BEFORE RUNNING:
+//  Update EnrollmentDateTime value
+//
+
+function speedUpOldStragglers() {
+    var collection = getContext().getCollection();
+
+    // Filtered Query
+    var filterQuery =
+    {
+        'query' : 'SELECT * from Stragglers s where s.EnrollmentDateTime<"2025-04-02T00:00:00" AND s.UDAttemptCount<5'
+    };
+
+    // Query documents and take 1st item.
+    var isAccepted = collection.queryDocuments(
+        collection.getSelfLink(),
+        filterQuery,
+        function (err, feed, options) {
+            if (err) throw err;
+
+            // Check the feed and if empty, set the body to 'no docs found', 
+            // else take 1st element from feed
+            if (!feed || !feed.length) {
+                var response = getContext().getResponse();
+                response.setBody('no docs found');
+            }
+            else {
+
+                var output = "";
+                var updatedItemCount = 0;
+                feed.forEach(item => {
+                    updateCount(item);
+                    output += JSON.stringify(item) + "/n";
+                    updatedItemCount++;
+                });
+
+
+                var response = getContext().getResponse();
+                //var body = { prefix: prefix, feed: feed[0] };
+                //response.setBody(JSON.stringify(body));
+                var body = "Total Updated: " + updatedItemCount + "/n\n" + output;
+                response.setBody(body);
+            }
+        }
+    );
+
+    if (!isAccepted) throw new Error('The query was not accepted by the server.');
+
+    function updateCount(straggler)
+    {
+        straggler.UDAttemptCount = 5;
+
+        var accept = collection.replaceDocument(straggler._self, straggler,
+            function(err, itemReplaced) {
+                if (err) throw "Unable to update entry, abort";
+            }
+        );
+
+        if (!accept) throw "Unable to update entry, abort";
+    }
+
+}

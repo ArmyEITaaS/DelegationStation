@@ -22,15 +22,18 @@ namespace UpdateDevices
         private readonly ILogger _logger;
         private readonly ICosmosDbService _dbService;
         private readonly IGraphService _graphService;
+        private readonly IGraphBetaService _graphBetaService;
 
 
-        public UpdateDevices(ILoggerFactory loggerFactory, ICosmosDbService dbService, IGraphService graphService)
+
+        public UpdateDevices(ILoggerFactory loggerFactory, ICosmosDbService dbService, IGraphService graphService, IGraphBetaService graphBetaService)
         {
             _logger = loggerFactory.CreateLogger<UpdateDevices>();
             _dbService = dbService;
             _graphService = graphService;
+            _graphBetaService = graphBetaService;
 
-            string methodName = ExtensionHelper.GetMethodName();
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
@@ -46,7 +49,7 @@ namespace UpdateDevices
         [Function("UpdateDevices")]
         public async Task Run([TimerTrigger("%TriggerTime%")] TimerInfo timerInfo)
         {
-            string methodName = ExtensionHelper.GetMethodName();
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
@@ -79,7 +82,7 @@ namespace UpdateDevices
 
         private async Task RunDeviceUpdateActionsAsync(Microsoft.Graph.Models.ManagedDevice device)
         {
-            string methodName = ExtensionHelper.GetMethodName();
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
@@ -120,6 +123,21 @@ namespace UpdateDevices
                 return;
             }
             _logger.DSLogInformation("Found matching device in DB for: '" + device.Id + "' '" + device.Manufacturer + "' '" + device.Model + "' '" + device.SerialNumber + "'.", fullMethodName);
+
+            // Updated managed device name if provided and not already equal
+            if (!String.IsNullOrEmpty(d.PreferredHostName) && (d.PreferredHostName != device.DeviceName))
+            {
+                bool result = await _graphBetaService.SetDeviceName(device.Id, d.PreferredHostName);
+
+                if (!result)
+                {
+                    _logger.DSLogWarning("Failed to rename device: '" + device.Id + "' '" + device.Manufacturer + "' '" + device.Model + "' '" + device.SerialNumber + " from " + device.DeviceName + " to " + d.PreferredHostName + "'.", fullMethodName);
+                }
+                else
+                {
+                    _logger.DSLogInformation("Updated device name for: '" + device.Id + "from '" + device.DeviceName + "' to '" + d.PreferredHostName + "'.", fullMethodName);
+                }
+            }
 
             string deviceObjectID = await _graphService.GetDeviceObjectID(device.AzureADDeviceId);
             if (String.IsNullOrEmpty(deviceObjectID))

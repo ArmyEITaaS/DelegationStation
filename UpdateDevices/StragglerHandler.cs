@@ -27,7 +27,7 @@ namespace UpdateDevices
             _dbService = dbService;
             _graphService = graphService;
 
-            string methodName = ExtensionHelper.GetMethodName();
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
@@ -49,7 +49,7 @@ namespace UpdateDevices
         [Function("StragglerHandler")]
         public async Task RunAsync([TimerTrigger("%SHTriggerTime%")] TimerInfo myTimer)
         {
-            string methodName = ExtensionHelper.GetMethodName();
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
@@ -65,7 +65,7 @@ namespace UpdateDevices
         }
         private async Task ProcessStragglers()
         {
-            string methodName = ExtensionHelper.GetMethodName();
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
@@ -153,7 +153,7 @@ namespace UpdateDevices
 
         private async Task<bool> RunDeviceUpdateActionsAsync(ManagedDevice device)
         {
-            string methodName = ExtensionHelper.GetMethodName();
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 

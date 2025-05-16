@@ -1,0 +1,114 @@
+#! /bin/bash
+
+###
+###  ENV-specific settings
+###
+###  Set these to the resource and resource group names you are using in your deployment
+###
+
+rg="<DS RESOURCE GROUP NAME>"
+name="<COSMOS DB ACCOUNT NAME>"
+
+updateDS_name="<UPDATE FUNCTION NAME>"
+corpIDsync_name="<CORPID SYNC FUNCTION NAME>"
+webapp_name="<WEBAPP NAME>"
+
+
+# Required for running in Git Bash 
+# Without it "/" will get converted to C:/ style paths
+export MSYS_NO_PATHCONV=1
+
+
+###
+### Disable key-based access
+###
+
+echo -n "Disabling key-based authentication..."
+az resource update --resource-group $rg --name $name --resource-type "Microsoft.DocumentDB/databaseAccounts" --set properties.disableLocalAuth=true -o none
+echo "Done"
+
+# Confirm setting in output
+
+echo "Confirming setting: "
+az resource show --resource-group $rg --name $name --resource-type "Microsoft.DocumentDB/databaseAccounts" --query "properties.{disableLocalAuth:disableLocalAuth}"
+echo ""
+
+
+###
+### Get necessary IDs
+### 
+
+echo "Getting necessary ids..."
+echo ""
+
+user_id=`az ad signed-in-user show --query id | tr -d '"'`
+echo "Logged in user: $user_id"
+echo ""
+
+cosmos_id=`az cosmosdb show --resource-group $rg --name $name --query "{id:id}" | jq '.id' | tr -d '"'`
+echo "Cosmos Resource ID: $cosmos_id"
+echo ""
+
+updateFunction_id=`az functionapp show --resource-group $rg --name $updateDS_name --query "{identity:identity}" | jq '.identity.principalId' | tr -d '"'`
+echo "Update Devices Function Managed Identity ID: $updateFunction_id"
+
+corpIDSync_id=`az functionapp show --resource-group $rg --name $corpIDsync_name --query "{identity:identity}" | jq '.identity.principalId' | tr -d '"'`
+echo "Corporate Identity Sync Function Managed Identity ID: $corpIDSync_id"
+
+webapp_id=`az webapp show --resource-group $rg --name $webapp_name --query "{identity:identity}" | jq '.identity.principalId' | tr -d '"'`
+echo "Delegation Station WebApp Managed Identity ID: $webapp_id"
+echo ""
+
+
+###
+### Retrieve Role IDs
+###
+
+reader_role_id=`az cosmosdb sql role definition list -g $rg --account-name $name --query "[?contains(roleName,'Reader')].{id:id}" | jq '.[].id' | tr -d '"' | awk -F '/' '{print $11}'`
+echo "Reader Role ID: $reader_role_id"
+
+contributor_role_id=`az cosmosdb sql role definition list -g $rg --account-name $name --query "[?contains(roleName,'Contributor')].{id:id}" | jq '.[].id' | tr -d '"' | awk -F '/' '{print $11}'`
+echo "Contributor Role ID: $contributor_role_id"
+echo ""
+
+
+# TODO:  Need to make it smarter so it doesn't add dupes
+
+#
+# Grant current user access to Azure Portal
+#
+echo "Assigning roles to current user..."
+az cosmosdb sql role assignment create --resource-group $rg --account-name $name --role-definition-id "$contributor_role_id" --principal-id $user_id --scope $cosmos_id -o none
+echo "Done"
+echo ""
+
+
+#
+# Grant Azure Functions/Web App access to DB
+# 
+
+echo "Assigning roles to Web App..."
+#az cosmosdb sql role assignment delete --resource-group $rg --account-name $name --role-definition-id "$reader_role_id" --principal-id $webapp_id --scope $cosmos_id -o none
+az cosmosdb sql role assignment create --resource-group $rg --account-name $name --role-definition-id $contributor_role_id --principal-id $webapp_id --scope $cosmos_id -o none
+echo "Done"
+echo ""
+
+echo "Assigning roles to CorpIDSync Function..."
+#az cosmosdb sql role assignment delete --resource-group $rg --account-name $name --role-definition-id "$reader_role_id" --principal-id $corpIDSync_id --scope $cosmos_id -o none
+az cosmosdb sql role assignment create --resource-group $rg --account-name $name --role-definition-id $contributor_role_id --principal-id $corpIDSync_id --scope $cosmos_id -o none
+echo "Done"
+echo ""
+
+echo "Assigning roles to UpdateDevices Function..."
+#az cosmosdb sql role assignment delete --resource-group $rg --account-name $name --role-definition-id "$reader_role_id" --principal-id $updateFunction_id --scope $cosmos_id -o none
+az cosmosdb sql role assignment create --resource-group $rg --account-name $name --role-definition-id $contributor_role_id --principal-id $updateFunction_id --scope $cosmos_id -o none
+echo "Done"
+echo ""
+
+#
+# Output resultant role assignments
+#
+
+echo "Current role assignments: "
+az cosmosdb sql role assignment list -g $rg --account-name $name --query "sort_by([].{principalId:principalId,roleDefinitionId:roleDefinitionId},&principalId)"
+

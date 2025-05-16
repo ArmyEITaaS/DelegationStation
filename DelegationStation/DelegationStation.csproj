@@ -2,20 +2,17 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
+    <Nullable>annotations</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>aspnet-DelegationStation-2544d2be-3f6f-4b7d-96b3-dfeed95244f4</UserSecretsId>
-    <WebProject_DirectoryAccessLevelKey>0</WebProject_DirectoryAccessLevelKey>
-    <ApplicationInsightsResourceId>/subscriptions/239e4506-8671-4c23-b040-6262a134199d/resourceGroups/Intune/providers/microsoft.insights/components/IntuneEnrollment3</ApplicationInsightsResourceId>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid" Version="8.0.13" />
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.47.0" />
-    <PackageReference Include="Microsoft.Graph" Version="5.70.0" />
-    <PackageReference Include="Microsoft.Identity.Web" Version="3.7.1" />
-    <PackageReference Include="Microsoft.Identity.Web.UI" Version="3.7.1" />
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.23.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid" Version="8.0.15" />
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.49.0" />
+    <PackageReference Include="Microsoft.Graph" Version="5.77.0" />
+    <PackageReference Include="Microsoft.Identity.Web" Version="3.8.3" />
+    <PackageReference Include="Microsoft.Identity.Web.UI" Version="3.8.3" />
   </ItemGroup>
 
   <ItemGroup>
