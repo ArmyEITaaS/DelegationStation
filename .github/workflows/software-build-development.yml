@@ -21,7 +21,7 @@ env:
   AZURE_UPDATE_FUNCTION_PACKAGE_PATH: .\UpdateDevices\published
   AZURE_UPDATE_FUNCTION_PKG_NAME: update-function
 
-  AZURE_CORPID_FUNCTION_PACKAGE_PATH: .\CorpIDSync\published
+  AZURE_CORPID_FUNCTION_PACKAGE_PATH: .\CorporateIdentifierSyncs\published
   AZURE_CORPID_FUNCTION_PKG_NAME: corpidsync-function
 
   AZURE_APP_PACKAGE_PATH: .\DelegationStation\published
