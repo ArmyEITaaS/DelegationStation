@@ -21,11 +21,11 @@ env:
   AZURE_UPDATE_FUNCTION_PACKAGE_PATH: .\UpdateDevices\published
   AZURE_UPDATE_FUNCTION_PKG_NAME: update-function
 
+  AZURE_CORPID_FUNCTION_PACKAGE_PATH: .\CorpIDSync\published
+  AZURE_CORPID_FUNCTION_PKG_NAME: corpidsync-function
+
   AZURE_APP_PACKAGE_PATH: .\DelegationStation\published
   AZURE_APP_PKG_NAME: webapp
-
-  AZURE_WEBJOB_PACKAGE_PATH: .\RemoveCaseSensitiveDuplicates\published
-  AZURE_WEBJOB_PKG_NAME: dupe-cleanup-webjob
 
   SRC_DIR: .
   # TEST_DIR: ./src/WinGet.RestSource.UnitTest
@@ -77,7 +77,7 @@ jobs:
        run: |
          dotnet publish ${{ env.SRC_DIR }}/DelegationStation --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_APP_PACKAGE_PATH }}"
          dotnet publish ${{ env.SRC_DIR }}/UpdateDevices --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_UPDATE_FUNCTION_PACKAGE_PATH }}"
-         dotnet publish ${{ env.SRC_DIR }}/RemoveCaseSensitiveDuplicates --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_WEBJOB_PACKAGE_PATH }}"
+         dotnet publish ${{ env.SRC_DIR }}/CorpIDSync --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_CORPID_FUNCTION_PACKAGE_PATH }}"
 
      - name: Upload Update Function Artifact
        uses: actions/upload-artifact@v4.6.0
@@ -87,17 +87,18 @@ jobs:
          if-no-files-found: error
          include-hidden-files: true
 
+     - name: Upload CorpIDSync Function Artifact
+       uses: actions/upload-artifact@v4.6.0
+       with:
+         name: ${{ env.AZURE_CORPID_FUNCTION_PKG_NAME}}
+         path: ${{ env.AZURE_CORPID_FUNCTION_PACKAGE_PATH }}
+         if-no-files-found: error
+         include-hidden-files: true
+
      - name: Upload WebApp Artifact
        uses: actions/upload-artifact@v4.6.0
        with:
          name: ${{ env.AZURE_APP_PKG_NAME}}
          path: ${{ env.AZURE_APP_PACKAGE_PATH }}
-         if-no-files-found: error
-
-     - name: Upload WebJob Artifact
-       uses: actions/upload-artifact@v4.6.0
-       with:
-         name: ${{ env.AZURE_WEBJOB_PKG_NAME }}
-         path: ${{ env.AZURE_WEBJOB_PACKAGE_PATH }}
          if-no-files-found: error
 
