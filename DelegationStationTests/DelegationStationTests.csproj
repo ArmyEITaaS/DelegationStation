@@ -16,13 +16,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="bunit" Version="1.38.5" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid" Version="8.0.13" />
+    <PackageReference Include="bunit" Version="1.39.5" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid" Version="8.0.15" />
     <PackageReference Include="Microsoft.NET.Sdk.Razor" Version="3.1.32" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
     <PackageReference Include="Microsoft.QualityTools.Testing.Fakes" Version="17.12.0" />
-    <PackageReference Include="MSTest.TestAdapter" Version="3.8.1" />
-    <PackageReference Include="MSTest.TestFramework" Version="3.8.1" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.8.3" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.8.3" />
     <PackageReference Include="coverlet.collector" Version="6.0.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

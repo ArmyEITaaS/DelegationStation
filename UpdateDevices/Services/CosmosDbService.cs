@@ -1,4 +1,6 @@
-﻿using DelegationStationShared;
+using Azure.Core;
+using Azure.Identity;
+using DelegationStationShared;
 using DelegationStationShared.Extensions;
 using DelegationStationShared.Models;
 using Microsoft.Azure.Cosmos;
@@ -29,6 +31,10 @@ namespace UpdateDevices.Services
       string containerName = Environment.GetEnvironmentVariable("COSMOS_CONTAINER_NAME", EnvironmentVariableTarget.Process);
       string databaseName = Environment.GetEnvironmentVariable("COSMOS_DATABASE_NAME", EnvironmentVariableTarget.Process);
       var connectionString = Environment.GetEnvironmentVariable("COSMOS_CONNECTION_STRING", EnvironmentVariableTarget.Process);
+      //bool managedIdAuthEnabled = false;
+      //bool.TryParse(Environment.GetEnvironmentVariable("CosmosManagedIdAuthEnabled", EnvironmentVariableTarget.Process), out managedIdAuthEnabled);
+      string cosmosEndpoint = Environment.GetEnvironmentVariable("COSMOS_ENDPOINT", EnvironmentVariableTarget.Process);
+
 
       if (string.IsNullOrEmpty(containerName))
       {
@@ -40,9 +46,9 @@ namespace UpdateDevices.Services
         _logger.DSLogWarning("COSMOS_DATABASE_NAME is null or empty, using default value of DelegationStationData", fullMethodName);
         databaseName = "DelegationStationData";
       }
-      if (String.IsNullOrEmpty(connectionString))
+      if (String.IsNullOrEmpty(connectionString) && String.IsNullOrEmpty(cosmosEndpoint))
       {
-        _logger.DSLogError("Cannot connect to CosmosDB. Missing required environment variable COSMOS_CONNECTION_STRING", fullMethodName);
+        _logger.DSLogError("Cannot connect to CosmosDB. Must configure COSMOS_CONNECTION_STRING or COSMOS_ENDPOINT", fullMethodName);
         return;
       }
 
@@ -50,7 +56,17 @@ namespace UpdateDevices.Services
       {
         if (_cosmosClient == null)
         {
-          _cosmosClient = new CosmosClient(connectionString);
+          if (!String.IsNullOrEmpty(cosmosEndpoint))
+          {
+            _logger.DSLogInformation("Using Managed Identity to connect to CosmosDB", fullMethodName);
+            TokenCredential credential = new ManagedIdentityCredential();
+            _cosmosClient = new CosmosClient(cosmosEndpoint, credential);
+          }
+          else
+          {
+            _logger.DSLogInformation("Using connection string to connect to CosmosDB", fullMethodName);
+            _cosmosClient = new CosmosClient(connectionString);
+          }
           _container = _cosmosClient.GetContainer(databaseName, containerName);
         }
         else if (_container == null)
@@ -269,7 +285,8 @@ namespace UpdateDevices.Services
             return results;
         }
 
-        // Removes entries that were enrolled over a day ago and have less than the max number 
+
+        // Removes entries that were enrolled over a day ago and have less than the max number
         // retries indicating UpdateDevices was able to process them before it stopped retrying
         public async Task<List<Straggler>> GetStragglersProcessedByUD(int minCount)
         {

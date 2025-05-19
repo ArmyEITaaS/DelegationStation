@@ -1,0 +1,20 @@
+#! /bin/bash
+
+# SET THE VALUES BELOW
+rg="<DS RESOURCE GROUP>"
+name="<COSMOSDB NAME>"
+
+
+#
+# Disable key-based access
+#
+echo -n "Disabling local auth on CosmosDB..."
+az resource update --resource-group $rg --name $name --resource-type "Microsoft.DocumentDB/databaseAccounts" --set properties.disableLocalAuth=false -o none
+echo "Done."
+
+#
+# Output resultant setting
+# 
+az resource show --resource-group $rg --name $name --resource-type "Microsoft.DocumentDB/databaseAccounts" --query "properties.{disableLocalAuth:disableLocalAuth}"
+
+

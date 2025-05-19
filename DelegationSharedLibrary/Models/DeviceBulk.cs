@@ -6,12 +6,12 @@ namespace DelegationStationShared.Models
     public class DeviceBulk
     {
         [Required(AllowEmptyStrings = false)]
-        [RegularExpression(@"^[a-zA-Z0-9\-_.&\(\)\s]+$", ErrorMessage = "Use letters, numbers, -, _, &, (, ) or . for Make value.")]
+        [RegularExpression(@"^[a-zA-Z0-9\-_.,&\(\)\s]+$", ErrorMessage = "For make, only use letters, numbers, or the following special characters: -_&().,")]
         public string Make { get; set; }
 
         [Required(AllowEmptyStrings = false)]
-        [RegularExpression(@"^[a-zA-Z0-9\-_.&\(\)+\s]+$", ErrorMessage = "Use letters, numbers, -, _, &, (, ), + or . for Model value.")]
 
+        [RegularExpression(@"^[a-zA-Z0-9\-_.,&\(\)\s]+$", ErrorMessage = "For model, only use letters, numbers, or the following special characters: -_&().,")]
         public string Model { get; set; }
 
 

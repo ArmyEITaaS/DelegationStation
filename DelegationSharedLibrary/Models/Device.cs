@@ -10,12 +10,12 @@ namespace DelegationStationShared.Models
         public Guid Id { get; set; }
 
         [Required(AllowEmptyStrings = false, ErrorMessage = "Make is Required")]
-        [RegularExpression(@"^[a-zA-Z0-9\-_.&\(\)\s]+$", ErrorMessage = "Only use letters, numbers, -, _, &, (, ) or . for Make value.")]
+        [RegularExpression(@"^[a-zA-Z0-9\-_.,&\(\)\s]+$", ErrorMessage = "Only use letters, numbers, or the following special characters: -_&().,")]
         public string Make { get; set; }
 
         [Required(AllowEmptyStrings = false, ErrorMessage = "Model is Required")]
 
-        [RegularExpression(@"^[a-zA-Z0-9\-_.&\(\)+\s]+$", ErrorMessage = "Use letters, numbers, -, _, &, (, ), + or . for Model value.")]
+        [RegularExpression(@"^[a-zA-Z0-9\-_.,&\(\)\s]+$", ErrorMessage = "Only use letters, numbers, or the following special characters: -_&().,")]
         public string Model { get; set; }
 
 
