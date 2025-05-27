@@ -11,7 +11,7 @@ namespace DelegationStationShared.Models
 
         [Required(AllowEmptyStrings = false)]
 
-        [RegularExpression(@"^[a-zA-Z0-9\-_.,&\(\)\s]+$", ErrorMessage = "For model, only use letters, numbers, or the following special characters: -_&().,")]
+        [RegularExpression(@"^[a-zA-Z0-9\-_.,&\(\)+\s]+$", ErrorMessage = "For model, only use letters, numbers, or the following special characters: -_&().+,")]
         public string Model { get; set; }
 
 

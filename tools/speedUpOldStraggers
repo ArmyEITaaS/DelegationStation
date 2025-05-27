@@ -5,7 +5,7 @@
 //
 //  The scenario where this is needed is:
 //  UpdatedDevices is run manually to ensure pickup of devices enrolled earlier.
-//  Stragglers will have entries creaated, but they won't get processed by 
+//  Stragglers will have entries created, but they won't get processed by 
 //  UpdateDevices again without manual intervention.
 //  This script prevents requiring additional manual runs of UpdateDevices.
 //
