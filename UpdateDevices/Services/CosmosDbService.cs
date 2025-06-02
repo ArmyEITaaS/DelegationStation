@@ -1,4 +1,5 @@
-﻿using Azure.Core;
+
+using Azure.Core;
 using Azure.Identity;
 using DelegationStationShared;
 using DelegationStationShared.Extensions;

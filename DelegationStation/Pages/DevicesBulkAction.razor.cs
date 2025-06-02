@@ -189,7 +189,7 @@ namespace DelegationStation.Pages
                             try
                             {
                                 // Validate Make, Model, SerialNumber, Action
-                                if (input[CsvColumns.Action].ToLower() != "add" && input[CsvColumns.Action].ToLower() != "remove")
+                                if (input[CsvColumns.Action].ToLower().Trim() != "add" && input[CsvColumns.Action].ToLower().Trim() != "remove")
                                 {
                                     var message = $"File upload error.\nFile Name: {file.Name}\nInvalid action. Action should be either add or remove.\nCorrelation Id: {c.ToString()}";
                                     fileError.Add(message);
