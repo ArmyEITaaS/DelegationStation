@@ -47,8 +47,9 @@ jobs:
       uses: darenm/Setup-VSTest@v1      
         
     - name: Restore dependencies
-      run: dotnet restore  
-
+      run: |
+        dotnet restore /p:BuildWithNetFrameworkHostedCompiler=true
+        
     - name: Build #Test Project
       run: |
         msbuild.exe ${{ env.SRC_DIR }}/DelegationStation.sln /p:platform="Any CPU" /p:configuration="Release"       
