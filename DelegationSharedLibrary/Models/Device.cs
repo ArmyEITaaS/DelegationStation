@@ -22,12 +22,12 @@ namespace DelegationStationShared.Models
 
         [Required(AllowEmptyStrings = false, ErrorMessage = "Model is Required")]
 
-        [RegularExpression(@"^[a-zA-Z0-9\-_.,&\(\)\s]+$", ErrorMessage = "Only use letters, numbers, or the following special characters: -_&().,")]
+        [RegularExpression(@"^[a-zA-Z0-9\-_.,&\(\)+\s]+$", ErrorMessage = "Only use letters, numbers, or the following special characters: -_&().+,")]
         public string Model { get; set; }
 
 
         [Required(AllowEmptyStrings = false, ErrorMessage = "Serial Number is Required")]
-        [RegularExpression(@"^[a-zA-Z0-9\-_.\s]+$", ErrorMessage = "Use letters, numbers, -, _, or . for SerialNumber value.")]
+        [RegularExpression(@"^[a-zA-Z0-9\-_.\s]+$", ErrorMessage = "Only use letters, numbers, -, _, or . for SerialNumber value.")]
         public string SerialNumber { get; set; }
 
         public string PartitionKey { get; set; }
