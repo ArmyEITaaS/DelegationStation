@@ -62,14 +62,14 @@ jobs:
       run: |
         vstest.console.exe ${{ env.SRC_DIR }}/DelegationStationTests/bin/Release/net8.0/DelegationStationTests.dll /logger:trx
        
-    - name: Visualize Results
-      uses: dorny/test-reporter@v1
-      if: success() || failure()
-      with:
-        name: Unit Tests
-        path: ${{ env.SRC_DIR }}/TestResults/*
-        reporter: dotnet-trx
-        fail-on-error: 'false'
+    #- name: Visualize Results
+    #  uses: dorny/test-reporter@v1
+    #  if: success() || failure()
+    #  with:
+    #    name: Unit Tests
+    #    path: ${{ env.SRC_DIR }}/TestResults/*
+    #    reporter: dotnet-trx
+    #    fail-on-error: 'false'
 
     - name: Publish
       run: |
