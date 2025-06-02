@@ -3,6 +3,8 @@ using DelegationStation.Interfaces;
 using DelegationStationShared.Models;
 using Microsoft.Azure.Cosmos;
 using Azure.Identity;
+using DelegationStationShared.Enums;
+
 
 namespace DelegationStation.Services
 {
@@ -20,8 +22,11 @@ namespace DelegationStation.Services
             {
                 throw new Exception("DeviceDBService appsettings configuration is null.");
             }
-            if (string.IsNullOrEmpty(configuration.GetSection("COSMOS_CONNECTION_STRING").Value) &&
-                string.IsNullOrEmpty(configuration.GetSection("COSMOS_ENDPOINT").Value))
+
+            string cosmosEndpoint = configuration.GetSection("COSMOS_ENDPOINT").Value ?? "";
+            string cosmosConnectionString = configuration.GetSection("COSMOS_CONNECTION_STRING").Value ?? "";
+
+            if (string.IsNullOrEmpty(cosmosConnectionString) && string.IsNullOrEmpty(cosmosEndpoint))
             {
                 throw new Exception("DeviceDBService appsettings COSMOS_CONNECTION_STRING and COSMOS_ENDPOINT settings are both null or empty. At least one must be set.");
             }
@@ -92,7 +97,7 @@ namespace DelegationStation.Services
             }
         }
 
-        public async Task<List<Device>> GetDevicesSearchAsync(string make, string model, string serialNumber)
+        public async Task<List<Device>> GetDevicesSearchAsync(string make, string model, string serialNumber, int? osID, string preferredHostName)
         {
             List<Device> devices = new List<Device>();
             string queryBuilder = "SELECT * FROM d WHERE d.Type = \"Device\" ";
@@ -111,11 +116,22 @@ namespace DelegationStation.Services
                 queryBuilder += " AND CONTAINS(d.SerialNumber, @serial, true)";
             }
 
+            if (osID != null)
+            {
+                queryBuilder += " AND d.OS=@os";
+            }
+            if (!string.IsNullOrEmpty(preferredHostName.Trim()))
+            {
+                queryBuilder += " AND CONTAINS(d.PreferredHostName, @hostname, true)";
+            }
+
             QueryDefinition q = new QueryDefinition(queryBuilder);
 
-            q.WithParameter("@serial", serialNumber);
             q.WithParameter("@make", make);
             q.WithParameter("@model", model);
+            q.WithParameter("@serial", serialNumber);
+            q.WithParameter("@os", osID);
+            q.WithParameter("@hostname", preferredHostName);
 
             var deviceQueryIterator = this._container.GetItemQueryIterator<Device>(q);
             while (deviceQueryIterator.HasMoreResults)
@@ -411,9 +427,12 @@ namespace DelegationStation.Services
             return devices;
         }
 
-        public async Task DeleteDeviceAsync(Device device)
+        public async Task MarkDeviceToDeleteAsync(Device device)
         {
-            await this._container.DeleteItemAsync<Device>(device.Id.ToString(), new PartitionKey(device.PartitionKey));
+            device.Status = DeviceStatus.Deleting;
+            device.MarkedToDeleteUTC = DateTime.UtcNow;
+            await this._container.UpsertItemAsync<Device>(device);
         }
+
     }
 }

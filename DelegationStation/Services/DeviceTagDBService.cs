@@ -19,8 +19,11 @@ namespace DelegationStation.Services
             {
                 throw new Exception("DeviceDBService appsettings configuration is null.");
             }
-            if (string.IsNullOrEmpty(configuration.GetSection("COSMOS_CONNECTION_STRING").Value) &&
-               string.IsNullOrEmpty(configuration.GetSection("COSMOS_ENDPOINT").Value))
+
+            string cosmosEndpoint = configuration.GetSection("COSMOS_ENDPOINT").Value ?? "";
+            string cosmosConnectionString = configuration.GetSection("COSMOS_CONNECTION_STRING").Value ?? "";
+
+            if (string.IsNullOrEmpty(cosmosConnectionString) && string.IsNullOrEmpty(cosmosEndpoint))
             {
                 throw new Exception("DeviceDBService appsettings COSMOS_CONNECTION_STRING and COSMOS_ENDPOINT settings are both null or empty. At least one must be set.");
             }
@@ -258,11 +261,7 @@ namespace DelegationStation.Services
         }
 
 
-        public async Task<DeviceTag> AddOrUpdateDeviceTagAsync(DeviceTag deviceTag)
-        {
-            ItemResponse<DeviceTag> response = await this._container.UpsertItemAsync<DeviceTag>(deviceTag);
-            return response;
-        }
+       
 
         public async Task<int> GetDeviceCountByTagIdAsync(string tagId)
         {
@@ -285,6 +284,12 @@ namespace DelegationStation.Services
 
             return response.Resource.FirstOrDefault<int>();
 
+        }
+
+        public async Task<DeviceTag> AddOrUpdateDeviceTagAsync(DeviceTag deviceTag)
+        {
+            ItemResponse<DeviceTag> response = await this._container.UpsertItemAsync<DeviceTag>(deviceTag);
+            return response;
         }
 
         public async Task DeleteDeviceTagAsync(DeviceTag deviceTag)

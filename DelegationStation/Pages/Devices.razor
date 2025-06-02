@@ -1,6 +1,8 @@
 ﻿@page "/"
 @using DelegationStation.Interfaces;
 @using DelegationStationShared.Models;
+@using DelegationStationShared.Enums;
+
 
 @inject IDeviceTagDBService deviceTagDBService
 @inject IDeviceDBService deviceDBService
@@ -17,12 +19,47 @@
 
         <table class="table table-responsive">
             <thead>
+
                 <tr>
                     <th>Make</th>
                     <th>Model</th>
                     <th>Serial Number</th>
+                    <th>OS</th>
+                    <th>Preferred Host Name</th>
                     <th>Tag</th>
+                    <th>State</th>
                     <th></th>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="text" @bind="searchDevice.Make" class="form-control" placeholder="Make" />
+                    </td>
+                    <td>
+                        <input type="text" @bind="searchDevice.Model" class="form-control" placeholder="Model" />
+                    </td>
+                    <td>
+                        <input type="text" @bind="searchDevice.SerialNumber" class="form-control" placeholder="Serial Number" />
+                    </td>
+                    <td>
+                        <InputSelect @bind-Value=searchDevice.OS class="form-select" id="OS">
+                            <option selected value>Select OS</option>
+                            @foreach (var os in Enum.GetValues(typeof(DeviceOS)))
+                            {
+                                @if ((DeviceOS) os != DeviceOS.Unknown)
+                                {
+                                  <option value=@os>@os</option>
+                                }
+                            }
+                        </InputSelect>
+                    </td>
+                    <td>
+                        <input type="text" @bind="searchDevice.PreferredHostName" class="form-control" placeholder="Preferred Host Name" />
+                    </td>
+                    <td></td>
+                    <td></td>
+                    <td>
+                        <button type="button" class="btn btn-primary" @onclick=@(() => GetDevicesSearch())>Search</button>
+                    </td>
                 </tr>
             </thead>
             <tbody>
@@ -44,13 +81,16 @@
                 }
                 else
                 {
+
                     @foreach (Device device in devices)
                     {
                         <tr>
-                            <td>@device.Make</td>
-                            <td>@device.Model</td>
-                            <td>@device.SerialNumber</td>
-                            <td>
+                            <td class="align-middle">@device.Make</td>
+                            <td class="align-middle">@device.Model</td>
+                            <td class="align-middle">@device.SerialNumber</td>
+                            <td class="align-middle">@device.OS</td>
+                            <td class="align-middle">@device.PreferredHostName</td>
+                            <td class="align-middle">
                                 @foreach (string t in device.Tags)
                                 {
                                     <span class="badge bg-secondary">@deviceTags.Where(tag => tag.Id.ToString() == t).Select(tag => tag.Name.ToString()).FirstOrDefault()</span>
@@ -58,30 +98,37 @@
                                 }
                             </td>
                             <td class="align-middle">
-                                <button type="button" class="btn btn-danger btn-sm text-nowrap" @onclick=@(() => RemoveDevice(device))>
-                                    <span class="oi oi-trash d-sm-none"></span><section class="d-none d-sm-block"><span class="oi oi-trash"></span> Delete</section>
-                                </button>
-
+                                @if (@device.Status == @DeviceStatus.Synced)
+                                {
+                                    <span class="badge rounded-pill bg-success" data-bas-toggle="tooltip" data-bs-placement="top" title="Last Sync: @device.LastCorpIdentitySync">@device.Status</span>
+                                }
+                                else if (@device.Status == @DeviceStatus.NotSyncing)
+                                {
+                                    <span class="badge rounded-pill bg-light text-dark" data-bas-toggle="tooltip" data-bs-placement="top" title="Device in Tag Not Set to Sync. Last confirmed: @device.LastCorpIdentitySync">Added</span>
+                                }
+                                else if (@device.Status == @DeviceStatus.Deleting)
+                                {
+                                    <span class="badge rounded-pill bg-dark" data-bas-toggle="tooltip" data-bs-placement="top" title="Marked To Delete: @device.MarkedToDeleteUTC">@device.Status</span>
+                                }
+                                else
+                                {
+                                    <span class="badge rounded-pill bg-info" data-bas-toggle="tooltip" data-bs-placement="top" title="Device Added: @device.ModifiedUTC">@device.Status</span>
+                                }
+                            </td>
+                            <td class="align-middle" align="center">
+                                @if (device.Status != @DeviceStatus.Deleting)
+                                {
+                                    <button type="button" class="btn btn-danger btn-sm text-nowrap" @onclick=@(() => RemoveDevice(device))>
+                                        <span class="oi oi-trash d-sm-none"></span><section class="d-none d-sm-block"><span class="oi oi-trash"></span> Delete</section>
+                                    </button>
+                                }
                             </td>
                         </tr>
                     }
                 }
             </tbody>
         </table>
-        <div class="row mb-4">
-            <div class="col">
-                <input type="text" @bind="searchDevice.Make" class="form-control" placeholder="Make" />
-            </div>
-            <div class="col">
-                <input type="text" @bind="searchDevice.Model" class="form-control" placeholder="Model" />
-            </div>
-            <div class="col">
-                <input type="text" @bind="searchDevice.SerialNumber" class="form-control" placeholder="Serial Number" />
-            </div>
-            <div class="col">
-                <button type="button" class="btn btn-success" @onclick=@(() => GetDevicesSearch())>Search</button>
-            </div>
-        </div>
+
         <EditForm Model="@newDevice" OnValidSubmit="AddDevice" class="form-control mb-5">
             <DataAnnotationsValidator />
             <h4>Add device</h4>
@@ -103,6 +150,24 @@
                 <label for="SerialNumber" class="form-label">Serial Number</label>
                 <InputText @bind-Value=newDevice.SerialNumber class="form-control" id="SerialNumber"></InputText>
                 <ValidationMessage For=@(() => newDevice.SerialNumber) />
+            </div>
+            <div class="mb-3">
+                <label for="Operating System" class="form-label">Device OS</label>
+                <InputSelect @bind-Value=newDevice.OS class="form-select" id="OS">
+                    <option disabled selected value>Select OS</option>
+                    @foreach (var os in Enum.GetValues(typeof(DeviceOS)))
+                    {
+                        @if ((DeviceOS)os != DeviceOS.Unknown)
+                        {
+                            <option value=@os>@os</option>
+                        }
+                    }
+                </InputSelect>
+            </div>
+            <div class="mb-3">
+                <label for="PreferredHostName" class="form-label">Preferred Host Name</label>
+                <InputText @bind-Value=newDevice.PreferredHostName class="form-control" id="PreferredHostName"></InputText>
+                <ValidationMessage For=@(() => newDevice.PreferredHostName) />
             </div>
             <div class="mb-3">
                 <label for="Tags" class="form-label">Tags:</label>
@@ -135,7 +200,7 @@
             }
         }
 
-       <ConfirmMessage MessageBody=@confirmMessage ConfirmAction="@(() => DeleteDevice())" @ref="ConfirmDelete" />
+       <ConfirmMessage MessageBody=@confirmMessage ConfirmAction="@(async() =>await DeleteDevice())" @ref="ConfirmDelete" />
 
     </Authorized>
 

@@ -4,6 +4,7 @@ using DelegationStation.Interfaces;
 using Microsoft.QualityTools.Testing.Fakes;
 using Microsoft.Extensions.Configuration;
 using System.Text.RegularExpressions;
+using DelegationStationShared.Enums;
 
 namespace DelegationStationTests.Pages
 {
@@ -28,8 +29,9 @@ namespace DelegationStationTests.Pages
                 var cut = RenderComponent<Devices>();
 
                 // Assert
-                string match = @"<td>1<\/td>(.|\n)*<td>2<\/td>(.|\n)*<td>3<\/td>";
-                
+                string match = "<td class=\"align-middle\">1<\\/td>(.|\n)*<td class=\"align-middle\">2<\\/td>(.|\n)*<td class=\"align-middle\">3<\\/td>(.|\n)*" +
+                    "<td class=\"align-middle\">.*testName1(.|\n)*<td class=\"align-middle\">.*title=\"Device Added:.*\">Added<\\/span><\\/td>";
+
                 Assert.IsTrue(Regex.IsMatch(cut.Markup, match), $"Expected Match:\n{match}\nActual:\n{cut.Markup}");
             }
         }
@@ -75,11 +77,14 @@ namespace DelegationStationTests.Pages
                     (groupIds) => Task.FromResult(deviceTags)
             };
 
+
             DelegationStationShared.Models.Device device1 = new DelegationStationShared.Models.Device()
             {
                 Make = "1",
                 Model = "2",
-                SerialNumber = "3"
+                SerialNumber = "3",
+                Status = DeviceStatus.Added,
+                Tags = new List<string>() { deviceTag1.Id.ToString() }
             };
             List<DelegationStationShared.Models.Device> devices = new List<DelegationStationShared.Models.Device>();
             devices.Add(device1);
@@ -89,7 +94,7 @@ namespace DelegationStationTests.Pages
                     Task.FromResult(devices)
             };
 
-            var myConfiguration = new Dictionary<string, string>
+            var myConfiguration = new Dictionary<string, string?>
                 {
                     {"DefaultAdminGroupObjectId", defaultId},
                     {"Nested:Key1", "NestedValue1"},

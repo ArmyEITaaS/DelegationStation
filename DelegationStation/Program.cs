@@ -1,13 +1,43 @@
 using DelegationStation.Authorization;
 using DelegationStation.Interfaces;
 using DelegationStation.Services;
+using DelegationStationShared;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
+using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
+using System.Text.RegularExpressions;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Setup Ilogger for startup errors
+var loggerFactory = LoggerFactory.Create(loggingBuilder =>
+{
+    loggingBuilder.SetMinimumLevel(LogLevel.Debug);
+    loggingBuilder.AddConsole();
+});
+ILogger logger = loggerFactory.CreateLogger<Program>();
+
+
+// Check for required config values
+string defaultAdminGroup = builder.Configuration["DefaultAdminGroupObjectId"] ?? "";
+if (string.IsNullOrEmpty(defaultAdminGroup))
+{
+    logger.LogError("Exiting. DefaultAdminGroupObjectId is not set. Please set it to the object ID of the group that should have admin access.");
+    Environment.Exit(1);
+}
+else
+{
+    var match = Regex.Match(defaultAdminGroup, DSConstants.GUID_REGEX, RegexOptions.IgnoreCase);
+    if (!match.Success)
+    {
+        logger.LogError("DefaultAdminGroupObjectId is not a valid GUID. Please set it to the object ID of the group that should have admin access.");
+        Environment.Exit(1);
+    }
+}
+
 
 //Add services to the container.
 builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
@@ -37,7 +67,7 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("TagUpdateActionAdministrativeUnits", policy =>
         policy.Requirements.Add(DeviceTagOperations.UpdateAdministrativeUnits));
     options.AddPolicy("DelegationStationAdmin", policy =>
-        policy.RequireRole(builder.Configuration["DefaultAdminGroupObjectId"]));
+        policy.RequireRole(defaultAdminGroup));
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .Build();

@@ -1,3 +1,4 @@
+
 using Azure.Core;
 using Azure.Identity;
 using DelegationStationShared;
@@ -22,18 +23,16 @@ namespace UpdateDevices.Services
 
     public CosmosDbService(ILogger<CosmosDbService> logger)
     {
-      string methodName = ExtensionHelper.GetMethodName();
+      string methodName = ExtensionHelper.GetMethodName() ?? "";
       string className = this.GetType().Name;
       string fullMethodName = className + "." + methodName;
 
       _logger = logger;
 
-      string containerName = Environment.GetEnvironmentVariable("COSMOS_CONTAINER_NAME", EnvironmentVariableTarget.Process);
-      string databaseName = Environment.GetEnvironmentVariable("COSMOS_DATABASE_NAME", EnvironmentVariableTarget.Process);
-      var connectionString = Environment.GetEnvironmentVariable("COSMOS_CONNECTION_STRING", EnvironmentVariableTarget.Process);
-      //bool managedIdAuthEnabled = false;
-      //bool.TryParse(Environment.GetEnvironmentVariable("CosmosManagedIdAuthEnabled", EnvironmentVariableTarget.Process), out managedIdAuthEnabled);
-      string cosmosEndpoint = Environment.GetEnvironmentVariable("COSMOS_ENDPOINT", EnvironmentVariableTarget.Process);
+      string containerName = Environment.GetEnvironmentVariable("COSMOS_CONTAINER_NAME", EnvironmentVariableTarget.Process) ?? "";
+      string databaseName = Environment.GetEnvironmentVariable("COSMOS_DATABASE_NAME", EnvironmentVariableTarget.Process) ?? "";
+      var connectionString = Environment.GetEnvironmentVariable("COSMOS_CONNECTION_STRING", EnvironmentVariableTarget.Process) ?? "";
+      string cosmosEndpoint = Environment.GetEnvironmentVariable("COSMOS_ENDPOINT", EnvironmentVariableTarget.Process) ?? "";
 
 
       if (string.IsNullOrEmpty(containerName))
@@ -85,7 +84,7 @@ namespace UpdateDevices.Services
 
     public async Task<Device> GetDevice(string make, string model, string serialNumber)
     {
-      string methodName = ExtensionHelper.GetMethodName();
+      string methodName = ExtensionHelper.GetMethodName() ?? "";
       string className = this.GetType().Name;
       string fullMethodName = className + "." + methodName;
 
@@ -120,7 +119,7 @@ namespace UpdateDevices.Services
 
     public async Task<DeviceTag> GetDeviceTag(string tagId)
     {
-      string methodName = ExtensionHelper.GetMethodName();
+      string methodName = ExtensionHelper.GetMethodName() ?? "";
       string className = this.GetType().Name;
       string fullMethodName = className + "." + methodName;
 
@@ -141,7 +140,7 @@ namespace UpdateDevices.Services
 
     public async Task<FunctionSettings> GetFunctionSettings()
     {
-      string methodName = ExtensionHelper.GetMethodName();
+      string methodName = ExtensionHelper.GetMethodName() ?? "";
       string className = this.GetType().Name;
       string fullMethodName = className + "." + methodName;
       FunctionSettings settings = new FunctionSettings();
@@ -167,7 +166,7 @@ namespace UpdateDevices.Services
 
     public async Task UpdateFunctionSettings(DateTime thisRun)
     {
-      string methodName = ExtensionHelper.GetMethodName();
+      string methodName = ExtensionHelper.GetMethodName() ?? "";
       string className = this.GetType().Name;
       string fullMethodName = className + "." + methodName;
 
@@ -186,7 +185,7 @@ namespace UpdateDevices.Services
 
         public async Task<Straggler> GetStraggler(string managedDeviceID)
         {
-            string methodName = ExtensionHelper.GetMethodName();
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
@@ -221,7 +220,7 @@ namespace UpdateDevices.Services
             if (straggler == null)
             {
                 straggler = new Straggler();
-                straggler.ManagedDeviceID = managedDevice.Id;
+                straggler.ManagedDeviceID = managedDevice.Id ?? "";
                 straggler.EnrollmentDateTime = managedDevice.EnrolledDateTime.Value.UtcDateTime;
                 straggler.LastUDUpdateDateTime = DateTime.UtcNow;
                 straggler.LastSeenDateTime = DateTime.UtcNow;
@@ -260,7 +259,7 @@ namespace UpdateDevices.Services
 
         public async Task<List<Straggler>> GetStragglerList(int minCount)
         {
-            string methodName = ExtensionHelper.GetMethodName();
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
@@ -285,12 +284,11 @@ namespace UpdateDevices.Services
             return results;
         }
 
-
         // Removes entries that were enrolled over a day ago and have less than the max number
         // retries indicating UpdateDevices was able to process them before it stopped retrying
         public async Task<List<Straggler>> GetStragglersProcessedByUD(int minCount)
         {
-            string methodName = ExtensionHelper.GetMethodName();
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 

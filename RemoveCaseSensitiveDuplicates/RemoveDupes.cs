@@ -108,7 +108,10 @@ namespace RemoveCaseSensitiveDuplicates
                 QueryDefinition query = new QueryDefinition("SELECT lower(c.Make) as Make, lower(c.Model) as Model, lower(c.SerialNumber) as SerialNumber, c.Tags[0] as Tag0, count(c._ts) as Count " +
                                                             "FROM c WHERE c.Type='Device' " +
                                                             "GROUP BY lower(c.Make), lower(c.Model), lower(c.SerialNumber), c.Tags[0]");
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+                // TOFIX????  if _container is null, it will be caught in try block
                 var queryIterator = _container.GetItemQueryIterator<Duplicate>(query);
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
 
                 while (queryIterator.HasMoreResults)
                 {
@@ -202,7 +205,7 @@ namespace RemoveCaseSensitiveDuplicates
 
 
 
-            // 
+            //
             // Check for M/M/SN with dupes across tags - we're just going to log these
             //
             _logger.DSLogInformation("Checking for duplicate across tags....");

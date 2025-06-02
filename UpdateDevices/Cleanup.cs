@@ -21,7 +21,7 @@ namespace UpdateDevices
             _logger = loggerFactory.CreateLogger<Cleanup>();
             _dbService = dbService;
 
-            string methodName = ExtensionHelper.GetMethodName();
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
@@ -37,7 +37,7 @@ namespace UpdateDevices
         public async Task Run([TimerTrigger("%CleanupTriggerTime%")] TimerInfo myTimer)
         {
 
-            string methodName = ExtensionHelper.GetMethodName();
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
@@ -53,7 +53,7 @@ namespace UpdateDevices
 
         private async Task CleanupUDProcessedEntries()
         {
-            string methodName = ExtensionHelper.GetMethodName();
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
