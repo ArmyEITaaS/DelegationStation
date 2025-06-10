@@ -6,10 +6,10 @@ on:
     branches:
       - main
 
-# permissions:
-#   actions: read
-#   checks: write
-#   contents: read
+permissions:
+  contents: read
+
+
 
 
 env:
