@@ -43,8 +43,6 @@ namespace DelegationStation.Services
                 _logger.LogInformation("COSMOS_CONTAINER_NAME is null or empty, using default value of DeviceData");
             }
 
-            string cosmosEndpoint = configuration.GetSection("COSMOS_ENDPOINT").Value;
-            string cosmosConnectionString = configuration.GetSection("COSMOS_CONNECTION_STRING").Value;
             string dbName = string.IsNullOrEmpty(configuration.GetSection("COSMOS_DATABASE_NAME").Value) ? "DelegationStationData" : configuration.GetSection("COSMOS_DATABASE_NAME").Value!;
             string containerName = string.IsNullOrEmpty(configuration.GetSection("COSMOS_CONTAINER_NAME").Value) ? "DeviceData" : configuration.GetSection("COSMOS_CONTAINER_NAME").Value!;
 
