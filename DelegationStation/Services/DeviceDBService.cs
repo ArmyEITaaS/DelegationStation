@@ -97,7 +97,7 @@ namespace DelegationStation.Services
             }
         }
 
-        public async Task<List<Device>> GetDevicesSearchAsync(string make, string model, string serialNumber, int? osID, string preferredHostName)
+        public async Task<List<Device>> GetDevicesSearchAsync(string make, string model, string serialNumber, int? osID, string preferredHostname)
         {
             List<Device> devices = new List<Device>();
             string queryBuilder = "SELECT * FROM d WHERE d.Type = \"Device\" ";
@@ -120,9 +120,9 @@ namespace DelegationStation.Services
             {
                 queryBuilder += " AND d.OS=@os";
             }
-            if (!string.IsNullOrEmpty(preferredHostName.Trim()))
+            if (!string.IsNullOrEmpty(preferredHostname.Trim()))
             {
-                queryBuilder += " AND CONTAINS(d.PreferredHostName, @hostname, true)";
+                queryBuilder += " AND CONTAINS(d.PreferredHostname, @hostname, true)";
             }
 
             QueryDefinition q = new QueryDefinition(queryBuilder);
@@ -131,7 +131,7 @@ namespace DelegationStation.Services
             q.WithParameter("@model", model);
             q.WithParameter("@serial", serialNumber);
             q.WithParameter("@os", osID);
-            q.WithParameter("@hostname", preferredHostName);
+            q.WithParameter("@hostname", preferredHostname);
 
             var deviceQueryIterator = this._container.GetItemQueryIterator<Device>(q);
             while (deviceQueryIterator.HasMoreResults)

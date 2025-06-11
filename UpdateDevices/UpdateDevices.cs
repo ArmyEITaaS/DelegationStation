@@ -125,17 +125,17 @@ namespace UpdateDevices
             _logger.DSLogInformation("Found matching device in DB for: '" + device.Id + "' '" + device.Manufacturer + "' '" + device.Model + "' '" + device.SerialNumber + "'.", fullMethodName);
 
             // Updated managed device name if provided and not already equal
-            if (!String.IsNullOrEmpty(d.PreferredHostName) && (d.PreferredHostName != device.DeviceName))
+            if (!String.IsNullOrEmpty(d.PreferredHostname) && (d.PreferredHostname != device.DeviceName))
             {
-                bool result = await _graphBetaService.SetDeviceName(device.Id, d.PreferredHostName);
+                bool result = await _graphBetaService.SetDeviceName(device.Id, d.PreferredHostname);
 
                 if (!result)
                 {
-                    _logger.DSLogWarning("Failed to rename device: '" + device.Id + "' '" + device.Manufacturer + "' '" + device.Model + "' '" + device.SerialNumber + " from " + device.DeviceName + " to " + d.PreferredHostName + "'.", fullMethodName);
+                    _logger.DSLogWarning("Failed to rename device: '" + device.Id + "' '" + device.Manufacturer + "' '" + device.Model + "' '" + device.SerialNumber + " from " + device.DeviceName + " to " + d.PreferredHostname + "'.", fullMethodName);
                 }
                 else
                 {
-                    _logger.DSLogInformation("Updated device name for: '" + device.Id + "from '" + device.DeviceName + "' to '" + d.PreferredHostName + "'.", fullMethodName);
+                    _logger.DSLogInformation("Updated device name for: '" + device.Id + "from '" + device.DeviceName + "' to '" + d.PreferredHostname + "'.", fullMethodName);
                 }
             }
 

@@ -4,6 +4,6 @@ namespace UpdateDevices.Interfaces
 {
     public interface IGraphBetaService
     {
-        Task<bool> SetDeviceName(string managedDeviceID, string newHostName);
+        Task<bool> SetDeviceName(string managedDeviceID, string newHostname);
     }
 }

@@ -68,7 +68,7 @@ namespace DelegationStation.API
             string fileName = "Devices.csv";
             List<Device> devices = await _deviceDBService.GetDevicesByTagAsync(id);
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("Make,Model,SerialNumber,OS,PreferredHostName,Action,AddedBy");
+            sb.AppendLine("Make,Model,SerialNumber,OS,PreferredHostname,Action,AddedBy");
             if (!string.IsNullOrEmpty(id))
             {
                 string deviceOSstring = "";
@@ -96,7 +96,7 @@ namespace DelegationStation.API
                         deviceOSstring = Enum.GetName(typeof(DeviceOS), device.OS) ?? "";
                     }
 
-                    sb.AppendLine($"{device.Make},{device.Model},{device.SerialNumber},{deviceOSstring},{device.PreferredHostName},,{device.AddedBy}");
+                    sb.AppendLine($"{device.Make},{device.Model},{device.SerialNumber},{deviceOSstring},{device.PreferredHostname},,{device.AddedBy}");
                 }
             }
 

@@ -81,16 +81,16 @@ namespace UpdateDevices.Services
             }
         }
 
-        public async Task<bool> SetDeviceName(string managedDeviceID, string newHostName)
+        public async Task<bool> SetDeviceName(string managedDeviceID, string newHostname)
         {
             string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
-            _logger.DSLogInformation($"Setting Device Name for Managed Device {managedDeviceID} to {newHostName}", fullMethodName);
+            _logger.DSLogInformation($"Setting Device Name for Managed Device {managedDeviceID} to {newHostname}", fullMethodName);
             var success = false;
             SetDeviceNamePostRequestBody requestBody = new SetDeviceNamePostRequestBody();
-            requestBody.DeviceName = newHostName;
+            requestBody.DeviceName = newHostname;
 
             try
             {

@@ -3,7 +3,6 @@
 @using DelegationStationShared.Models;
 @using DelegationStationShared.Enums;
 
-
 @inject IDeviceTagDBService deviceTagDBService
 @inject IDeviceDBService deviceDBService
 @inject ILogger<Tags> logger
@@ -25,9 +24,27 @@
                     <th>Model</th>
                     <th>Serial Number</th>
                     <th>OS</th>
-                    <th>Preferred Host Name</th>
+                    <th>Preferred Hostname</th>
                     <th>Tag</th>
-                    <th>State</th>
+                    <th>
+                        State
+                        <img src="css/bootstrap/icons/info-circle.svg" alt="Info Icon"
+                            data-bs-toggle="tooltip" data-bs-placement="top" title="@statusDefinitions" />
+                        @code {
+                            private string? statusDefinitions
+                            {
+                                get
+                                {
+                                    string result = "";
+                                    foreach (var status in StatusDefinitions)
+                                    {
+                                        result = result + status.Key.ToString() + ": " + status.Value.ToString() + "\n";
+                                    }
+                                    return result;
+                                }
+                            }
+                        }
+                    </th>
                     <th></th>
                 </tr>
                 <tr>
@@ -53,7 +70,7 @@
                         </InputSelect>
                     </td>
                     <td>
-                        <input type="text" @bind="searchDevice.PreferredHostName" class="form-control" placeholder="Preferred Host Name" />
+                        <input type="text" @bind="searchDevice.PreferredHostname" class="form-control" placeholder="Preferred Hostname" />
                     </td>
                     <td></td>
                     <td></td>
@@ -89,7 +106,7 @@
                             <td class="align-middle">@device.Model</td>
                             <td class="align-middle">@device.SerialNumber</td>
                             <td class="align-middle">@device.OS</td>
-                            <td class="align-middle">@device.PreferredHostName</td>
+                            <td class="align-middle">@device.PreferredHostname</td>
                             <td class="align-middle">
                                 @foreach (string t in device.Tags)
                                 {
@@ -163,11 +180,12 @@
                         }
                     }
                 </InputSelect>
+                <ValidationMessage For=@(() => newDevice.OS) />
             </div>
             <div class="mb-3">
-                <label for="PreferredHostName" class="form-label">Preferred Host Name</label>
-                <InputText @bind-Value=newDevice.PreferredHostName class="form-control" id="PreferredHostName"></InputText>
-                <ValidationMessage For=@(() => newDevice.PreferredHostName) />
+                <label for="PreferredHostname" class="form-label">Preferred Hostname</label>
+                <InputText @bind-Value=newDevice.PreferredHostname class="form-control" id="PreferredHostname"></InputText>
+                <ValidationMessage For=@(() => newDevice.PreferredHostname) />
             </div>
             <div class="mb-3">
                 <label for="Tags" class="form-label">Tags:</label>
@@ -175,7 +193,7 @@
                 @foreach (DeviceTag tag in deviceTags.Where(t => t.Name.ToLower().Contains(tagSearch.ToLower())))
                 {
                     <div class="form-check form-switch mt-2">
-                        <input class="form-check-input" type="checkbox" @onchange=@(() => AddRemoveTag(tag)) checked="@((newDevice.Tags.Where(t => t == tag.Id.ToString()).Count() > 0) ? "checked" : null)">
+                        <input class="form-check-input" type="checkbox" @onchange=@(() => AddRemoveTag(tag)) checked="@(newDevice.Tags.Any(t => t == tag.Id.ToString()))">
                         <label class="form-check-label" for="flexSwitchCheckDefault">@tag.Name</label>
                     </div>
                 }

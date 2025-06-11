@@ -12,23 +12,22 @@ namespace DelegationStationShared.Models
         [JsonProperty(PropertyName = "id")]
         public Guid Id { get; set; }
 
-        [RegularExpression(@"^[0-9a-zA-Z](([0-9a-zA-Z-])*([0-9a-zA-Z])+)*$", ErrorMessage = "Only use letters, numbers, or hyphen for Preferred Host Name value.")]
-        [StringLength(15, ErrorMessage = "Preferred Host Name must be 1-15 characters.")]
-        public string PreferredHostName { get; set; }
-
         [Required(AllowEmptyStrings = false, ErrorMessage = "Make is Required")]
         [RegularExpression(@"^[a-zA-Z0-9\-_.,&\(\)\s]+$", ErrorMessage = "Only use letters, numbers, or the following special characters: -_&().,")]
         public string Make { get; set; }
 
         [Required(AllowEmptyStrings = false, ErrorMessage = "Model is Required")]
-
         [RegularExpression(@"^[a-zA-Z0-9\-_.,&\(\)+\s]+$", ErrorMessage = "Only use letters, numbers, or the following special characters: -_&().+,")]
         public string Model { get; set; }
-
 
         [Required(AllowEmptyStrings = false, ErrorMessage = "Serial Number is Required")]
         [RegularExpression(@"^[a-zA-Z0-9\-_.\s]+$", ErrorMessage = "Only use letters, numbers, -, _, or . for SerialNumber value.")]
         public string SerialNumber { get; set; }
+
+        [RegularExpression(@"^[0-9a-zA-Z](?:[0-9a-zA-Z-]*[0-9a-zA-Z])?$", ErrorMessage = "Only use letters, numbers, or hyphen for Preferred Hostname value. Hyphens may not be at beginning or end.")]
+        [StringLength(15, ErrorMessage = "Preferred Hostname must be 1-15 characters.")]
+        [Required(AllowEmptyStrings = false, ErrorMessage = "Preferred Hostname is Required")]
+        public string PreferredHostname { get; set; }
 
         public string PartitionKey { get; set; }
 
@@ -52,7 +51,7 @@ namespace DelegationStationShared.Models
 
         public DeviceStatus Status { get; set; }
 
-
+        [Required]
         public DeviceOS? OS { get; set; }
         public DateTime? MarkedToDeleteUTC { get; set; }
 
@@ -68,7 +67,7 @@ namespace DelegationStationShared.Models
         {
             Id = Guid.NewGuid();
             PartitionKey = this.Id.ToString();
-            PreferredHostName = string.Empty;
+            PreferredHostname = string.Empty;
             Make = string.Empty;
             Model = string.Empty;
             SerialNumber = string.Empty;
