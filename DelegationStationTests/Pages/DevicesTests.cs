@@ -1,10 +1,11 @@
-﻿using DelegationStation.Pages;
-using Microsoft.Extensions.DependencyInjection;
-using DelegationStation.Interfaces;
-using Microsoft.QualityTools.Testing.Fakes;
-using Microsoft.Extensions.Configuration;
-using System.Text.RegularExpressions;
+﻿using DelegationStation.Interfaces;
+using DelegationStation.Pages;
 using DelegationStationShared.Enums;
+using DelegationStationShared.Models;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.QualityTools.Testing.Fakes;
+using System.Text.RegularExpressions;
 
 namespace DelegationStationTests.Pages
 {
@@ -25,14 +26,64 @@ namespace DelegationStationTests.Pages
                 authContext.SetClaims(new System.Security.Claims.Claim("name", "TEST USER"));
                 authContext.SetClaims(new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", defaultId.ToString()));
 
+                // Create fake services
+                List<DeviceTag> deviceTags = new List<DeviceTag>();
+                DeviceTag deviceTag = new DeviceTag();
+                deviceTag.Name = "testName";
+                deviceTag.Description = "testDescription";
+                deviceTags.Add(deviceTag);
+
+                var fakeDeviceTagDBService = new DelegationStation.Interfaces.Fakes.StubIDeviceTagDBService()
+                {
+                    GetDeviceTagsAsyncIEnumerableOfString =
+                        (groupIds) => Task.FromResult(deviceTags),
+                    GetDeviceTagCountAsyncIEnumerableOfString =
+                        (groupIds) => Task.FromResult(2),
+                    GetDeviceTagsByPageAsyncIEnumerableOfStringInt32Int32 =
+                        (groupIds, pageNumber, pageSize) => Task.FromResult(deviceTags)
+                };
+
+                List<Device> devices = new List<Device>();
+                Device device = new Device();
+                device.Make = "testMake";
+                device.Model = "testModel";
+                device.SerialNumber = "1111";
+                device.PreferredHostname = "testHostname";
+                device.Tags.Add(deviceTag.Name);
+                devices.Add(device);
+
+                var fakeDeviceDBService = new DelegationStation.Interfaces.Fakes.StubIDeviceDBService()
+                {
+                    GetDevicesAsyncIEnumerableOfString =
+                        (groupIds) => Task.FromResult(devices),
+                };
+
+                
+                var myConfiguration = new Dictionary<string, string?>
+                {
+                    {"DefaultAdminGroupObjectId", defaultId.ToString()},
+                    {"Nested:Key1", "NestedValue1"},
+                    {"Nested:Key2", "NestedValue2"}
+                };
+
+                var configuration = new ConfigurationBuilder()
+                    .AddInMemoryCollection(myConfiguration)
+                    .Build();
+
+
+                // Add Dependent Services
+                Services.AddSingleton<IDeviceTagDBService>(fakeDeviceTagDBService);
+                Services.AddSingleton<IDeviceDBService>(fakeDeviceDBService);
+                Services.AddSingleton<Microsoft.Extensions.Configuration.IConfiguration>(configuration);
+
                 // Act
                 var cut = RenderComponent<Devices>();
 
                 // Assert
-                string match = "<td class=\"align-middle\">1<\\/td>(.|\n)*<td class=\"align-middle\">2<\\/td>(.|\n)*<td class=\"align-middle\">3<\\/td>(.|\n)*" +
-                    "<td class=\"align-middle\">.*testName1(.|\n)*<td class=\"align-middle\">.*title=\"Device Added:.*\">Added<\\/span><\\/td>";
-
-                Assert.IsTrue(Regex.IsMatch(cut.Markup, match), $"Expected Match:\n{match}\nActual:\n{cut.Markup}");
+                Assert.IsTrue(cut.Markup.Contains("testMake</td>"), $"testMake should be rendered in the table as a Make. \\nActual:\\n{cut.Markup}\"");
+                Assert.IsTrue(cut.Markup.Contains("testModel</td>"), "testModel should be rendered in the table as a Model.");
+                Assert.IsTrue(cut.Markup.Contains("1111</td>"), "1111 should be rendered in the table as a serialNumber.");
+                Assert.IsTrue(cut.Markup.Contains("testHostname</td>"), "testHostname should be rendered in the table as a Hostname.");
             }
         }
 

@@ -496,6 +496,10 @@ For example, "https://graph.microsoft.com/"
 <b>"SyncIntervalHours":  "4"</b><br/>
 Amount of time to pass before checking that a device is still synced.  For example, "4" will pull all devices with a sync time older than Now-4 hours.
 
+<b>"AddDeviceBatchSize": "5000"</b><br/>
+(Optional) Amount of devices the AddDevices function will attempt to add in a single batch.  Default is 5000, which is estimated to run 15 minutes, but can be set lower if you are having issues with the function timing out.
+
+
 #### Certificate Configuration
 
 This is only needed if you are connecting to Graph using certificates.

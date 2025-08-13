@@ -55,13 +55,26 @@ namespace CorporateIdentifierSync
                 return;
             }
 
+            int batchSize = 5000;
+            string batchSizeString = Environment.GetEnvironmentVariable("AddDeviceBatchSize", EnvironmentVariableTarget.Process);
+            if (!int.TryParse(batchSizeString, out int bs) || bs <= 0)
+            {
+                _logger.DSLogError($"BatchSize is not set or invalid. Using default value: {batchSize}.", fullMethodName);
+            }
+            else
+            {
+                batchSize = bs;
+                _logger.DSLogInformation($"Using BatchSize: {batchSize}.", fullMethodName);
+            }
+
+
 
 
             // Get All Devices without Corporate Identifier values or fields
             List<Device> devicesToMigrate = new List<Device>();
             try
             {
-                devicesToMigrate = await _dbService.GetAddedDevices();
+                devicesToMigrate = await _dbService.GetAddedDevices(batchSize);
                 _logger.DSLogInformation($"Found {devicesToMigrate.Count} devices to migrate.", fullMethodName);
             }
             catch (Exception ex)
@@ -73,6 +86,7 @@ namespace CorporateIdentifierSync
 
             // For each device set blank Corporate Identifier values
             int deviceCount = 0;
+            int totalDevices = devicesToMigrate.Count;
             foreach (Device device in devicesToMigrate)
             {
 
@@ -138,7 +152,7 @@ namespace CorporateIdentifierSync
                     await _dbService.UpdateDevice(device);
                     deviceCount++;
 
-                    _logger.DSLogInformation($"Successfully added Corporate Identifier for device {device.Make} {device.Model} {device.SerialNumber}.", fullMethodName);
+                    _logger.DSLogInformation($"Successfully added Corporate Identifier for device {deviceCount}/{totalDevices}:  {device.Make} {device.Model} {device.SerialNumber}.", fullMethodName);
                 }
                 catch (Exception ex)
                 {

@@ -2,6 +2,7 @@ using Azure.Core;
 using Azure.Identity;
 using DelegationStation.Interfaces;
 using DelegationStationShared.Models;
+using DelegationStationShared;
 using Microsoft.Azure.Cosmos;
 
 namespace DelegationStation.Services
@@ -249,7 +250,7 @@ namespace DelegationStation.Services
                 throw new Exception("DeviceDBService GetDeviceAsync was sent null tagId");
             }
 
-            if (!System.Text.RegularExpressions.Regex.Match(tagId, "^([0-9A-Fa-f]{8}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{12})$").Success)
+            if (!System.Text.RegularExpressions.Regex.Match(tagId,DSConstants.GUID_REGEX).Success)
             {
                 throw new Exception($"DeviceDBService GetDeviceAsync tagId did not match GUID format {tagId}");
             }
@@ -259,7 +260,7 @@ namespace DelegationStation.Services
         }
 
 
-       
+
 
         public async Task<int> GetDeviceCountByTagIdAsync(string tagId)
         {
