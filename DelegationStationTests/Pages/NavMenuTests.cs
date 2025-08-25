@@ -91,7 +91,7 @@ namespace DelegationStationTests.Pages
                 var cut = RenderComponent<NavMenu>();
 
                 // Assert
-                Assert.IsFalse(cut.Markup.Contains("Roles"), $"Menu should not dispaly Roles link. \\nActual:\\n{cut.Markup}\"");
+                Assert.IsFalse(cut.Markup.Contains("Roles"), $"Menu should not display Roles link. \\nActual:\\n{cut.Markup}\"");
             }
         }
     }
