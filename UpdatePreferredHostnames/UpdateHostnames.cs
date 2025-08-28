@@ -1,0 +1,514 @@
+﻿using Azure.Identity;
+using DelegationStationShared;
+using DelegationStationShared.Extensions;
+using DelegationStationShared.Models;
+using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Logging;
+using Microsoft.Graph;
+using Microsoft.Graph.Beta.Models.WindowsUpdates;
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using System.Threading.Tasks;
+//using UpdatePreferredHostnames.Models;
+using static Azure.Core.HttpHeader;
+
+namespace UpdatePreferredHostnames
+{
+    public class UpdateHostnames
+    {
+        private readonly ILogger _logger;
+        private static Container? _container = null;
+        private static GraphServiceClient? _graphClient = null;
+
+        public UpdateHostnames(ILoggerFactory loggerFactory)
+        {
+            _logger = loggerFactory.CreateLogger<UpdateHostnames>();
+        }
+
+        internal async Task RunAsync()
+        {
+            string? methodName = ExtensionHelper.GetMethodName();
+            string className = this.GetType().Name;
+            string fullMethodName = className + "." + methodName;
+
+            _logger.DSLogInformation("Preferred Hostname update and flagging Job starting....", fullMethodName);
+
+            ConnectToCosmosDb();
+            if (_container == null)
+            {
+                _logger.DSLogError("Failed to connect to Cosmos DB, exiting.", fullMethodName);
+                Environment.Exit(1);
+            }
+
+            await ConnectToGraph();
+            if (_graphClient == null)
+            {
+                _logger.DSLogError("Failed to connect to Graph, exiting.", fullMethodName);
+                Environment.Exit(1);
+            }
+            int result = await UpdateHostnamesAsync();
+
+            _logger.DSLogInformation($"Preferred Hostname update and flagging Job done:  Updated {result} devices.", fullMethodName);
+
+        }
+
+        private void ConnectToCosmosDb()
+        {
+
+            string? methodName = ExtensionHelper.GetMethodName();
+            string className = this.GetType().Name;
+            string fullMethodName = className + "." + methodName;
+
+            _logger.DSLogInformation("Connecting to Cosmos DB...", fullMethodName);
+
+            string? containerName = Environment.GetEnvironmentVariable("COSMOS_CONTAINER_NAME");
+            string? databaseName = Environment.GetEnvironmentVariable("COSMOS_DATABASE_NAME");
+            var connectionString = Environment.GetEnvironmentVariable("COSMOS_CONNECTION_STRING");
+
+            if (string.IsNullOrEmpty(containerName))
+            {
+                _logger.DSLogWarning("COSMOS_CONTAINER_NAME is null or empty, using default value of DeviceData", fullMethodName);
+                containerName = "DeviceData";
+            }
+            if (string.IsNullOrEmpty(databaseName))
+            {
+                _logger.DSLogWarning("COSMOS_DATABASE_NAME is null or empty, using default value of DelegationStationData", fullMethodName);
+                databaseName = "DelegationStationData";
+            }
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                _logger.DSLogError("Cannot connect to CosmosDB. Missing required environment variable COSMOS_CONNECTION_STRING", fullMethodName);
+                return;
+            }
+
+            try
+            {
+                CosmosClient client = new(connectionString: connectionString);
+                _container = client.GetContainer(databaseName, containerName);
+            }
+            catch (Exception ex)
+            {
+                _logger.DSLogException("Failed to connect to CosmosDB: ", ex, fullMethodName);
+                return;
+            }
+
+            _logger.DSLogInformation($"Connected to Cosmos DB database {databaseName} container {containerName}.", fullMethodName);
+        }
+        private async Task ConnectToGraph()
+        {
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
+            string className = this.GetType().Name;
+            string fullMethodName = className + "." + methodName;
+
+            _logger.DSLogInformation("Connecting to Graph...", fullMethodName);
+
+            var azureCloud = Environment.GetEnvironmentVariable("AzureEnvironment");
+            var graphEndpoint = Environment.GetEnvironmentVariable("GraphEndpoint");
+            //var graphAccessToken = await GetAccessTokenAsync(graphEndpoint);
+            //if (graphAccessToken == null)
+            //{
+            //    _logger.LogError($"{fullMethodName} Error: Failed to get access token");
+            //}
+            var options = new TokenCredentialOptions
+            {
+                AuthorityHost = azureCloud == "AzurePublicCloud" ? AzureAuthorityHosts.AzurePublicCloud : AzureAuthorityHosts.AzureGovernment
+            };
+
+            var scopes = new string[] { $"{graphEndpoint}.default" };
+            string baseUrl = graphEndpoint + "v1.0";
+
+            var certDN = Environment.GetEnvironmentVariable("CertificateDistinguishedName");
+
+            if (!String.IsNullOrEmpty(certDN))
+            {
+                _logger.DSLogInformation("Using certificate authentication: ", fullMethodName);
+                _logger.DSLogDebug("AzureCloud: " + azureCloud, fullMethodName);
+                _logger.DSLogDebug("GraphEndpoint: " + graphEndpoint, fullMethodName);
+
+                X509Store store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
+                store.Open(OpenFlags.ReadOnly);
+                _logger.DSLogInformation("Using certificate with Subject Name {0} for Graph service: " + certDN, fullMethodName);
+                var certificate = store.Certificates.Cast<X509Certificate2>().FirstOrDefault(cert => cert.Subject.ToString() == certDN);
+
+                var clientCertCredential = new ClientCertificateCredential(
+                    Environment.GetEnvironmentVariable("TenantId"),
+                    Environment.GetEnvironmentVariable("ClientId"),
+                    certificate,
+                    options
+                );
+                store.Close();
+                _graphClient = new GraphServiceClient(clientCertCredential, scopes, baseUrl);
+            }
+            else
+            {
+                _logger.DSLogInformation("Using Client Secret for Graph service", fullMethodName);
+                _logger.DSLogDebug("AzureCloud: " + azureCloud, fullMethodName);
+                _logger.DSLogDebug("GraphEndpoint: " + graphEndpoint, fullMethodName);
+
+
+                var clientSecretCredential = new ClientSecretCredential(
+                    Environment.GetEnvironmentVariable("TenantId"),
+                    Environment.GetEnvironmentVariable("ClientId"),
+                    Environment.GetEnvironmentVariable("ClientSecret"),
+                    options
+                );
+
+                _graphClient = new GraphServiceClient(clientSecretCredential, scopes, baseUrl);
+            }
+        }
+        private async Task<String> GetAccessTokenAsync(string uri)
+        {
+            MethodBase method = MethodBase.GetCurrentMethod();
+            string methodName = method.Name;
+            string className = method.ReflectedType.Name;
+            string fullMethodName = className + "." + methodName;
+
+            var AppSecret = Environment.GetEnvironmentVariable("ClientSecret", EnvironmentVariableTarget.Process);
+            var AppId = Environment.GetEnvironmentVariable("ClientId", EnvironmentVariableTarget.Process);
+            var TenantId = Environment.GetEnvironmentVariable("TenantId", EnvironmentVariableTarget.Process);
+            var TargetCloud = Environment.GetEnvironmentVariable("AzureEnvironment", EnvironmentVariableTarget.Process);
+
+            if (String.IsNullOrEmpty(AppSecret) || String.IsNullOrEmpty(AppId) || String.IsNullOrEmpty(TenantId) || String.IsNullOrEmpty(TargetCloud))
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine($"{fullMethodName} Error: Missing required environment variables. Please check the following environment variables are set:");
+                sb.Append(String.IsNullOrEmpty(AppSecret) ? "ClientSecret\n" : "");
+                sb.Append(String.IsNullOrEmpty(AppId) ? "ClientId\n" : "");
+                sb.Append(String.IsNullOrEmpty(TenantId) ? "TenantId\n" : "");
+                sb.Append(String.IsNullOrEmpty(TargetCloud) ? "AzureEnvironment\n" : "");
+                _logger.LogError(sb.ToString());
+                return null;
+            }
+
+            string tokenUri = "";
+            if (TargetCloud == "AzurePublicCloud")
+            {
+                tokenUri = $"https://login.microsoftonline.com/{TenantId}/oauth2/token";
+            }
+            else
+            {
+                tokenUri = $"https://login.microsoftonline.us/{TenantId}/oauth2/token";
+            }
+
+            // Get token for Log Analytics
+
+            var tokenRequest = new HttpRequestMessage(HttpMethod.Post, tokenUri);
+            tokenRequest.Content = new FormUrlEncodedContent(new[]
+            {
+                new KeyValuePair<string, string>("grant_type", "client_credentials"),
+                new KeyValuePair<string, string>("client_id", AppId),
+                new KeyValuePair<string, string>("client_secret", AppSecret),
+                new KeyValuePair<string, string>("resource", uri)
+            });
+
+            try
+            {
+                var httpClient = new HttpClient();
+                var tokenResponse = await httpClient.SendAsync(tokenRequest);
+                var tokenContent = await tokenResponse.Content.ReadAsStringAsync();
+                var tokenData = JsonConvert.DeserializeObject<dynamic>(tokenContent);
+                return tokenData.access_token;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"{fullMethodName} Error: getting access token for URI {tokenUri}: {ex.Message}");
+                return null;
+            }
+        }
+        private async Task<int> UpdateHostnamesAsync()
+        {
+            string? methodName = ExtensionHelper.GetMethodName();
+            string className = this.GetType().Name;
+            string fullMethodName = className + "." + methodName;
+            int count = 0;
+            List<string> PresentUnenrolledDevices = new List<string>();
+            PresentUnenrolledDevices.Add("Tag, Make, Model, Serial Number, OS, Hostname, Action");
+            //
+            // Retrieve Devices and their Ids and Preferred Hostnames
+            //
+            Queue<Device> devicesToCheck = new Queue<Device>();
+
+            try
+            {
+                QueryDefinition query = new QueryDefinition("SELECT c.id as id, c.PreferredHostname as PreferredHostname, lower(c.Make) as Make, lower(c.Model) as Model, lower(c.SerialNumber) as SerialNumber, c.Tags[0] as Tag0 " +
+                                                            "FROM c WHERE c.Type='Device' ");
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+                // TOFIX????  if _container is null, it will be caught in try block
+                var queryIterator = _container.GetItemQueryIterator<Device>(query);
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+                while (queryIterator.HasMoreResults)
+                {
+                    var response = queryIterator.ReadNextAsync().Result;
+
+                    foreach (var device in response)
+                    {
+                        devicesToCheck.Enqueue(device);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.DSLogException("Failed to query Cosmos for devices: ", ex, fullMethodName);
+                return count;
+            }
+
+            Queue<Device> devicesToUpdate = new Queue<Device>();
+
+            
+            // For each device, check if the Hostname in Intune matches the PreferredHostname in Cosmos.
+            while (devicesToCheck.Count > 0)
+            {
+                var device = devicesToCheck.Dequeue();
+                string deviceHostname = null;
+                try
+                {
+
+                    var deviceObj = await _graphClient.DeviceManagement.ManagedDevices.GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Filter = $"serialNumber eq '{device.SerialNumber}' and model eq '{device.Model}'";
+                        requestConfiguration.QueryParameters.Select = new string[] { "ManagedDeviceName" };
+                    });
+                    if(deviceObj == null || deviceObj.Value == null || deviceObj.Value.Count == 0)
+                    {
+                        _logger.DSLogWarning($"Device with Model '{device.Model}' and SerialNumber '{device.SerialNumber}' not found in Intune.", fullMethodName);
+                        continue;
+                    }
+                    deviceHostname = deviceObj.Value.FirstOrDefault().ManagedDeviceName ?? "";
+                    if(string.Equals(device.PreferredHostname, deviceHostname))
+                    {
+                        _logger.DSLogInformation($"Device {device.Id} PreferredHostname '{device.PreferredHostname}' matches Intune Hostname '{deviceHostname}', no update needed.", fullMethodName);
+                        continue;
+                    }
+                    device.PreferredHostname = deviceHostname ?? "";
+                    devicesToUpdate.Enqueue(device);
+                }
+                catch (Exception ex)
+                {
+                    _logger.DSLogException("Failed to retrieve graph device ID using .\n", ex, fullMethodName);
+                    PresentUnenrolledDevices.Add($"{device.Tags[0]}, {device.Make}, {device.Model}, {device.SerialNumber}, , , ");
+                }
+            }
+            
+
+
+            // Update the PreferredHostname in Cosmos if it does not match the Intune hostname.
+            while (devicesToUpdate.Count > 0)
+            {
+                var device = devicesToUpdate.Dequeue();
+
+                try
+                {
+                    PatchOperation patchOperation = PatchOperation.Replace("/PreferredHostname", device.PreferredHostname);
+                    IReadOnlyList<PatchOperation> patchOperations = new List<PatchOperation>() { patchOperation };
+                    PartitionKey partitionKey = new PartitionKey(device.Id.ToString());
+                    await _container.PatchItemAsync<Device>(device.Id.ToString(), partitionKey, patchOperations);  //DeleteItemAsync<Device>(device.Id.ToString(), new PartitionKey(device.PartitionKey));
+                    //TODO Log the updated device details
+                    count++;
+                    _logger.DSLogInformation($"Updated device {device.Id} PreferredHostname to '{device.PreferredHostname}'", fullMethodName);
+                }
+                catch (Exception ex)
+                {
+                    _logger.DSLogException($"Failed to delete duplicate device from Delegation Station: {device.Id}", ex, fullMethodName);
+                }                
+            }
+            _logger.DSLogInformation($"Updated {count} devices.", fullMethodName);
+            _logger.DSLogInformation("The following devices were not enrolled in Intune and could not be updated:", fullMethodName);
+            foreach (var device in PresentUnenrolledDevices)
+            {
+                _logger.DSLogInformation(device);
+            }
+            return count;
+        }
+
+//        private async Task<int> CleanupAsync()
+//        {
+//            string? methodName = ExtensionHelper.GetMethodName();
+//            string className = this.GetType().Name;
+//            string fullMethodName = className + "." + methodName;
+
+//            int count = 0;
+
+//            bool deleteFlag = false;
+//            bool.TryParse(Environment.GetEnvironmentVariable("DELETE_DUPLICATES"), out deleteFlag);
+//            if (!deleteFlag)
+//            {
+//                _logger.DSLogInformation("DELETE_DUPLICATES is not set or not set to true.  This run will only output what would be deleted.", fullMethodName);
+//            }
+//            else
+//            {
+//                _logger.DSLogInformation("DELETE_DUPLICATES is set to true.  This run will delete duplicates.", fullMethodName);
+//            }
+
+//            //
+//            // Retrieve counts for unique M/M/SN/Tag combinations
+//            //
+//            List<Duplicate> dupesToCleanup = new List<Duplicate>();
+//            try
+//            {
+//                QueryDefinition query = new QueryDefinition("SELECT lower(c.Make) as Make, lower(c.Model) as Model, lower(c.SerialNumber) as SerialNumber, c.Tags[0] as Tag0, count(c._ts) as Count " +
+//                                                            "FROM c WHERE c.Type='Device' " +
+//                                                            "GROUP BY lower(c.Make), lower(c.Model), lower(c.SerialNumber), c.Tags[0]");
+//#pragma warning disable CS8602 // Dereference of a possibly null reference.
+//                // TOFIX????  if _container is null, it will be caught in try block
+//                var queryIterator = _container.GetItemQueryIterator<Duplicate>(query);
+//#pragma warning restore CS8602 // Dereference of a possibly null reference.
+
+//                while (queryIterator.HasMoreResults)
+//                {
+//                    var response = queryIterator.ReadNextAsync().Result;
+
+//                    foreach (var duplicate in response)
+//                    {
+//                        if (duplicate.Count > 1)
+//                        {
+//                            _logger.DSLogInformation($"Found {duplicate.Count} duplicates when case ignored: '{duplicate.Make}' '{duplicate.Model}' '{duplicate.SerialNumber}' Tag ID: {duplicate.Tag0}", fullMethodName);
+//                            dupesToCleanup.Add(duplicate);
+//                        }
+//                    }
+//                }
+//            }
+//            catch (Exception ex)
+//            {
+//                _logger.DSLogException("Exiting.  Failed to query CosmosDB for duplicates: ", ex, fullMethodName);
+//                return count;
+//            }
+
+
+//            //
+//            // For each of the unique combos, get all devices sorted newest to oldest
+//            // we'll keep the newest and add the rest to a list to delete
+//            //
+//            List<Device> devicesToDelete = new List<Device>();
+//            foreach (var dupe in dupesToCleanup)
+//            {
+//                _logger.DSLogInformation($"Processing devices matching '{dupe.Make}' '{dupe.Model}' '{dupe.SerialNumber}' Tag: {dupe.Tag0}", fullMethodName);
+//                try
+//                {
+//                    QueryDefinition query2 = new QueryDefinition("SELECT * FROM  c WHERE c.Type='Device' AND STRINGEQUALS(c.Make,@make,true) AND STRINGEQUALS(c.Model,@model,true) AND STRINGEQUALS(c.SerialNumber,@serialNumber,true) " +
+//                                                                 "AND c.Tags[0]=@tag ORDER BY c.ModifiedUTC ASC");
+//                    query2.WithParameter("@make", dupe.Make);
+//                    query2.WithParameter("@model", dupe.Model);
+//                    query2.WithParameter("@serialNumber", dupe.SerialNumber);
+//                    query2.WithParameter("@tag", dupe.Tag0);
+
+//                    var queryIterator2 = _container.GetItemQueryIterator<Device>(query2);
+
+//                    bool savedOffFirstResult = false;
+//                    while (queryIterator2.HasMoreResults)
+//                    {
+//                        var response = queryIterator2.ReadNextAsync().Result;
+
+//                        foreach (var device in response)
+//                        {
+//                            if (savedOffFirstResult)
+//                            {
+//                                devicesToDelete.Add(device);
+//                                _logger.DSLogInformation($"   Marking duplicate for deletion: '{device.Make}' '{device.Model}' '{device.SerialNumber}' Tag: {device.Tags[0]}", fullMethodName);
+//                            }
+//                            else
+//                            {
+//                                _logger.DSLogInformation($"   Keeping newest entry: '{device.Make}' '{device.Model}' '{device.SerialNumber}' Tag: {device.Tags[0]}", fullMethodName);
+//                                savedOffFirstResult = true;
+//                            }
+
+//                        }
+
+//                    }
+//                }
+//                catch (Exception ex)
+//                {
+//                    _logger.DSLogException("Exiting. Failed to query CosmosDB for duplicate device details: ", ex, fullMethodName);
+//                    return count;
+//                }
+//            }
+//            _logger.DSLogInformation($"Found {devicesToDelete.Count} duplicate devices to delete.", fullMethodName);
+
+//            //
+//            // Delete all devices marked for deletion
+//            //
+//            foreach (var device in devicesToDelete)
+//            {
+//                try
+//                {
+//                    if (deleteFlag)
+//                    {
+//                        await _container.DeleteItemAsync<Device>(device.Id.ToString(), new PartitionKey(device.PartitionKey));
+//                    }
+//                    count++;
+//                }
+//                catch (Exception ex)
+//                {
+//                    _logger.DSLogException($"Failed to delete duplicate device from Delegation Station: {device.Id}", ex, fullMethodName);
+//                }
+
+//                _logger.DSLogInformation($"Deleted {count} devices.", fullMethodName);
+
+
+
+//                //
+//                // Check for M/M/SN with dupes across tags - we're just going to log these
+//                //
+//                _logger.DSLogInformation("Checking for duplicate across tags....");
+//                int devicesToReview = 0;
+
+//                try
+//                {
+//                    QueryDefinition query3 = new QueryDefinition("SELECT lower(c.Make) as Make, lower(c.Model) as Model, lower(c.SerialNumber) as SerialNumber, count(c._ts) as Count " +
+//                                                                "FROM c WHERE c.Type='Device' " +
+//                                                                "GROUP BY lower(c.Make), lower(c.Model), lower(c.SerialNumber)");
+//                    var queryIterator3 = _container.GetItemQueryIterator<Duplicate>(query3);
+
+//                    while (queryIterator3.HasMoreResults)
+//                    {
+//                        var response = queryIterator3.ReadNextAsync().Result;
+
+//                        foreach (var duplicate in response)
+//                        {
+//                            if (duplicate.Count > 1)
+//                            {
+//                                _logger.DSLogWarning($"Found {duplicate.Count} duplicates across tags when case ignored: '{duplicate.Make}' '{duplicate.Model}' '{duplicate.SerialNumber}'", fullMethodName);
+
+//                                try
+//                                {
+//                                    QueryDefinition query4 = new QueryDefinition("SELECT * FROM  c WHERE c.Type='Device' AND STRINGEQUALS(c.Make,@make,true) AND STRINGEQUALS(c.Model,@model,true) AND " +
+//                                                                                 "STRINGEQUALS(c.SerialNumber,@serialNumber,true) ORDER BY c.ModifiedUTC DESC");
+//                                    query4.WithParameter("@make", duplicate.Make);
+//                                    query4.WithParameter("@model", duplicate.Model);
+//                                    query4.WithParameter("@serialNumber", duplicate.SerialNumber);
+
+//                                    var queryIterator4 = _container.GetItemQueryIterator<Device>(query4);
+//                                    while (queryIterator4.HasMoreResults)
+//                                    {
+//                                        var response4 = queryIterator4.ReadNextAsync().Result;
+//                                        foreach (var device in response4)
+//                                        {
+//                                            _logger.DSLogWarning($"     Individual device details: (CosmosID) {device.Id} '{device.Make}' '{device.Model}' '{device.SerialNumber}' Tag: {device.Tags[0]}", fullMethodName);
+//                                            devicesToReview++;
+//                                        }
+//                                    }
+//                                }
+//                                catch (Exception ex)
+//                                {
+//                                    _logger.DSLogException("Failed to query CosmosDB for duplicate device details: ", ex, fullMethodName);
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//                catch (Exception ex)
+//                {
+//                    _logger.DSLogException("Failed to query CosmosDB for duplicates across tags: ", ex, fullMethodName);
+//                }
+
+//                _logger.DSLogWarning($"Found {devicesToReview} duplicate devices to review.", fullMethodName);
+
+
+//                return count;
+//            }
+//        }
+    }
+}
