@@ -204,12 +204,12 @@ namespace UpdatePreferredHostnames
 
                     var deviceObj = await _graphClient.DeviceManagement.ManagedDevices.GetAsync((requestConfiguration) =>
                     {
-                        requestConfiguration.QueryParameters.Filter = $"serialNumber eq '{device.SerialNumber}' and model eq '{device.Model}'";
+                        requestConfiguration.QueryParameters.Filter = $"serialNumber eq '{device.SerialNumber}' and manufacturer eq '{device.Make}' and model eq '{device.Model}'";
                         requestConfiguration.QueryParameters.Select = new string[] { "ManagedDeviceName" };
                     });
                     if(deviceObj == null || deviceObj.Value == null || deviceObj.Value.Count == 0)
                     {
-                        _logger.DSLogWarning($"Device with Model '{device.Model}' and SerialNumber '{device.SerialNumber}' not found in Intune.", fullMethodName);
+                        _logger.DSLogWarning($"Device with Make '{device.Make}', Model '{device.Model}', and SerialNumber '{device.SerialNumber}' not found in Intune.", fullMethodName);
                         PresentUnenrolledDevices.Add($"{device.Tags[0]}, {device.Make}, {device.Model}, {device.SerialNumber}, , , ");
                         continue;
                     }
