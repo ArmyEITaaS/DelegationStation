@@ -1,20 +1,12 @@
-﻿using Azure.Identity;
+﻿using Azure.Core;
+using Azure.Identity;
 using DelegationStationShared;
 using DelegationStationShared.Extensions;
 using DelegationStationShared.Models;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graph;
-using Microsoft.Graph.Beta.Models.WindowsUpdates;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
-//using UpdatePreferredHostnames.Models;
-using static Azure.Core.HttpHeader;
 
 namespace UpdatePreferredHostnames
 {
@@ -67,7 +59,7 @@ namespace UpdatePreferredHostnames
 
             string? containerName = Environment.GetEnvironmentVariable("COSMOS_CONTAINER_NAME");
             string? databaseName = Environment.GetEnvironmentVariable("COSMOS_DATABASE_NAME");
-            var connectionString = Environment.GetEnvironmentVariable("COSMOS_CONNECTION_STRING");
+            var cosmosEndpoint = Environment.GetEnvironmentVariable("COSMOS_ENDPOINT");
 
             if (string.IsNullOrEmpty(containerName))
             {
@@ -79,7 +71,7 @@ namespace UpdatePreferredHostnames
                 _logger.DSLogWarning("COSMOS_DATABASE_NAME is null or empty, using default value of DelegationStationData", fullMethodName);
                 databaseName = "DelegationStationData";
             }
-            if (string.IsNullOrEmpty(connectionString))
+            if (string.IsNullOrEmpty(cosmosEndpoint))
             {
                 _logger.DSLogError("Cannot connect to CosmosDB. Missing required environment variable COSMOS_CONNECTION_STRING", fullMethodName);
                 return;
@@ -87,7 +79,8 @@ namespace UpdatePreferredHostnames
 
             try
             {
-                CosmosClient client = new(connectionString: connectionString);
+                TokenCredential credential = new ManagedIdentityCredential();
+                CosmosClient client = new(accountEndpoint: cosmosEndpoint, credential);
                 _container = client.GetContainer(databaseName, containerName);
             }
             catch (Exception ex)
@@ -130,8 +123,8 @@ namespace UpdatePreferredHostnames
                 var certificate = store.Certificates.Cast<X509Certificate2>().FirstOrDefault(cert => cert.Subject.ToString() == certDN);
 
                 var clientCertCredential = new ClientCertificateCredential(
-                    Environment.GetEnvironmentVariable("TenantId"),
-                    Environment.GetEnvironmentVariable("ClientId"),
+                    Environment.GetEnvironmentVariable("AzureAd__TenantId"),
+                    Environment.GetEnvironmentVariable("AzureAd__ClientId"),
                     certificate,
                     options
                 );
@@ -146,9 +139,9 @@ namespace UpdatePreferredHostnames
 
 
                 var clientSecretCredential = new ClientSecretCredential(
-                    Environment.GetEnvironmentVariable("TenantId"),
-                    Environment.GetEnvironmentVariable("ClientId"),
-                    Environment.GetEnvironmentVariable("ClientSecret"),
+                    Environment.GetEnvironmentVariable("AzureAd__TenantId"),
+                    Environment.GetEnvironmentVariable("AzureAd__ClientId"),
+                    Environment.GetEnvironmentVariable("AzureApp__ClientSecret"),
                     options
                 );
 
@@ -171,25 +164,55 @@ namespace UpdatePreferredHostnames
 
             try
             {
-                QueryDefinition query = new QueryDefinition("SELECT c.id as id, c.PreferredHostname as PreferredHostname, lower(c.Make) as Make, lower(c.Model) as Model, lower(c.SerialNumber) as SerialNumber, c.Tags as Tags " +
+                QueryDefinition devicesQuery = new QueryDefinition("SELECT c.id as id, c.PreferredHostname as PreferredHostname, lower(c.Make) as Make, lower(c.Model) as Model, lower(c.SerialNumber) as SerialNumber, c.Tags as Tags " +
                                                             "FROM c WHERE c.Type='Device' ");
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
                 // TOFIX????  if _container is null, it will be caught in try block
-                var queryIterator = _container.GetItemQueryIterator<Device>(query);
+                var deviceQueryIterator = _container.GetItemQueryIterator<Device>(devicesQuery);
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
-                while (queryIterator.HasMoreResults)
+                while (deviceQueryIterator.HasMoreResults)
                 {
-                    var response = queryIterator.ReadNextAsync().Result;
-
-                    foreach (var device in response)
+                    var result = deviceQueryIterator.ReadNextAsync().Result;
+                    foreach (var device in result)
                     {
                         devicesToCheck.Enqueue(device);
+                    }
+                }
+                
+            }
+            catch (Exception ex)
+            {
+                _logger.DSLogException("Failed to query Cosmos for devices: ", ex, fullMethodName);
+                return count;
+            }
+
+            //
+            // Retrieve Tags and their Ids
+            //
+            Dictionary<string, string> idsToTags = new Dictionary<string, string>();
+
+            try
+            {
+                QueryDefinition tagsQuery = new QueryDefinition("SELECT *" +
+                                                            "FROM c WHERE c.PartitionKey=\"DeviceTag\" ");
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+                // TOFIX????  if _container is null, it will be caught in try block
+                var tagQueryIterator = _container.GetItemQueryIterator<DeviceTag>(tagsQuery);
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+                while (tagQueryIterator.HasMoreResults)
+                {
+                    var response = tagQueryIterator.ReadNextAsync().Result;
+
+                    foreach (var tag in response)
+                    {
+                        idsToTags[tag.Id.ToString()] = tag.Name;
+                        _logger.DSLogInformation($"Tag {tag.Id} Name '{tag.Name}' added.", fullMethodName);
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.DSLogException("Failed to query Cosmos for devices: ", ex, fullMethodName);
+                _logger.DSLogException("Failed to query Cosmos for Tags: ", ex, fullMethodName);
                 return count;
             }
 
@@ -201,22 +224,21 @@ namespace UpdatePreferredHostnames
                 string deviceHostname = null;
                 try
                 {
-
                     var deviceObj = await _graphClient.DeviceManagement.ManagedDevices.GetAsync((requestConfiguration) =>
                     {
                         requestConfiguration.QueryParameters.Filter = $"serialNumber eq '{device.SerialNumber}' and manufacturer eq '{device.Make}' and model eq '{device.Model}'";
-                        requestConfiguration.QueryParameters.Select = new string[] { "ManagedDeviceName" };
+                        requestConfiguration.QueryParameters.Select = new string[] { "DeviceName" };
                     });
                     if(deviceObj == null || deviceObj.Value == null || deviceObj.Value.Count == 0)
                     {
                         _logger.DSLogWarning($"Device with Make '{device.Make}', Model '{device.Model}', and SerialNumber '{device.SerialNumber}' not found in Intune.", fullMethodName);
-                        PresentUnenrolledDevices.Add($"{device.Tags[0]}, {device.Make}, {device.Model}, {device.SerialNumber}, , , ");
+                        PresentUnenrolledDevices.Add($"{idsToTags[device.Tags[0]]}, {device.Make}, {device.Model}, {device.SerialNumber}, , , ");
                         continue;
                     }
-                    deviceHostname = deviceObj.Value.FirstOrDefault().ManagedDeviceName ?? "";
-                    if(string.Equals(device.PreferredHostname, deviceHostname))
+                    deviceHostname = deviceObj.Value.FirstOrDefault().DeviceName ?? "";
+                    if(!string.IsNullOrEmpty(device.PreferredHostname))
                     {
-                        _logger.DSLogInformation($"Device {device.Id} PreferredHostname '{device.PreferredHostname}' matches Intune Hostname '{deviceHostname}', no update needed.", fullMethodName);
+                        _logger.DSLogInformation($"Device {device.Id} PreferredHostname '{device.PreferredHostname}' not empty, no update needed.", fullMethodName);
                         continue;
                     }
                     device.PreferredHostname = deviceHostname ?? "";
@@ -249,11 +271,18 @@ namespace UpdatePreferredHostnames
                 }                
             }
             _logger.DSLogInformation($"Updated {count} devices.", fullMethodName);
-            _logger.DSLogInformation("The following devices were not enrolled in Intune and could not be updated:", fullMethodName);
+            
+            string unenrolledDevicesResult = "";
             foreach (var device in PresentUnenrolledDevices)
             {
-                _logger.DSLogInformation(device);
+                unenrolledDevicesResult += device + "\n";
             }
+
+            string fileName = "UnenrolledDevices.csv";
+            File.WriteAllText(fileName, unenrolledDevicesResult);
+            _logger.DSLogInformation("The devices that were not enrolled in Intune and could not be updated have been saved to the following path: \n"
+                + Directory.GetCurrentDirectory(), fullMethodName);
+
             return count;
         }
     }

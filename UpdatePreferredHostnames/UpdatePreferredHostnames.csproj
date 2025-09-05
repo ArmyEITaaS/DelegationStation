@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk;Microsoft.NET.Sdk.Publish">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -18,6 +18,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DelegationSharedLibrary\DelegationSharedLibrary.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Settings.job">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
