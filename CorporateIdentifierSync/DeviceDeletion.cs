@@ -62,44 +62,46 @@ namespace CorporateIdentifierSync
                 _logger.DSLogInformation($"-----Deleting device {device.Id}.-----", fullMethodName);
 
 
-                // Delete from Managed Devices
-                bool delManagedDevice = false;
-                ManagedDevice managedDevice = null;
-                try
-                {
-                    managedDevice = await _graphService.GetManagedDevice(device.Make, device.Model, device.SerialNumber);
+                // Commenting out removal of devices from managed devices until we can confirm we won't need it
+                // in the future
+                //// Delete from Managed Devices
+                //bool delManagedDevice = false;
+                //ManagedDevice managedDevice = null;
+                //try
+                //{
+                //    managedDevice = await _graphService.GetManagedDevice(device.Make, device.Model, device.SerialNumber);
 
-                    if (managedDevice != null && managedDevice.Id != null)
-                    {
-                        _logger.DSLogInformation($"Found managed device {managedDevice.Id} in Intune that matches device {device.Make} {device.Model} {device.SerialNumber}.", fullMethodName);
-                        delManagedDevice = await _graphService.DeleteManagedDevice(managedDevice.Id);
-                        _logger.DSLogInformation($"Successfully deleted managed device {managedDevice.Id} for {device.Make} {device.Model} {device.SerialNumber}", fullMethodName);
-                    }
-                    else
-                    {
-                        // Setting as deleted since it's not present
-                        _logger.DSLogInformation($"No managed device to delete for {device.Make} {device.Model} {device.SerialNumber}", fullMethodName);
-                        delManagedDevice = true;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    if (managedDevice == null)
-                    {
-                        _logger.DSLogException($"Unable to query managed device for {device.Make} {device.Model} {device.SerialNumber}", ex, fullMethodName);
-                    }
-                    else
-                    {
-                        _logger.DSLogException($"Unable to delete managed device: {managedDevice.Id} {device.Make} {device.Model} {device.SerialNumber}", ex, fullMethodName);
-                    }
-                    delManagedDevice = false;
-                }
+                //    if (managedDevice != null && managedDevice.Id != null)
+                //    {
+                //        _logger.DSLogInformation($"Found managed device {managedDevice.Id} in Intune that matches device {device.Make} {device.Model} {device.SerialNumber}.", fullMethodName);
+                //        delManagedDevice = await _graphService.DeleteManagedDevice(managedDevice.Id);
+                //        _logger.DSLogInformation($"Successfully deleted managed device {managedDevice.Id} for {device.Make} {device.Model} {device.SerialNumber}", fullMethodName);
+                //    }
+                //    else
+                //    {
+                //        // Setting as deleted since it's not present
+                //        _logger.DSLogInformation($"No managed device to delete for {device.Make} {device.Model} {device.SerialNumber}", fullMethodName);
+                //        delManagedDevice = true;
+                //    }
+                //}
+                //catch (Exception ex)
+                //{
+                //    if (managedDevice == null)
+                //    {
+                //        _logger.DSLogException($"Unable to query managed device for {device.Make} {device.Model} {device.SerialNumber}", ex, fullMethodName);
+                //    }
+                //    else
+                //    {
+                //        _logger.DSLogException($"Unable to delete managed device: {managedDevice.Id} {device.Make} {device.Model} {device.SerialNumber}", ex, fullMethodName);
+                //    }
+                //    delManagedDevice = false;
+                //}
 
-                //
-                //  Only continues with deletions if successfully removed managed device entry
-                //
-                if (delManagedDevice)
-                {
+                ////
+                ////  Only continues with deletions if successfully removed managed device entry
+                ////
+                //if (delManagedDevice)
+                //{
                     bool delCorpID = false;
 
                     if (isCorpIDSyncEnabled)
@@ -142,19 +144,19 @@ namespace CorporateIdentifierSync
                     {
                         _logger.DSLogError($"Deletion from Corporate Identifiers failed for device {device.Id}.  Not deleting from Delegation Station", fullMethodName);
                     }
-                }
-                else
-                {
-                    if (managedDevice != null && managedDevice.Id != null)
-                    {
-                        _logger.DSLogError($"Deletion from Intune failed for device {device.Id} (managedDevice ID: {managedDevice.Id}).  Not deleting from Delegation Station", fullMethodName);
-                    }
-                    else
-                    {
-                        _logger.DSLogError($"Deletion from Intune failed for device {device.Id} Not deleting from Delegation Station", fullMethodName);
-                    }
+                //}
+                //else
+                //{
+                //    if (managedDevice != null && managedDevice.Id != null)
+                //    {
+                //        _logger.DSLogError($"Deletion from Intune failed for device {device.Id} (managedDevice ID: {managedDevice.Id}).  Not deleting from Delegation Station", fullMethodName);
+                //    }
+                //    else
+                //    {
+                //        _logger.DSLogError($"Deletion from Intune failed for device {device.Id} Not deleting from Delegation Station", fullMethodName);
+                //    }
 
-                }
+                //}
             }
 
             _logger.DSLogInformation($"Successfully deleted {deviceCount} devices.", fullMethodName);
