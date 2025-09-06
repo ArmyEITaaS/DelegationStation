@@ -77,16 +77,16 @@ namespace CorporateIdentifierSync.Services
 
 
 
-        public async Task<bool> DeleteManagedDevice(string managedDeviceID)
-        {
-            string methodName = ExtensionHelper.GetMethodName() ?? "";
-            string className = this.GetType().Name;
-            string fullMethodName = className + "." + methodName;
+        //public async Task<bool> DeleteManagedDevice(string managedDeviceID)
+        //{
+        //    string methodName = ExtensionHelper.GetMethodName() ?? "";
+        //    string className = this.GetType().Name;
+        //    string fullMethodName = className + "." + methodName;
 
-            await _graphClient.DeviceManagement.ManagedDevices[managedDeviceID].DeleteAsync();
-            _logger.DSLogInformation($"Managed Device Deleted: {managedDeviceID}", fullMethodName);
-            return true;
-        }
+        //    await _graphClient.DeviceManagement.ManagedDevices[managedDeviceID].DeleteAsync();
+        //    _logger.DSLogInformation($"Managed Device Deleted: {managedDeviceID}", fullMethodName);
+        //    return true;
+        //}
 
 
         public async Task<ManagedDevice> GetManagedDevice(string make, string model, string serialNum)
