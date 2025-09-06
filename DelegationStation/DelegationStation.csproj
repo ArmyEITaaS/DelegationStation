@@ -2,11 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
+    <Nullable>annotations</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>aspnet-DelegationStation-2544d2be-3f6f-4b7d-96b3-dfeed95244f4</UserSecretsId>
-    <WebProject_DirectoryAccessLevelKey>0</WebProject_DirectoryAccessLevelKey>
-    <ApplicationInsightsResourceId>/subscriptions/239e4506-8671-4c23-b040-6262a134199d/resourceGroups/Intune/providers/microsoft.insights/components/IntuneEnrollment3</ApplicationInsightsResourceId>
   </PropertyGroup>
 
   <ItemGroup>

@@ -28,9 +28,9 @@
             <p>
                 Upload a csv file with the following format:
                 <ul>
-                    <li>Make,Model,SerialNumber,Action (add,remove)</li>
-                    <li>Make,Model,SerialNumber,Action (add,remove)</li>
-                    <li>Make,Model,SerialNumber,Action (add,remove)</li>
+                    <li>Make,Model,SerialNumber,OS,PreferredHostname, Action (add,remove)</li>
+                    <li>Make,Model,SerialNumber,OS,PreferredHostname, Action (add,remove)</li>
+                    <li>Make,Model,SerialNumber,OS,PreferredHostname, Action (add,remove)</li>
                 </ul>
             </p>
         </div>
@@ -38,9 +38,11 @@
             <p>
                 Example:
                 <ul>
-                    <li>Microsoft Surface,Laptop 5,246813579,add</li>
-                    <li>Microsoft Surface,Laptop 5,246813579,remove</li>
+                    <li>Microsoft Surface,Laptop 5,246813579,Windows,host1,add</li>
+                    <li>Microsoft Surface,Laptop 5,246823580,Windows,host2,add</li>
+                    <li>Apple,Macbook Pro,246813579,,,remove</li>
                 </ul>
+                Note:  Preferred Hostname and OS fields are not used for removal.
             </p>
         </div>
     </div>
@@ -164,6 +166,8 @@
                     <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn Title="Make" Property="@(p => p.Make)" />
                     <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn Title="Model" Property="@(p => p.Model)" />
                     <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn Title="Serial Number" Property="@(p => p.SerialNumber)" />
+                        <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn Title="Operating System" Property="@(p => p.OS)" />
+                        <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn Title="Preferred Hostname" Property="@(p => p.PreferredHostname)" />
                     <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn Title="Action" Property="@(p => p.Action)" />
                 </Microsoft.AspNetCore.Components.QuickGrid.QuickGrid>
             </div>

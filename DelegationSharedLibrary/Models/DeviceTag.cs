@@ -20,6 +20,8 @@ namespace DelegationStationShared.Models
         [Required(AllowEmptyStrings = false)]
         public string PartitionKey { get; set; }
 
+        public bool CorpIDSyncEnabled { get; set; }
+
         public DeviceTag()
         {
             Id = Guid.NewGuid();

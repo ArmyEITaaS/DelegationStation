@@ -26,6 +26,10 @@
                 <label for="TagDescription" class="form-label">Tag description</label>
                 <InputTextArea @bind-Value=newTag.Description class="form-control" id="TagDescription"></InputTextArea>
             </div>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" @bind=newTag.CorpIDSyncEnabled id="corpIDSwitch">
+                <label class="form-check-label" for="corpIDSwitch">Enable Corporate Identifier Sync</label>
+            </div>
             <input type="submit" class="btn btn-primary mb-3" value="Add" />
         </EditForm>
     </Authorized>

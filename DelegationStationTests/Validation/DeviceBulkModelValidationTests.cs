@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+using DelegationStationShared.Enums;
+using System.ComponentModel.DataAnnotations;
+
 
 namespace DelegationStationTests.Validation
 {
@@ -20,7 +22,9 @@ namespace DelegationStationTests.Validation
             {
                 Make = make,
                 Model = "Model",
-                SerialNumber = "00000"
+                SerialNumber = "00000",
+                PreferredHostname = "hostname",
+                OS = DeviceOS.Windows
             };
             Assert.IsFalse(ValidateModel(device).Any(
                 v => (v.ErrorMessage ?? "").Contains("only use")));
@@ -57,7 +61,9 @@ namespace DelegationStationTests.Validation
             {
                 Make = make,
                 Model = "Model",
-                SerialNumber = "00000"
+                SerialNumber = "00000",
+                PreferredHostname = "hostname",
+                OS = DeviceOS.Windows
             };
             Assert.IsTrue(ValidateModel(device).Any(
                 v => (v.ErrorMessage ?? "").Contains("only use")));
@@ -79,7 +85,9 @@ namespace DelegationStationTests.Validation
             {
                 Make = "Make",
                 Model = model,
-                SerialNumber = "00000"
+                SerialNumber = "00000",
+                PreferredHostname = "hostname",
+                OS = DeviceOS.Windows
             };
             Assert.IsFalse(ValidateModel(device).Any(
                 v => (v.ErrorMessage ?? "").Contains("only use")));
@@ -114,7 +122,9 @@ namespace DelegationStationTests.Validation
             {
                 Make = "Make",
                 Model = model,
-                SerialNumber = "00000"
+                SerialNumber = "00000",
+                PreferredHostname = "hostname",
+                OS = DeviceOS.Windows
             };
             Assert.IsTrue(ValidateModel(device).Any(
                 v => (v.ErrorMessage ?? "").Contains("only use")));
@@ -131,7 +141,9 @@ namespace DelegationStationTests.Validation
             {
                 Make = "Make",
                 Model = "Model",
-                SerialNumber = serialNumber
+                SerialNumber = serialNumber,
+                PreferredHostname = "hostname",
+                OS = DeviceOS.Windows
             };
             Assert.IsFalse(ValidateModel(device).Any(
                 v => (v.ErrorMessage ?? "").Contains("Only use")));
@@ -171,10 +183,97 @@ namespace DelegationStationTests.Validation
             {
                 Make = "Make",
                 Model = "Model",
-                SerialNumber = serialNumber
+                SerialNumber = serialNumber,
+                PreferredHostname = "hostname",
+                OS = DeviceOS.Windows
             };
             Assert.IsTrue(ValidateModel(device).Any(
                 v => (v.ErrorMessage ?? "").Contains("Only use")));
+        }
+
+        [TestMethod]
+        [DataRow("ValidHostname123")]
+        [DataRow("valid-hostname")]
+        [DataRow("valid-host-name")]
+        public void VerifyValidHostnameAllowed(string hostname)
+        {
+            var device = new DeviceBulk
+            {
+                Make = "Make",
+                Model = "Model",
+                SerialNumber = "12345",
+                PreferredHostname = hostname,
+                OS = DeviceOS.Windows
+
+            };
+            Assert.IsFalse(ValidateModel(device).Any(
+                v => (v.ErrorMessage ?? "").Contains("Only use")));
+
+        }
+
+        [TestMethod]
+        [DataRow("InvalidHostname123,")]
+        [DataRow("InvalidHostname123&")]
+        [DataRow("InvalidHostname123(")]
+        [DataRow("InvalidHostname123)")]
+        [DataRow("InvalidHostname123+")]
+        [DataRow("InvalidHostname123!")]
+        [DataRow("InvalidHostname123@")]
+        [DataRow("InvalidHostname123#")]
+        [DataRow("InvalidHostname123$")]
+        [DataRow("InvalidHostname123%")]
+        [DataRow("InvalidHostname123^")]
+        [DataRow("InvalidHostname123*")]
+        [DataRow("InvalidHostname123=")]
+        [DataRow("InvalidHostname123+")]
+        [DataRow("InvalidHostname123{")]
+        [DataRow("InvalidHostname123}")]
+        [DataRow("InvalidHostname123[")]
+        [DataRow("InvalidHostname123]")]
+        [DataRow("InvalidHostname123\\")]
+        [DataRow("InvalidHostname123/")]
+        [DataRow("InvalidHostname123|")]
+        [DataRow("InvalidHostname123?")]
+        [DataRow("InvalidHostname123<")]
+        [DataRow("InvalidHostname123>")]
+        [DataRow("InvalidHostname123~")]
+        [DataRow("InvalidHostname123'")]
+        [DataRow("InvalidHostname123\"")]
+        [DataRow("InvalidHostname123`")]
+        [DataRow("-InvalidHostname123")]
+        [DataRow("InvalidHostname123-")]
+        public void VerifyInvalidHostnameNotAllowed(string hostname)
+        {
+            var device = new DeviceBulk
+            {
+                Make = "Make",
+                Model = "Model",
+                SerialNumber = "12345",
+                PreferredHostname = hostname,
+                OS = DeviceOS.Windows
+            };
+
+            // Only testing regex in this test
+            Assert.IsTrue(ValidateModel(device).Any(
+                v => (v.ErrorMessage ?? "").Contains("Only use")));
+
+        }
+
+        [TestMethod]
+        [DataRow("HostnameTooLong1")]
+        public void VerifyHostnameLengthValidation(string hostname)
+        {
+            var device = new DeviceBulk
+            {
+                Make = "Make",
+                Model = "Model",
+                SerialNumber = "12345",
+                PreferredHostname = hostname,
+                OS = DeviceOS.Windows
+            };
+            // Only testing length in this test
+            Assert.IsTrue(ValidateModel(device).Any(
+                v => (v.ErrorMessage ?? "").Contains("must be 1-15 characters")));
         }
 
         private IList<ValidationResult> ValidateModel(object model)

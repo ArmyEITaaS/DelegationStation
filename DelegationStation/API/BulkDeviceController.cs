@@ -1,5 +1,6 @@
-﻿using DelegationStation.Interfaces;
+using DelegationStation.Interfaces;
 using DelegationStationShared;
+using DelegationStationShared.Enums;
 using DelegationStationShared.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -73,10 +74,12 @@ namespace DelegationStation.API
             string fileName = "Devices.csv";
             List<Device> devices = await _deviceDBService.GetDevicesByTagAsync(sanitizedID);
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("Make,Model,SerialNumber,Action,AddedBy");
-
+            sb.AppendLine("Make,Model,SerialNumber,OS,PreferredHostname,Action,AddedBy");
+            
             if (!string.IsNullOrEmpty(sanitizedID))
             {
+                string deviceOSstring = "";
+
                 foreach (Device device in devices)
                 {
                     if (device.Make.Contains(","))
@@ -91,8 +94,16 @@ namespace DelegationStation.API
                     {
                         device.SerialNumber = "\"" + device.SerialNumber + "\"";
                     }
+                    if( device.OS == null )
+                    {
+                        deviceOSstring = "-- unknown --";
+                    }
+                    else
+                    {
+                        deviceOSstring = Enum.GetName(typeof(DeviceOS), device.OS) ?? "";
+                    }
 
-                    sb.AppendLine($"{device.Make},{device.Model},{device.SerialNumber},,{device.AddedBy}");
+                    sb.AppendLine($"{device.Make},{device.Model},{device.SerialNumber},{deviceOSstring},{device.PreferredHostname},,{device.AddedBy}");
                 }
             }
 

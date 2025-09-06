@@ -1,10 +1,77 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
+using DelegationStationShared.Enums;
+
 
 namespace DelegationStationTests.Validation
 {
     [TestClass]
     public class DeviceModelValidationTests
     {
+
+        [TestMethod]
+        public void VerifyMakeIsRequired()
+        {
+            var device = new Device
+            {
+                Make = "",
+                Model = "Model",
+                SerialNumber = "99999",
+                PreferredHostname = "hostname",
+                OS = DeviceOS.Windows
+            };
+
+            Assert.IsTrue(ValidateModel(device).Any(
+                v => (v.ErrorMessage ?? "").Contains("Required")));
+        }
+
+        [TestMethod]
+        public void VerifyModelIsRequired()
+        {
+            var device = new Device
+            {
+                Make = "Make",
+                Model = "",
+                SerialNumber = "99999",
+                PreferredHostname = "hostname",
+                OS = DeviceOS.Windows
+            };
+
+            Assert.IsTrue(ValidateModel(device).Any(
+                v => (v.ErrorMessage ?? "").Contains("Required")));
+        }
+
+        [TestMethod]
+        public void VerifySNIsRequired()
+        {
+            var device = new Device
+            {
+                Make = "Make",
+                Model = "Model",
+                SerialNumber = "",
+                PreferredHostname = "hostname",
+                OS = DeviceOS.Windows
+            };
+
+            Assert.IsTrue(ValidateModel(device).Any(
+                v => (v.ErrorMessage ?? "").Contains("Required")));
+        }
+
+        [TestMethod]
+        public void VerifyHostnameIsRequired()
+        {
+            var device = new Device
+            {
+                Make = "Make",
+                Model = "Model",
+                SerialNumber = "99999",
+                PreferredHostname = "",
+                OS = DeviceOS.Windows
+            };
+
+            Assert.IsTrue(ValidateModel(device).Any(
+                v => (v.ErrorMessage ?? "").Contains("Required")));
+        }
+
 
         [TestMethod]
         [DataRow("ValidMake123")]
@@ -21,7 +88,9 @@ namespace DelegationStationTests.Validation
             {
                 Make = make,
                 Model = "Model",
-                SerialNumber = "00000"
+                SerialNumber = "00000",
+                PreferredHostname = "hostname",
+                OS = DeviceOS.Windows
             };
             Assert.IsFalse(ValidateModel(device).Any(
                 v => (v.ErrorMessage ?? "").Contains("Only use")));
@@ -58,7 +127,9 @@ namespace DelegationStationTests.Validation
             {
                 Make = make,
                 Model = "Model",
-                SerialNumber = "00000"
+                SerialNumber = "00000",
+                PreferredHostname = "hostname",
+                OS = DeviceOS.Windows
             };
             Assert.IsTrue(ValidateModel(device).Any(
                 v => (v.ErrorMessage ?? "").Contains("Only use")));
@@ -81,7 +152,9 @@ namespace DelegationStationTests.Validation
             {
                 Make = "Make",
                 Model = model,
-                SerialNumber = "00000"
+                SerialNumber = "00000",
+                PreferredHostname = "hostname",
+                OS = DeviceOS.Windows
             };
             Assert.IsFalse(ValidateModel(device).Any(
                 v => (v.ErrorMessage ?? "").Contains("Only use")));
@@ -118,7 +191,9 @@ namespace DelegationStationTests.Validation
             {
                 Make = "Make",
                 Model = model,
-                SerialNumber = "00000"
+                SerialNumber = "00000",
+                PreferredHostname = "hostname",
+                OS = DeviceOS.Windows
             };
             Assert.IsTrue(ValidateModel(device).Any(
                 v => (v.ErrorMessage ?? "").Contains("Only use")));
@@ -136,7 +211,9 @@ namespace DelegationStationTests.Validation
             {
                 Make = "Make",
                 Model = "Model",
-                SerialNumber = serialNumber
+                SerialNumber = serialNumber,
+                PreferredHostname = "hostname",
+                OS = DeviceOS.Windows
             };
             Assert.IsFalse(ValidateModel(device).Any(
                 v => (v.ErrorMessage ?? "").Contains("Only use")));
@@ -178,13 +255,114 @@ namespace DelegationStationTests.Validation
             {
                 Make = "Make",
                 Model = "Model",
-                SerialNumber = serialNumber
+                SerialNumber = serialNumber,
+                PreferredHostname = "hostname",
+                OS = DeviceOS.Windows
             };
             Assert.IsTrue(ValidateModel(device).Any(
                 v => (v.ErrorMessage ?? "").Contains("Only use")));
 
         }
 
+        [TestMethod]
+        [DataRow("ValidHostname123")]
+        [DataRow("valid-hostname")]
+        [DataRow("valid-host-name")]
+        public void VerifyValidHostnameAllowed(string hostname)
+        {
+            var device = new Device
+            {
+                Make = "Make",
+                Model = "Model",
+                SerialNumber = "12345",
+                PreferredHostname = hostname,
+                OS = DeviceOS.Windows
+
+            };
+            Assert.IsFalse(ValidateModel(device).Any(
+                v => (v.ErrorMessage ?? "").Contains("Only use")));
+
+        }
+
+        [TestMethod]
+        [DataRow("InvalidHostname123,")]
+        [DataRow("InvalidHostname123&")]
+        [DataRow("InvalidHostname123(")]
+        [DataRow("InvalidHostname123)")]
+        [DataRow("InvalidHostname123+")]
+        [DataRow("InvalidHostname123!")]
+        [DataRow("InvalidHostname123@")]
+        [DataRow("InvalidHostname123#")]
+        [DataRow("InvalidHostname123$")]
+        [DataRow("InvalidHostname123%")]
+        [DataRow("InvalidHostname123^")]
+        [DataRow("InvalidHostname123*")]
+        [DataRow("InvalidHostname123=")]
+        [DataRow("InvalidHostname123+")]
+        [DataRow("InvalidHostname123{")]
+        [DataRow("InvalidHostname123}")]
+        [DataRow("InvalidHostname123[")]
+        [DataRow("InvalidHostname123]")]
+        [DataRow("InvalidHostname123\\")]
+        [DataRow("InvalidHostname123/")]
+        [DataRow("InvalidHostname123|")]
+        [DataRow("InvalidHostname123?")]
+        [DataRow("InvalidHostname123<")]
+        [DataRow("InvalidHostname123>")]
+        [DataRow("InvalidHostname123~")]
+        [DataRow("InvalidHostname123'")]
+        [DataRow("InvalidHostname123\"")]
+        [DataRow("InvalidHostname123`")]
+        [DataRow("-InvalidHostname123")]
+        [DataRow("InvalidHostname123-")]
+        public void VerifyInvalidHostnameNotAllowed(string hostname)
+        {
+            var device = new Device
+            {
+                Make = "Make",
+                Model = "Model",
+                SerialNumber = "12345",
+                PreferredHostname = hostname,
+                OS = DeviceOS.Windows
+            };
+
+            // Only testing regex in this test
+            Assert.IsTrue(ValidateModel(device).Any(
+                v => (v.ErrorMessage ?? "").Contains("Only use")));
+
+        }
+
+        [TestMethod]
+        [DataRow("HostnameTooLong1")]
+        public void VerifyHostnameLengthValidation(string hostname)
+        {
+            var device = new Device
+            {
+                Make = "Make",
+                Model = "Model",
+                SerialNumber = "12345",
+                PreferredHostname = hostname,
+                OS = DeviceOS.Windows
+            };
+            // Only testing length in this test
+            Assert.IsTrue(ValidateModel(device).Any(
+                v => (v.ErrorMessage ?? "").Contains("must be 1-15 characters")));
+        }
+
+        [TestMethod]
+        public void VerifyOSIsRequired()
+        {
+            var device = new Device
+            {
+                Make = "Make",
+                Model = "Model",
+                SerialNumber = "12345",
+                PreferredHostname = "hostname"
+            };
+
+            Assert.IsTrue(ValidateModel(device).Any(
+                v => (v.ErrorMessage ?? "").Contains("required")));
+        }
 
 
         private IList<ValidationResult> ValidateModel(object model)

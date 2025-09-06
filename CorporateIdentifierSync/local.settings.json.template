@@ -1,0 +1,22 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "AzureEnvironment": "AzureUSGovernment",
+    "COSMOS_CONNECTION_STRING": "",
+    "COSMOS_DATABASE_NAME": "DelegationStationData",
+    "COSMOS_CONTAINER_NAME": "DeviceData",
+    "AddDevicesTriggerTime": "0 */15 * * * *",
+    "DeleteDevicesTriggerTime": "0 5-59/15 * * * *",
+    "ConfirmSyncTriggerTime": "0 10-59/15 * * * *",
+    "SyncIntervalHours":  "24",
+    "CertificateDistinguishedName": "",
+    "AzureAd:TenantId": "",
+    "AzureAd:ClientId": "",
+    "AzureApp:ClientSecret": "",
+    "GraphEndpoint": "https://dod-graph.microsoft.us/",
+    "CorpIDSyncEnabled": "false"
+  }
+}
+

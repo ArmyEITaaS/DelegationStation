@@ -25,7 +25,7 @@ namespace DelegationStationTests.Pages
                 authContext.SetClaims(new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", defaultId.ToString()));
                 authContext.SetPolicies("DelegationStationAdmin");
 
-                var myConfiguration = new Dictionary<string, string>
+                var myConfiguration = new Dictionary<string, string?>
                 {
                     {"DefaultAdminGroupObjectId", defaultId.ToString()},
                     {"Nested:Key1", "NestedValue1"},
@@ -68,7 +68,7 @@ namespace DelegationStationTests.Pages
                 authContext.SetClaims(new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", userGroupId.ToString()));
 
                 
-                var myConfiguration = new Dictionary<string, string>
+                var myConfiguration = new Dictionary<string, string?>
                 {
                     {"DefaultAdminGroupObjectId", defaultId.ToString()},
                     {"Nested:Key1", "NestedValue1"},

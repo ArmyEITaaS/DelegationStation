@@ -1,4 +1,5 @@
-﻿using DelegationStationShared.Models;
+﻿using DelegationStationShared.Enums;
+using DelegationStationShared.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 

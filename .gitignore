@@ -365,3 +365,4 @@ FodyWeavers.xsd
 
 # Local developer configuration
 **/Properties/serviceDependencies*
+/DelegationStation/appsettings.json

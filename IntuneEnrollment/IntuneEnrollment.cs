@@ -18,6 +18,7 @@ using DelegationStationShared.Models;
 using System.Text;
 using DelegationStationShared;
 
+
 namespace DelegationStation.Function
 {
     public static class IntuneEnrollmentFunction
@@ -25,6 +26,7 @@ namespace DelegationStation.Function
         //private static GraphServiceClient _graphClient;
         private static ILogger _logger;
         //private static HttpClient _graphHttpClient;
+        private static string _guidRegex = "^([0-9A-Fa-f]{8}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{12})$";
 
         [FunctionName("IntuneEnrollmentTrigger")]
         public static async Task<IActionResult> Run(

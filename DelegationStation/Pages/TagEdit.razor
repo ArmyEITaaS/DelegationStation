@@ -3,6 +3,7 @@
 @using DelegationStation.Interfaces;
 @using Microsoft.Graph.Models;
 @using DelegationStation.Shared;
+@using DelegationStationShared.Enums;
 
 @inject ILogger<TagEdit> logger
 @inject IDeviceTagDBService deviceTagDBService
@@ -36,6 +37,10 @@
                         <InputText @bind-Value=tag.Name class="form-control"></InputText>
                         <label>Description:</label>
                         <InputTextArea @bind-Value=tag.Description class="form-control"></InputTextArea>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" @bind=tag.CorpIDSyncEnabled id="corpIDSwitch">
+                            <label class="form-check-label" for="corpIDSwitch">Enable Corporate Identifier Sync</label>
+                        </div>
                         <label class="my-1">Allowed User Principal Name RegEx:</label>
                         <InputText @bind-Value=tag.AllowedUserPrincipalName @oninput=@ClearTestEnrollmentResult class="form-control"></InputText>
                         <div class="border rounded my-3 p-3">
@@ -370,7 +375,7 @@
                             <input type="submit" class="btn btn-primary mt-2 mb-3 @(@validateActionInputs() ? "" : "disabled")" value="Add Action" />
 
                         </EditForm>
-                
+
 
                 @if (!string.IsNullOrEmpty(tagErrorMessage))
                 {
@@ -405,7 +410,7 @@
                                         <tr class="">
                                             <td>@a.ActionType</td>
                                             <td>@a.Name</td>
-                                            <td>@a.Value</td>                                           
+                                            <td>@a.Value</td>
                                         </tr>
                                     }
                                 </tbody>
@@ -414,7 +419,7 @@
                     </NotAuthorized>
                 </AuthorizeView>
 
-                
+
             </EditForm>
         }
         @if (!string.IsNullOrEmpty(userMessage))
