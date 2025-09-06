@@ -1,5 +1,6 @@
-﻿using DelegationStationShared.Enums;
+using DelegationStationShared.Enums;
 using System.ComponentModel.DataAnnotations;
+
 
 namespace DelegationStationTests.Validation
 {
@@ -162,7 +163,6 @@ namespace DelegationStationTests.Validation
         [DataRow("InvalidSN123^")]
         [DataRow("InvalidSN123*")]
         [DataRow("InvalidSN123=")]
-        [DataRow("InvalidSN123+")]
         [DataRow("InvalidSN123{")]
         [DataRow("InvalidSN123}")]
         [DataRow("InvalidSN123[")]

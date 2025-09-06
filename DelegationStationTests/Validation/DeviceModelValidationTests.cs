@@ -1,5 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using DelegationStationShared.Enums;
+
 
 namespace DelegationStationTests.Validation
 {
@@ -106,7 +107,6 @@ namespace DelegationStationTests.Validation
         [DataRow("InvalidMake123*")]
         [DataRow("InvalidMake123+")]
         [DataRow("InvalidMake123=")]
-        [DataRow("InvalidMake123+")]
         [DataRow("InvalidMake123{")]
         [DataRow("InvalidMake123}")]
         [DataRow("InvalidMake123[")]
@@ -363,6 +363,7 @@ namespace DelegationStationTests.Validation
             Assert.IsTrue(ValidateModel(device).Any(
                 v => (v.ErrorMessage ?? "").Contains("required")));
         }
+
 
         private IList<ValidationResult> ValidateModel(object model)
         {
