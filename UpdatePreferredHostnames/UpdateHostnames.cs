@@ -36,7 +36,7 @@ namespace UpdatePreferredHostnames
                 Environment.Exit(1);
             }
 
-            await ConnectToGraph();
+            ConnectToGraph();
             if (_graphClient == null)
             {
                 _logger.DSLogError("Failed to connect to Graph, exiting.", fullMethodName);
@@ -91,7 +91,7 @@ namespace UpdatePreferredHostnames
 
             _logger.DSLogInformation($"Connected to Cosmos DB database {databaseName} container {containerName}.", fullMethodName);
         }
-        private async Task ConnectToGraph()
+        private void ConnectToGraph()
         {
             string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
@@ -156,7 +156,7 @@ namespace UpdatePreferredHostnames
             string fullMethodName = className + "." + methodName;
             int count = 0;
             List<string> PresentUnenrolledDevices = new List<string>();
-            PresentUnenrolledDevices.Add("Tag, Make, Model, Serial Number, OS, Hostname, Action");
+            PresentUnenrolledDevices.Add("Tag,Make,Model,Serial Number,OS,Hostname,Action");
             //
             // Retrieve Devices and their Ids and Preferred Hostnames
             //
@@ -166,10 +166,12 @@ namespace UpdatePreferredHostnames
             {
                 QueryDefinition devicesQuery = new QueryDefinition("SELECT c.id as id, c.PreferredHostname as PreferredHostname, lower(c.Make) as Make, lower(c.Model) as Model, lower(c.SerialNumber) as SerialNumber, c.Tags as Tags " +
                                                             "FROM c WHERE c.Type='Device' ");
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-                // TOFIX????  if _container is null, it will be caught in try block
+                if(_container == null)
+                {
+                    _logger.DSLogError("Cosmos container is null.", fullMethodName);
+                    return count;
+                }
                 var deviceQueryIterator = _container.GetItemQueryIterator<Device>(devicesQuery);
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
                 while (deviceQueryIterator.HasMoreResults)
                 {
                     var result = deviceQueryIterator.ReadNextAsync().Result;
@@ -195,10 +197,12 @@ namespace UpdatePreferredHostnames
             {
                 QueryDefinition tagsQuery = new QueryDefinition("SELECT *" +
                                                             "FROM c WHERE c.PartitionKey=\"DeviceTag\" ");
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-                // TOFIX????  if _container is null, it will be caught in try block
+                if (_container == null)
+                {
+                    _logger.DSLogError("Cosmos container is null.", fullMethodName);
+                    return count;
+                }
                 var tagQueryIterator = _container.GetItemQueryIterator<DeviceTag>(tagsQuery);
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
                 while (tagQueryIterator.HasMoreResults)
                 {
                     var response = tagQueryIterator.ReadNextAsync().Result;
@@ -221,7 +225,7 @@ namespace UpdatePreferredHostnames
             while (devicesToCheck.Count > 0)
             {
                 var device = devicesToCheck.Dequeue();
-                string deviceHostname = null;
+                string deviceHostname = "";
                 try
                 {
                     var deviceObj = await _graphClient.DeviceManagement.ManagedDevices.GetAsync((requestConfiguration) =>
@@ -232,7 +236,7 @@ namespace UpdatePreferredHostnames
                     if(deviceObj == null || deviceObj.Value == null || deviceObj.Value.Count == 0)
                     {
                         _logger.DSLogWarning($"Device with Make '{device.Make}', Model '{device.Model}', and SerialNumber '{device.SerialNumber}' not found in Intune.", fullMethodName);
-                        PresentUnenrolledDevices.Add($"{idsToTags[device.Tags[0]]}, {device.Make}, {device.Model}, {device.SerialNumber}, , , ");
+                        PresentUnenrolledDevices.Add($"{idsToTags[device.Tags[0]]},{device.Make},{device.Model},{device.SerialNumber},,,");
                         continue;
                     }
                     deviceHostname = deviceObj.Value.FirstOrDefault().DeviceName ?? "";
@@ -247,7 +251,7 @@ namespace UpdatePreferredHostnames
                 catch (Exception ex)
                 {
                     _logger.DSLogException("Failed to retrieve graph device ID using .\n", ex, fullMethodName);
-                    PresentUnenrolledDevices.Add($"{device.Tags[0]}, {device.Make}, {device.Model}, {device.SerialNumber}, , , ");
+                    PresentUnenrolledDevices.Add($"{device.Tags[0]},{device.Make},{device.Model},{device.SerialNumber},,,");
                 }
             }
 
@@ -278,10 +282,10 @@ namespace UpdatePreferredHostnames
                 unenrolledDevicesResult += device + "\n";
             }
 
-            string fileName = "UnenrolledDevices.csv";
+            string fileName = "MissingPreferredHostname.csv";
             File.WriteAllText(fileName, unenrolledDevicesResult);
             _logger.DSLogInformation("The devices that were not enrolled in Intune and could not be updated have been saved to the following path: \n"
-                + Directory.GetCurrentDirectory(), fullMethodName);
+                + Directory.GetCurrentDirectory() + "\\" + fileName, fullMethodName);
 
             return count;
         }

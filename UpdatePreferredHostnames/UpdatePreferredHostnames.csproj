@@ -20,10 +20,4 @@
     <ProjectReference Include="..\DelegationSharedLibrary\DelegationSharedLibrary.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="Settings.job">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>
