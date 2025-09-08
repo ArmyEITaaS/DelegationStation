@@ -1,4 +1,4 @@
-﻿using Azure.Core;
+using Azure.Core;
 using Azure.Identity;
 using DelegationStationShared;
 using DelegationStationShared.Extensions;
@@ -282,6 +282,7 @@ namespace UpdateDevices.Services
 
             return results;
         }
+
 
         // Removes entries that were enrolled over a day ago and have less than the max number
         // retries indicating UpdateDevices was able to process them before it stopped retrying
