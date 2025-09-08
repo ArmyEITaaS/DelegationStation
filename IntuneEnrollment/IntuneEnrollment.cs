@@ -7,32 +7,25 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using System.Configuration;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Graph;
-using Azure.Identity;
-using Microsoft.Graph.Models.ExternalConnectors;
 using System.Collections.Generic;
 using System.Net.Http.Headers;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using Microsoft.Azure.Cosmos;
 using System.Linq;
-using Microsoft.Graph.Chats.Item.SendActivityNotification;
-using Microsoft.Graph.Models;
 using System.Reflection;
 using DelegationStationShared.Models;
-using Microsoft.Graph.Models.TermStore;
 using System.Text;
-using Microsoft.Azure.Cosmos.Serialization.HybridRow.Layouts;
+using DelegationStationShared;
+
 
 namespace DelegationStation.Function
 {
     public static class IntuneEnrollmentFunction
     {
-        private static GraphServiceClient _graphClient;
+        //private static GraphServiceClient _graphClient;
         private static ILogger _logger;
-        private static HttpClient _graphHttpClient;
+        //private static HttpClient _graphHttpClient;
         private static string _guidRegex = "^([0-9A-Fa-f]{8}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{12})$";
 
         [FunctionName("IntuneEnrollmentTrigger")]
@@ -41,8 +34,12 @@ namespace DelegationStation.Function
             ILogger log)
         {
             _logger = log;
+
+            //TODO:  validate request against schema
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            _logger.LogDebug($"RequestBody: \n{requestBody}");
+
+            // FIXME:  commenting out - need to validate and sanitize the input
+            //_logger.LogDebug($"RequestBody: \n{requestBody}");
 
             string response = "Completed execution";
 
@@ -71,7 +68,7 @@ namespace DelegationStation.Function
             return new OkObjectResult(response);
         }
 
-        
+
         private static async Task RunDeviceUpdateActionsAsync(DeviceResponse device)
         {
             List<DeviceUpdateAction> actions = new List<DeviceUpdateAction>();
@@ -125,7 +122,7 @@ namespace DelegationStation.Function
                 _logger.LogError($"{fullMethodName} Error: querying Cosmos DB for device {device.Manufacturer} {device.Model} {device.SerialNumber}.\n {ex.Message}", ex);
             }
 
-            if(deviceResults.Count < 1) 
+            if(deviceResults.Count < 1)
             {
                 // TODO make personal / add to group / update attribute
                 if(defaultActionDisable == "true")
@@ -146,12 +143,12 @@ namespace DelegationStation.Function
                     ItemResponse<DeviceTag> tagResponse = await container.ReadItemAsync<DeviceTag>(tagId, new PartitionKey("DeviceTag"));
                     tag = tagResponse.Resource;
                     _logger.LogInformation($"{fullMethodName} Information: Found tag {tag.Name}", tag);
-                } 
+                }
                 catch(Exception ex)
                 {
                     _logger.LogError($"{fullMethodName} Error: Get tag {tagId} failed.\n {ex.Message}", ex);
                 }
-                
+
                 foreach(DeviceUpdateAction deviceUpdateAction in tag.UpdateActions.Where(t => t.ActionType == DeviceUpdateActionType.Group))
                 {
                     await AddDeviceToAzureADGroup(device.AzureADDeviceId, deviceUpdateAction.Value);
@@ -175,7 +172,7 @@ namespace DelegationStation.Function
                 _logger.LogError($"{fullMethodName} Error: DeviceId or updateActions is null or empty. DeviceId: {deviceId};");
                 return;
             }
-            if (Regex.IsMatch(deviceId, _guidRegex) == false)
+            if (Regex.IsMatch(deviceId, DSConstants.GUID_REGEX) == false)
             {
                 _logger.LogError($"{fullMethodName} Error: DeviceId is not a valid GUID. DeviceId: {deviceId}");
                 return;
@@ -251,14 +248,14 @@ namespace DelegationStation.Function
                         });
                         break;
                     case "ExtensionAttribute4":
-                        attributeContent = JsonConvert.SerializeObject(new Dictionary<string, object> 
-                        { 
-                            { 
-                                "extensionAttributes", new 
-                                { 
-                                    extensionAttribute4 = action.Value, 
-                                } 
-                            }, 
+                        attributeContent = JsonConvert.SerializeObject(new Dictionary<string, object>
+                        {
+                            {
+                                "extensionAttributes", new
+                                {
+                                    extensionAttribute4 = action.Value,
+                                }
+                            },
                         });
                         break;
                     case "ExtensionAttribute5":
@@ -391,7 +388,7 @@ namespace DelegationStation.Function
                         break;
                     default:
                         _logger.LogWarning($"{fullMethodName} Warning: Property update called on a property not implemented. Property - {action.Name}");
-                        
+
                         break;
                 }
                 string deviceADRequestUri = String.Format("{0}/v1.0/devices(deviceId='{1}')", tokenUri, deviceId);
@@ -412,13 +409,13 @@ namespace DelegationStation.Function
                     {
                         _logger.LogError($"{fullMethodName} Graph Response Error: {deviceADResponse.IsSuccessStatusCode}\nStatus Code: {deviceADResponse.StatusCode}\nReason: {deviceADResponse.ReasonPhrase}\nRequest URI: {deviceADRequestUri}\nAttributeContent: {attributeContent}");
                     }
-                } 
+                }
                 catch (Exception ex)
                 {
                     _logger.LogError($"{fullMethodName} Graph Response Error: {ex.Message}\nRequest URI: {deviceADRequestUri}\nAttributeContent: {attributeContent}");
                     return;
                 }
-            }           
+            }
 
             return;
         }
@@ -431,11 +428,16 @@ namespace DelegationStation.Function
             if (logAnalyticsMatch.Success)
             {
                 logUri = logAnalyticsMatch.Groups[1].Value;
-                _logger.LogInformation($"Log Analytics Uri Used: {logUri}");
+                //FIXME:  Need to sanitize/validate logURI before logging
+                // commenting out for now
+                //_logger.LogInformation($"Log Analytics Uri Used: {logUri}");
             }
             else
             {
-                _logger.LogInformation($"Error: Unable to find Log Analytics Uri:\n{requestBody}");
+                //FIXME:  Need to santizie/validate logURI before logging
+                // commenting out for now
+                _logger.LogInformation($"Error: Unable to find Log Analytics Uri:\n");
+                //_logger.LogInformation($"Error: Unable to find Log Analytics Uri:\n{requestBody}");
             }
             return logUri;
         }
@@ -486,19 +488,19 @@ namespace DelegationStation.Function
                 _logger.LogError($"{fullMethodName} Error: DeviceId or GroupId is null or empty. DeviceId: {deviceId} GroupId: {groupId}");
                 return;
             }
-            if (Regex.IsMatch(deviceId, _guidRegex) == false)
+            if (Regex.IsMatch(deviceId, DSConstants.GUID_REGEX) == false)
             {
                 _logger.LogError($"{fullMethodName} Error: DeviceId is not a valid GUID. DeviceId: {deviceId}");
                 return;
             }
-            if (Regex.IsMatch(groupId, _guidRegex) == false)
+            if (Regex.IsMatch(groupId, DSConstants.GUID_REGEX) == false)
             {
                 _logger.LogError($"{fullMethodName} Error: GroupId is not a valid GUID. GroupId: {groupId}");
                 return;
             }
 
             var TargetCloud = Environment.GetEnvironmentVariable("AzureEnvironment", EnvironmentVariableTarget.Process);
-            
+
             string tokenUri = "";
             if (TargetCloud == "AzurePublicCloud")
             {
@@ -549,16 +551,16 @@ namespace DelegationStation.Function
                 stringContent.Headers.Remove("Content-Type");
                 stringContent.Headers.Add("Content-Type", "application/json");
                 groupRequest.Content = stringContent;
-                            
+
                 var groupResponse = await httpClient.SendAsync(groupRequest);
                 string response = await groupResponse.Content.ReadAsStringAsync();
                 response = String.IsNullOrEmpty(response) ? "Success" : response;
                 _logger.LogInformation($"{fullMethodName} Group Add Response: {response}");
-            } 
+            }
             catch (Exception ex)
             {
                 _logger.LogError($"{fullMethodName} Error: {ex.Message}");
-            }            
+            }
         }
 
         private static async Task AddDeviceToAzureAdministrativeUnit (string deviceId, string auId)
@@ -573,12 +575,12 @@ namespace DelegationStation.Function
                 _logger.LogError($"{fullMethodName} Error: DeviceId or AU Id is null or empty. DeviceId: {deviceId} AU Id: {auId}");
                 return;
             }
-            if (Regex.IsMatch(deviceId, _guidRegex) == false)
+            if (Regex.IsMatch(deviceId, DSConstants.GUID_REGEX) == false)
             {
                 _logger.LogError($"{fullMethodName} Error: DeviceId is not a valid GUID. DeviceId: {deviceId}");
                 return;
             }
-            if (Regex.IsMatch(auId, _guidRegex) == false)
+            if (Regex.IsMatch(auId, DSConstants.GUID_REGEX) == false)
             {
                 _logger.LogError($"{fullMethodName} Error: AU Id is not a valid GUID. AU Id: {auId}");
                 return;

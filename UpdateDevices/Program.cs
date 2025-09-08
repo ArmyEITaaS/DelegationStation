@@ -1,16 +1,12 @@
-using Microsoft.Azure.Cosmos.Fluent;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Threading.Tasks;
 using UpdateDevices.Interfaces;
 using UpdateDevices.Services;
 
 namespace UpdateDevices
 {
-  internal class Program
+    internal class Program
   {
     static void Main(string[] args)
     {
@@ -24,6 +20,7 @@ namespace UpdateDevices
           ConfigureServices(services =>
           {
             services.AddSingleton<ICosmosDbService, CosmosDbService>();
+            services.AddSingleton<IGraphBetaService, GraphBetaService>();
             services.AddSingleton<IGraphService, GraphService>();
           })
           .Build();

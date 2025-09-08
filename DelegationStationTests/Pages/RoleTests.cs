@@ -4,6 +4,7 @@ using DelegationStation.Interfaces;
 using Microsoft.QualityTools.Testing.Fakes;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Http;
+using DelegationStationShared.Enums;
 
 namespace DelegationStationTests.Pages
 {
@@ -44,7 +45,7 @@ namespace DelegationStationTests.Pages
                     GetRolesAsync = () => Task.FromResult(roles)
                 };
 
-                var myConfiguration = new Dictionary<string, string>
+                var myConfiguration = new Dictionary<string, string?>
                 {
                     {"DefaultAdminGroupObjectId", defaultId.ToString()},
                     {"Nested:Key1", "NestedValue1"},
@@ -114,7 +115,7 @@ namespace DelegationStationTests.Pages
                     GetRolesAsync = () => Task.FromResult(roles)
                 };
 
-                var myConfiguration = new Dictionary<string, string>
+                var myConfiguration = new Dictionary<string, string?>
                 {
                     {"DefaultAdminGroupObjectId", defaultId.ToString()},
                     {"Nested:Key1", "NestedValue1"},
