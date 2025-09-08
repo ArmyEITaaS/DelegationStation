@@ -27,6 +27,9 @@ env:
   AZURE_SYNC_FUNCTION_PACKAGE_PATH: .\CorporateIdentifierSync\published
   AZURE_SYNC_FUNCTION_PKG_NAME: sync-function
 
+  AZURE_WEBJOB_PACKAGE_PATH: .\UpdatePreferredHostnames\published
+  AZURE_WEBJOB_PKG_NAME: webjob
+
   SRC_DIR: .
   # TEST_DIR: ./src/WinGet.RestSource.UnitTest
   
@@ -78,6 +81,7 @@ jobs:
          dotnet publish ${{ env.SRC_DIR }}/DelegationStation --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_APP_PACKAGE_PATH }}"
          dotnet publish ${{ env.SRC_DIR }}/UpdateDevices --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_UPDATE_FUNCTION_PACKAGE_PATH }}"
          dotnet publish ${{ env.SRC_DIR }}/CorporateIdentifierSync --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_SYNC_FUNCTION_PACKAGE_PATH }}"
+         dotnet publish ${{ env.SRC_DIR }}/UpdatePreferredHostnames --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_WEBJOB_PACKAGE_PATH }}"
 
      - name: Upload Update Function Artifact
        uses: actions/upload-artifact@v4.6.0
@@ -102,3 +106,9 @@ jobs:
          if-no-files-found: error
          include-hidden-files: true
 
+     - name: Upload WebJob Artifact
+       uses: actions/upload-artifact@v4.6.0
+       with:
+         name: ${{ env.AZURE_WEBJOB_PKG_NAME }}
+         path: ${{ env.AZURE_WEBJOB_PACKAGE_PATH }}
+         if-no-files-found: error
