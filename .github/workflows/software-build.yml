@@ -24,9 +24,6 @@ env:
   AZURE_SYNC_FUNCTION_PACKAGE_PATH: .\CorporateIdentifierSync\published
   AZURE_SYNC_FUNCTION_PKG_NAME: sync-function
 
-  AZURE_WEBJOB_PACKAGE_PATH: .\RemoveCaseSensitiveDuplicates\published
-  AZURE_WEBJOB_PKG_NAME: dupe-cleanup-webjob
-
 jobs:
   build:
 
@@ -76,7 +73,6 @@ jobs:
         dotnet publish ${{ env.SRC_DIR }}/DelegationStation --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_APP_PACKAGE_PATH }}"
         dotnet publish ${{ env.SRC_DIR }}/UpdateDevices --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_UPDATE_FUNCTION_PACKAGE_PATH }}"
         dotnet publish ${{ env.SRC_DIR }}/CorporateIdentifierSync --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_SYNC_FUNCTION_PACKAGE_PATH }}"
-        dotnet publish ${{ env.SRC_DIR }}/RemoveCaseSensitiveDuplicates --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_WEBJOB_PACKAGE_PATH }}"
       
     - name: Upload WebApp Artifact
       uses: actions/upload-artifact@v4.6.0
@@ -89,6 +85,7 @@ jobs:
       with:
         name: ${{ env.AZURE_UPDATE_FUNCTION_PKG_NAME }}
         path: ${{ env.AZURE_UPDATE_FUNCTION_PACKAGE_PATH }}
+        include-hidden-files: true
 
     - name: Upload Sync Function Artifact
       uses: actions/upload-artifact@v4.6.0
@@ -96,10 +93,4 @@ jobs:
         name: ${{ env.AZURE_SYNC_FUNCTION_PKG_NAME }}
         path: ${{ env.AZURE_SYNC_FUNCTION_PACKAGE_PATH }}
         include-hidden-files: true
-
-    - name: Upload WebJob Artifact
-      uses: actions/upload-artifact@v4.6.0
-      with:
-        name: ${{ env.AZURE_WEBJOB_PKG_NAME }}
-        path: ${{ env.AZURE_WEBJOB_PACKAGE_PATH }}
 

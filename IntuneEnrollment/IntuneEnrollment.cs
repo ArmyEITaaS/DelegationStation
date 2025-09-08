@@ -16,6 +16,8 @@ using System.Linq;
 using System.Reflection;
 using DelegationStationShared.Models;
 using System.Text;
+using DelegationStationShared;
+
 
 namespace DelegationStation.Function
 {
@@ -32,8 +34,12 @@ namespace DelegationStation.Function
             ILogger log)
         {
             _logger = log;
+
+            //TODO:  validate request against schema
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            _logger.LogDebug($"RequestBody: \n{requestBody}");
+
+            // FIXME:  commenting out - need to validate and sanitize the input
+            //_logger.LogDebug($"RequestBody: \n{requestBody}");
 
             string response = "Completed execution";
 
@@ -166,7 +172,7 @@ namespace DelegationStation.Function
                 _logger.LogError($"{fullMethodName} Error: DeviceId or updateActions is null or empty. DeviceId: {deviceId};");
                 return;
             }
-            if (Regex.IsMatch(deviceId, _guidRegex) == false)
+            if (Regex.IsMatch(deviceId, DSConstants.GUID_REGEX) == false)
             {
                 _logger.LogError($"{fullMethodName} Error: DeviceId is not a valid GUID. DeviceId: {deviceId}");
                 return;
@@ -422,11 +428,16 @@ namespace DelegationStation.Function
             if (logAnalyticsMatch.Success)
             {
                 logUri = logAnalyticsMatch.Groups[1].Value;
-                _logger.LogInformation($"Log Analytics Uri Used: {logUri}");
+                //FIXME:  Need to sanitize/validate logURI before logging
+                // commenting out for now
+                //_logger.LogInformation($"Log Analytics Uri Used: {logUri}");
             }
             else
             {
-                _logger.LogInformation($"Error: Unable to find Log Analytics Uri:\n{requestBody}");
+                //FIXME:  Need to santizie/validate logURI before logging
+                // commenting out for now
+                _logger.LogInformation($"Error: Unable to find Log Analytics Uri:\n");
+                //_logger.LogInformation($"Error: Unable to find Log Analytics Uri:\n{requestBody}");
             }
             return logUri;
         }
@@ -477,12 +488,12 @@ namespace DelegationStation.Function
                 _logger.LogError($"{fullMethodName} Error: DeviceId or GroupId is null or empty. DeviceId: {deviceId} GroupId: {groupId}");
                 return;
             }
-            if (Regex.IsMatch(deviceId, _guidRegex) == false)
+            if (Regex.IsMatch(deviceId, DSConstants.GUID_REGEX) == false)
             {
                 _logger.LogError($"{fullMethodName} Error: DeviceId is not a valid GUID. DeviceId: {deviceId}");
                 return;
             }
-            if (Regex.IsMatch(groupId, _guidRegex) == false)
+            if (Regex.IsMatch(groupId, DSConstants.GUID_REGEX) == false)
             {
                 _logger.LogError($"{fullMethodName} Error: GroupId is not a valid GUID. GroupId: {groupId}");
                 return;
@@ -564,12 +575,12 @@ namespace DelegationStation.Function
                 _logger.LogError($"{fullMethodName} Error: DeviceId or AU Id is null or empty. DeviceId: {deviceId} AU Id: {auId}");
                 return;
             }
-            if (Regex.IsMatch(deviceId, _guidRegex) == false)
+            if (Regex.IsMatch(deviceId, DSConstants.GUID_REGEX) == false)
             {
                 _logger.LogError($"{fullMethodName} Error: DeviceId is not a valid GUID. DeviceId: {deviceId}");
                 return;
             }
-            if (Regex.IsMatch(auId, _guidRegex) == false)
+            if (Regex.IsMatch(auId, DSConstants.GUID_REGEX) == false)
             {
                 _logger.LogError($"{fullMethodName} Error: AU Id is not a valid GUID. AU Id: {auId}");
                 return;

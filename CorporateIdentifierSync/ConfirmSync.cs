@@ -98,22 +98,27 @@ namespace CorporateIdentifierSync
                         if ((device.OS == DeviceOS.Windows) || (device.OS == DeviceOS.Unknown))
                         {
                             identifier = $"{device.Make},{device.Model},{device.SerialNumber}";
+
                         }
                         else
                         {
                             identifier = device.SerialNumber;
                         }
-                            try
-                            {
-                                ImportedDeviceIdentity deviceIdentity = await _graphBetaService.AddCorporateIdentifier(device.CorporateIdentityType, identifier);
-                                device.CorporateIdentityID = deviceIdentity.Id;
-                                device.CorporateIdentity = deviceIdentity.ImportedDeviceIdentifier;
-                                corpIDUpdated = true;
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger.DSLogError($"Error adding corporate identifier for device {device.Id}: {ex.Message}", fullMethodName);
-                            }
+
+
+                        try
+                        {
+                            ImportedDeviceIdentityType corpIDType = CorpIDUtilities.GetCorpIDTypeForOS(device.OS);
+                            ImportedDeviceIdentity deviceIdentity = await _graphBetaService.AddCorporateIdentifier(corpIDType, identifier);
+
+                            device.CorporateIdentityID = deviceIdentity.Id;
+                            device.CorporateIdentity = deviceIdentity.ImportedDeviceIdentifier;
+                            corpIDUpdated = true;
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.DSLogError($"Error adding corporate identifier for device {device.Id}: {ex.Message}", fullMethodName);
+                        }
 
                     }
                     else
@@ -152,7 +157,7 @@ namespace CorporateIdentifierSync
                     }
                 }
 
-                if((!tagSetToSync && successfullyUnsynced) || corpIDFound || corpIDUpdated)
+                if ((!tagSetToSync && successfullyUnsynced) || corpIDFound || corpIDUpdated)
                 {
 
                     // Update the sync date and status for devices successfully processed

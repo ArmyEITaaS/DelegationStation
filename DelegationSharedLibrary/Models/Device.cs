@@ -43,8 +43,6 @@ namespace DelegationStationShared.Models
 
         // Corporate Identifier related
         public string CorporateIdentity { get; set; }
-        //public string CorporateIdentityType { get; set; }
-        public ImportedDeviceIdentityType  CorporateIdentityType { get; set; }
         public DateTime LastCorpIdentitySync { get; set; }
         public string CorporateIdentityID { get; set; }
 

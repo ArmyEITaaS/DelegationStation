@@ -116,11 +116,11 @@ namespace CorporateIdentifierSync
                 {
                     if (isCorpIDSyncEnabledForTag)
                     {
+                        _logger.DSLogInformation($"-----Adding Corporate Identifier for device {device.Make} {device.Model} {device.SerialNumber}.-----", fullMethodName);
+
                         string identifier = "";
                         if ((device.OS == DeviceOS.Windows) || (device.OS == DeviceOS.Unknown))
                         {
-                            device.CorporateIdentityType = ImportedDeviceIdentityType.ManufacturerModelSerial;
-                            _logger.DSLogInformation($"-----Adding Corporate Identifier for device {device.Make} {device.Model} {device.SerialNumber}.-----", fullMethodName);
 
                             // Putting make and model in quotes to handle commas
                             string escapedMake = "\"" + device.Make + "\"";
@@ -129,10 +129,11 @@ namespace CorporateIdentifierSync
                         }
                         else
                         {
-                            device.CorporateIdentityType = ImportedDeviceIdentityType.SerialNumber;
                             identifier = device.SerialNumber;
                         }
-                        ImportedDeviceIdentity deviceIdentity = await _graphBetaService.AddCorporateIdentifier(device.CorporateIdentityType, identifier);
+
+                        ImportedDeviceIdentityType corpIDType = CorpIDUtilities.GetCorpIDTypeForOS(device.OS);
+                        ImportedDeviceIdentity deviceIdentity = await _graphBetaService.AddCorporateIdentifier(corpIDType, identifier);
 
                         // Set the Corporate Identifier values
                         device.CorporateIdentityID = deviceIdentity.Id;
