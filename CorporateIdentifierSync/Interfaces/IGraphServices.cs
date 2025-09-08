@@ -6,6 +6,6 @@ namespace CorporateIdentifierSync.Interfaces
     {
         Task<ManagedDevice> GetManagedDevice(string make, string model, string serialNum);
 
-        Task<bool> DeleteManagedDevice(string managedDeviceID);
+        //Task<bool> DeleteManagedDevice(string managedDeviceID);
     }
 }
