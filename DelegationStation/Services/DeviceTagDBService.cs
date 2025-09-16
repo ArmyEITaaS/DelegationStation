@@ -104,6 +104,7 @@ namespace DelegationStation.Services
                 }
                 sb.Append(")");
             }
+            sb.Append($" ORDER BY t.Name ASC");
             sb.Append($" OFFSET {(pageNumber - 1) * pageSize} LIMIT {pageSize}");
 
 
@@ -125,7 +126,8 @@ namespace DelegationStation.Services
                 var response = await queryIterator.ReadNextAsync();
                 deviceTags.AddRange(response.ToList());
             }
-
+            //Quick sort device tags by Name case insensitive
+            //deviceTags = deviceTags.OrderBy(t => t.Name, StringComparer.OrdinalIgnoreCase).ToList();
             return deviceTags;
 
         }
@@ -162,7 +164,9 @@ namespace DelegationStation.Services
                     argCount++;
                 }
                 sb.Append(")");
+                
             }
+            sb.Append($" ORDER BY t.Name ASC");
 
 
             argCount = 0;
@@ -183,7 +187,8 @@ namespace DelegationStation.Services
                 var response = await queryIterator.ReadNextAsync();
                 deviceTags.AddRange(response.ToList());
             }
-
+            //Quick sort device tags by Name case insensitive
+            //deviceTags = deviceTags.OrderBy(t => t.Name, StringComparer.OrdinalIgnoreCase).ToList();
             return deviceTags;
         }
         public async Task<int> GetDeviceTagCountAsync(IEnumerable<string> groupIds)
