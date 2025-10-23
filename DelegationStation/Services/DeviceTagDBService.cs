@@ -70,7 +70,7 @@ namespace DelegationStation.Services
             await database.Database.CreateContainerIfNotExistsAsync(containerName, "/PartitionKey");
         }
 
-        public async Task<List<DeviceTag>> GetDeviceTagsByPageAsync(IEnumerable<string> groupIds, int pageNumber, int pageSize)
+        public async Task<List<DeviceTag>> GetDeviceTagsByPageAsync(IEnumerable<string> groupIds, int pageNumber, int pageSize, string name = null)
         {
 
             List<DeviceTag> deviceTags = new List<DeviceTag>();
@@ -88,6 +88,10 @@ namespace DelegationStation.Services
             if (groupIds.Contains(_DefaultGroup))
             {
                 sb.Append("SELECT * FROM t WHERE t.PartitionKey = \"DeviceTag\"");
+                if (!string.IsNullOrEmpty(name))
+                {
+                    sb.Append($" AND CONTAINS(t.Name, @name, true)");
+                }
             }
             else
             {
@@ -101,6 +105,10 @@ namespace DelegationStation.Services
                         sb.Append("OR ");
                     }
                     argCount++;
+                }
+                if (!string.IsNullOrEmpty(name))
+                {
+                    sb.Append($" AND CONTAINS(t.Name, @name, true)");
                 }
                 sb.Append(")");
             }
@@ -119,7 +127,10 @@ namespace DelegationStation.Services
                     argCount++;
                 }
             }
-
+            if (!string.IsNullOrEmpty(name))
+            {
+                q.WithParameter("@name", name);
+            }
             var queryIterator = this._container.GetItemQueryIterator<DeviceTag>(q);
             while (queryIterator.HasMoreResults)
             {
@@ -132,7 +143,7 @@ namespace DelegationStation.Services
 
         }
 
-        public async Task<List<DeviceTag>> GetDeviceTagsAsync(IEnumerable<string> groupIds)
+        public async Task<List<DeviceTag>> GetDeviceTagsAsync(IEnumerable<string> groupIds, string name = null)
         {
             List<DeviceTag> deviceTags = new List<DeviceTag>();
 
@@ -149,6 +160,10 @@ namespace DelegationStation.Services
             if (groupIds.Contains(_DefaultGroup))
             {
                 sb.Append("SELECT * FROM t WHERE t.PartitionKey = \"DeviceTag\"");
+                if (!string.IsNullOrEmpty(name))
+                {
+                    sb.Append($" AND CONTAINS(t.Name, @name, true)");
+                }
             }
             else
             {
@@ -162,6 +177,10 @@ namespace DelegationStation.Services
                         sb.Append("OR ");
                     }
                     argCount++;
+                }
+                if (!string.IsNullOrEmpty(name))
+                {
+                    sb.Append($" AND CONTAINS(t.Name, @name, true)");
                 }
                 sb.Append(")");
                 
@@ -180,7 +199,10 @@ namespace DelegationStation.Services
                     argCount++;
                 }
             }
-
+            if (!string.IsNullOrEmpty(name))
+            {
+                q.WithParameter("@name", name);
+            }
             var queryIterator = this._container.GetItemQueryIterator<DeviceTag>(q);
             while (queryIterator.HasMoreResults)
             {
@@ -191,7 +213,7 @@ namespace DelegationStation.Services
             //deviceTags = deviceTags.OrderBy(t => t.Name, StringComparer.OrdinalIgnoreCase).ToList();
             return deviceTags;
         }
-        public async Task<int> GetDeviceTagCountAsync(IEnumerable<string> groupIds)
+        public async Task<int> GetDeviceTagCountAsync(IEnumerable<string> groupIds, string name = null)
         {
             int numTags = 0;
             groupIds = groupIds.Where(g => System.Text.RegularExpressions.Regex.Match(g, "^([0-9A-Fa-f]{8}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{12})$").Success);
@@ -207,6 +229,10 @@ namespace DelegationStation.Services
             if (groupIds.Contains(_DefaultGroup))
             {
                 sb.Append("SELECT VALUE COUNT(1) FROM t WHERE t.PartitionKey = \"DeviceTag\"");
+                if (!string.IsNullOrEmpty(name))
+                {
+                    sb.Append($" AND CONTAINS(t.Name, @name, true)");
+                }
             }
             else
             {
@@ -221,6 +247,10 @@ namespace DelegationStation.Services
                     }
                     argCount++;
                 }
+                if(!string.IsNullOrEmpty(name))
+                {
+                    sb.Append($" AND CONTAINS(t.Name, @name, true)");
+                }
                 sb.Append("))");
             }
 
@@ -234,6 +264,10 @@ namespace DelegationStation.Services
                     q.WithParameter($"@arg{argCount}", groupId);
                     argCount++;
                 }
+            }
+            if (!string.IsNullOrEmpty(name))
+            {
+                q.WithParameter("@name", name);
             }
 
             var queryIterator = this._container.GetItemQueryIterator<int>(q);
@@ -264,7 +298,28 @@ namespace DelegationStation.Services
             return response.Resource;
         }
 
+        public async Task<List<DeviceTag>> GetTagsSearchAsync(string name)
+        {
+            List<DeviceTag> tags = new List<DeviceTag>();
+            string queryBuilder = "SELECT * FROM t WHERE t.PartitionKey = \"DeviceTag\" ";
+            if (!string.IsNullOrEmpty(name.Trim()))
+            {
+                queryBuilder += "AND CONTAINS(t.Name, @name, true) ";
+            }
 
+            QueryDefinition q = new QueryDefinition(queryBuilder);
+
+            q.WithParameter("@name", name);
+
+            var tagQueryIterator = this._container.GetItemQueryIterator<DeviceTag>(q);
+            while (tagQueryIterator.HasMoreResults)
+            {
+                var qIresponse = await tagQueryIterator.ReadNextAsync();
+                tags.AddRange(qIresponse.ToList());
+            }
+
+            return tags;
+        }
 
 
         public async Task<int> GetDeviceCountByTagIdAsync(string tagId)

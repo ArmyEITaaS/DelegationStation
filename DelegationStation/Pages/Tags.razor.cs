@@ -25,6 +25,8 @@ namespace DelegationStation.Pages
         private int TotalTags = 0;
         private int TotalPages = 0;
         private int PageSize = 10;
+        private DeviceTag searchTag = new DeviceTag();
+        private List<DeviceTag> AllTags = new List<DeviceTag>();
 
         [Parameter] public int PageNumber { get; set; }
 
@@ -53,7 +55,20 @@ namespace DelegationStation.Pages
             }
             deviceTags = await deviceTagDBService.GetDeviceTagsByPageAsync(groups, PageNumber, PageSize);
         }
-
+        private async Task GetTagsSearch()
+        {
+            Guid c = Guid.NewGuid();
+            userMessage = string.Empty;
+            try
+            {
+                await FirstPage();
+            }
+            catch (Exception ex)
+            {
+                userMessage = $"Error retrieving searching Devices.\nCorrelation Id: {c.ToString()}";
+                logger.LogError($"{userMessage}\n{ex.Message}\nUser: {userName} {userId}");
+            }
+        }
 
         private async Task NextPage()
         {
@@ -104,10 +119,10 @@ namespace DelegationStation.Pages
             userMessage = "";
             try
             {
-                TotalTags = await deviceTagDBService.GetDeviceTagCountAsync(groups);
+                TotalTags = await deviceTagDBService.GetDeviceTagCountAsync(groups, searchTag.Name);
                 TotalPages = (int)Math.Ceiling((decimal)TotalTags / PageSize);
 
-                deviceTags = await deviceTagDBService.GetDeviceTagsByPageAsync(groups, PageNumber, PageSize);
+                deviceTags = await deviceTagDBService.GetDeviceTagsByPageAsync(groups, PageNumber, PageSize, searchTag.Name);
             }
             catch (Exception ex)
             {
