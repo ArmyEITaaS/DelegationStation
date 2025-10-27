@@ -1,14 +1,29 @@
+using DelegationStationShared.Enums;
 using DelegationStationShared.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.QuickGrid;
+using Microsoft.Azure.Cosmos.Linq;
 using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
 
 namespace DelegationStation.Pages
 {
+    static class CsvColumns
+    {
+        // These are the index values of each column in the CSV
+        public const int Make = 0;
+        public const int Model = 1;
+        public const int SerialNumber = 2;
+        public const int OS = 3;
+        public const int Hostname = 4;
+        public const int Action = 5;
+
+        // This is the total number of columns
+        public const int Count = 6;
+    }
     public partial class DevicesBulkAction
     {
         [CascadingParameter]
@@ -36,7 +51,6 @@ namespace DelegationStation.Pages
         private bool isUpdating;
         private List<string> updateErrors = new();
         private string userMessage = string.Empty;
-
 
 
         protected override async Task OnInitializedAsync()
@@ -157,9 +171,9 @@ namespace DelegationStation.Pages
                             string splitOn = ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)";
                             var input = Regex.Split(ln, splitOn);
 
-                            if (input.Length != 4)
+                            if (input.Length != CsvColumns.Count)
                             {
-                                var message = $"File upload error.\nFile Name: {file.Name}\nLine {line}. Invalid number of columns. Input contains {input.Length} columns and should only have 4.\nCorrelation Id: {c.ToString()}";
+                                var message = $"File upload error.\nFile Name: {file.Name}\nLine {line}:\n Invalid number of columns. Input contains {input.Length} columns and should have {CsvColumns.Count}.\nCorrelation Id: {c.ToString()}";
                                 fileError.Add(message);
                                 logger.LogError($"{message}\nUser: {userName} {userId}");
                                 isLoading = false;
@@ -175,45 +189,82 @@ namespace DelegationStation.Pages
                             try
                             {
                                 // Validate Make, Model, SerialNumber, Action
-                                if (input[3].ToLower().Trim() != "add" && input[3].ToLower().Trim() != "remove")
+                                if (input[CsvColumns.Action].ToLower() != "add" && input[CsvColumns.Action].ToLower() != "remove")
                                 {
-                                    var message = $"File upload error.\nFile Name: {file.Name}\nInvalid action. Action should be either add or remove.\nCorrelation Id: {c.ToString()}";
+                                    var message = $"Line {line}:\n Invalid action. Action should be either add or remove.\nCorrelation Id: {c.ToString()}";
                                     fileError.Add(message);
                                     logger.LogWarning($"{message}\nUser: {userName} {userId}");
                                     continue;
                                 }
 
+                                // Validate/Convert OS on add only
+                                DeviceOS? os = null;
+                                if (input[CsvColumns.Action].ToLower() == "add")
+                                {
+                                    if (!Enum.TryParse(input[CsvColumns.OS].Trim(), true, out DeviceOS os_out))
+                                    {
+                                        var message = $"Line {line}:\n Invalid OS.  Valid values include:  Windows, MacOS, iOS and Android.\nCorrelation Id: {c.ToString()}";
+                                        fileError.Add(message);
+                                        logger.LogWarning($"{message}\nUser: {userName} {userId}");
+                                        continue;
+                                    }
+                                    else
+                                    {
+                                        if (os_out == DeviceOS.Unknown)
+                                        {
+                                            var message = $"Line {line}:\n Invalid OS.  Valid values include:  Windows, MacOS, iOS and Android.\nCorrelation Id: {c.ToString()}";
+                                            fileError.Add(message);
+                                            logger.LogWarning($"{message}\nUser: {userName} {userId}");
+                                            continue;
+                                        }
+                                    }
+                                    os = os_out;
+
+                                }
+
                                 var newDevice = new DeviceBulk()
                                 {
-                                    Make = input[0],
-                                    Model = input[1],
-                                    SerialNumber = input[2],
-                                    Action = (DeviceBulkAction)Enum.Parse(typeof(DeviceBulkAction), (input[3].ToLower()))
+                                    Make = input[CsvColumns.Make],
+                                    Model = input[CsvColumns.Model],
+                                    SerialNumber = input[CsvColumns.SerialNumber],
+                                    OS = os,
+                                    PreferredHostname = input[CsvColumns.Hostname],
+                                    Action = (DeviceBulkAction)Enum.Parse(typeof(DeviceBulkAction), (input[CsvColumns.Action].ToLower()))
                                 };
                                 var context = new ValidationContext(newDevice, null, null);
                                 var results = new List<ValidationResult>();
 
                                 if (!Validator.TryValidateObject(newDevice, context, results, true))
                                 {
-                                    System.Text.StringBuilder sb = new System.Text.StringBuilder();
-                                    sb.Append($"Line {line}. Invalid input\n");
-                                    foreach (var result in results)
+                                    // Ignore preferred hostname validation and OS if action is remove
+                                    if (input[CsvColumns.Action].ToLower() == "remove")
                                     {
-                                        sb.Append("\t" + result.ErrorMessage + "\n" ?? "");
-                                    };
-                                    sb.AppendLine($"Correlation Id: {c.ToString()}");
-                                    fileError.Add(sb.ToString());
-                                    logger.LogWarning($"{sb.ToString()}\nUser: {userName} {userId}");
-                                    continue;
+                                       results.RemoveAll(r => r.MemberNames.Contains(nameof(newDevice.PreferredHostname)) || r.MemberNames.Contains(nameof(newDevice.OS)));
+                                    }
+
+                                    // if validation issues remain report error
+                                    if (results.Count > 0)
+                                    {
+                                        System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                                        sb.Append($"Line {line}. Invalid input\n");
+                                        foreach (var result in results)
+                                        {
+                                            sb.Append("\t" + result.ErrorMessage + "\n" ?? "");
+                                        }
+                                        sb.AppendLine($"Correlation Id: {c.ToString()}");
+                                        fileError.Add(sb.ToString());
+                                        logger.LogWarning($"{sb.ToString()}\nUser: {userName} {userId}");
+                                        continue;
+                                    }
                                 }
 
                                 devices.Add(newDevice);
                             }
                             catch (Exception ex)
                             {
-                                var message = $"File upload error.\nFile Name: {file.Name}\nLine {line}.\n{ex.Message}\nCorrelation Id: {c.ToString()}";
+                                var message = $"File upload error.\nFile Name: {file.Name}\nCorrelation Id: {c.ToString()}";
                                 fileError.Add(message);
-                                logger.LogError($"{message}\nUser: {userName} {userId}");
+                                logger.LogError($"{c.ToString()} {message}\nUser: {userName} {userId} Exception: {ex.Message}");
                                 isLoading = false;
                                 return;
                             }
@@ -222,9 +273,9 @@ namespace DelegationStation.Pages
                 }
                 catch (Exception ex)
                 {
-                    var message = $"File upload error.\nFile Name: {file.Name}\n{ex.Message}\nCorrelation Id: {c.ToString()}";
+                    var message = $"File upload error.\nFile Name: {file.Name}\nCorrelation Id: {c.ToString()}";
                     fileError.Add(message);
-                    logger.LogError($"{message}\nUser: {userName} {userId}");
+                    logger.LogError($"{c.ToString()} {message}\nUser: {userName} {userId} Exception: {ex.Message}");
                 }
                 finally
                 {
@@ -307,6 +358,8 @@ namespace DelegationStation.Pages
                     d.Make = device.Make;
                     d.Model = device.Model;
                     d.SerialNumber = device.SerialNumber;
+                    d.OS = device.OS;
+                    d.PreferredHostname = device.PreferredHostname;
                     d.ModifiedUTC = DateTime.UtcNow;
                     d.AddedBy = userId;
                     d.Tags.Add(tagToApply);
@@ -318,7 +371,7 @@ namespace DelegationStation.Pages
                     }
                     catch (Exception ex)
                     {
-                        var message = $"{ex.Message}\nMake: {device.Make}\nModel: {device.Model}\nSerialNumber: {device.SerialNumber}\nCorrelation Id: {c.ToString()}";
+                        var message = $"{ex.Message}\nMake: {device.Make}\nModel: {device.Model}\nSerialNumber: {device.SerialNumber}\nOperating System: {device.OS}\nPreferred Hostname: {device.PreferredHostname}\nCorrelation Id: {c.ToString()}";
                         updateErrors.Add(message);
                         logger.LogError($"{message}\nUser: {userName} {userId}");
                     }
@@ -332,7 +385,7 @@ namespace DelegationStation.Pages
                     }
                     catch (Exception ex)
                     {
-                        var message = $"{ex.Message}\nMake: {device.Make}\nModel: {device.Model}\nSerialNumber: {device.SerialNumber}\n{ex.Message}\nCorrelation Id: {c.ToString()}";
+                        var message = $"{ex.Message}\nMake: {device.Make}\nModel: {device.Model}\nSerialNumber: {device.SerialNumber}\nPreferred Hostname: {device.PreferredHostname}\nCorrelation Id: {c.ToString()}";
                         logger.LogError($"{message}\nUser: {userName} {userId}");
                     }
                     if (d != null)
@@ -340,26 +393,26 @@ namespace DelegationStation.Pages
                         // Validate the applied tag is on the device
                         if (!d.Tags.Contains(tagToApply))
                         {
-                            var message = $"Bulk Updating Devices Error on Delete:\nMake: {device.Make}\nModel: {device.Model}\nSerialNumber: {device.SerialNumber}\nTag: {tagToApply} not found on device.\nCorrelation Id: {c.ToString()}";
+                            var message = $"Bulk Updating Devices Error on Delete:\nMake: {device.Make}\nModel: {device.Model}\nSerialNumber: {device.SerialNumber}\nPreferred Hostname: {device.PreferredHostname}\nTag: {tagToApply} not found on device.\nCorrelation Id: {c.ToString()}";
                             updateErrors.Add(message);
                             logger.LogError($"{message}\nUser: {userName} {userId}");
                         }
                         else
                         {
-                            await deviceDBService.DeleteDeviceAsync(d);
-                            logger.LogInformation($"Device Deleted:\nMake: {device.Make}\nModel: {device.Model}\nSerialNumber: {device.SerialNumber}\nUser: {userName} {userId}");
+                            await deviceDBService.MarkDeviceToDeleteAsync(d);
+                            logger.LogInformation($"Device Marked for Deletion:\nMake: {device.Make}\nModel: {device.Model}\nSerialNumber: {device.SerialNumber}\nPreferred Hostname: {device.PreferredHostname}\nUser: {userName} {userId}");
                         }
                     }
                     else
                     {
-                        var message = $"Device to remove not found: \nMake: {device.Make}\nModel: {device.Model}\nSerialNumber: {device.SerialNumber}\nCorrelation Id: {c.ToString()}";
+                        var message = $"Device to remove not found: \nMake: {device.Make}\nModel: {device.Model}\nSerialNumber: {device.SerialNumber}\nPreferred Hostname: {device.PreferredHostname}\nCorrelation Id: {c.ToString()}";
                         updateErrors.Add(message);
                         logger.LogError($"{message}\nUser: {userName} {userId}");
                     }
                 }
                 else
                 {
-                    var message = $"No recognized action provided: \nMake: {device.Make}\nModel: {device.Model}\nSerialNumber: {device.SerialNumber}\nNo update action.\nCorrelation Id: {c.ToString()}";
+                    var message = $"No recognized action provided: \nMake: {device.Make}\nModel: {device.Model}\nSerialNumber: {device.SerialNumber}\nPreferred Hostname: {device.PreferredHostname}\nNo update action.\nCorrelation Id: {c.ToString()}";
                     updateErrors.Add(message);
                     logger.LogError($"{message}\nUser: {userName} {userId}");
                 }

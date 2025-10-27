@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using DelegationStationShared.Enums;
+using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations;
 
 namespace DelegationStationShared.Models

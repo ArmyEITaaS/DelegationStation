@@ -21,13 +21,13 @@ namespace UpdateDevices.Services
     {
 
         private static string _guidRegex = "^([0-9A-Fa-f]{8}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{12})$";
-        
+
         private readonly ILogger<GraphService> _logger;
         private GraphServiceClient _graphClient;
 
         public GraphService(IConfiguration configuration, ILogger<GraphService> logger)
         {
-            string methodName = ExtensionHelper.GetMethodName();
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
@@ -86,7 +86,7 @@ namespace UpdateDevices.Services
 
         public async Task AddDeviceToAzureADGroup(string deviceId, string deviceObjectId, DeviceUpdateAction group)
         {
-            string methodName = ExtensionHelper.GetMethodName();
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
@@ -139,7 +139,7 @@ namespace UpdateDevices.Services
 
         public async Task AddDeviceToAzureAdministrativeUnit(string deviceId, string deviceObjectId, DeviceUpdateAction adminUnit)
         {
-            string methodName = ExtensionHelper.GetMethodName();
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
@@ -191,7 +191,7 @@ namespace UpdateDevices.Services
 
         public async Task<string> GetDeviceObjectID(string azureADDeviceID)
         {
-            string methodName = ExtensionHelper.GetMethodName();
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
@@ -217,7 +217,7 @@ namespace UpdateDevices.Services
 
         public async Task<List<ManagedDevice>> GetNewDeviceManagementObjectsAsync(DateTime dateTime)
         {
-            string methodName = ExtensionHelper.GetMethodName();
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
@@ -256,7 +256,7 @@ namespace UpdateDevices.Services
 
         public async Task UpdateAttributesOnDeviceAsync(string deviceId, string objectDeviceId, List<DeviceUpdateAction> updateActions)
         {
-            string methodName = ExtensionHelper.GetMethodName();
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
@@ -318,11 +318,11 @@ namespace UpdateDevices.Services
 
         public async Task<ManagedDevice> GetManagedDevice(string make, string model, string serialNum)
         {
-            string methodName = ExtensionHelper.GetMethodName();
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
-            ManagedDevice? result = null;
+            ManagedDevice result = null;
             try
             {
                 var devices = await _graphClient.DeviceManagement.ManagedDevices.GetAsync((requestConfiguration) =>
@@ -350,11 +350,12 @@ namespace UpdateDevices.Services
 
         public async Task<ManagedDevice> GetManagedDevice(string deviceID)
         {
-            string methodName = ExtensionHelper.GetMethodName();
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
-            ManagedDevice? result = null;
+            ManagedDevice result = null;
+
             try
             {
                 result = await _graphClient.DeviceManagement.ManagedDevices[deviceID].GetAsync();

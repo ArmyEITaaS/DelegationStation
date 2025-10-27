@@ -1,4 +1,5 @@
-﻿namespace DelegationStationShared.Models
+﻿namespace DelegationStationShared.Enums
+
 {
     public enum AllowedAttributes
     {
