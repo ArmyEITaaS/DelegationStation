@@ -2,6 +2,7 @@ using Azure.Core;
 using Azure.Identity;
 using DelegationStation.Interfaces;
 using DelegationStationShared.Models;
+using DelegationStationShared;
 using Microsoft.Azure.Cosmos;
 
 namespace DelegationStation.Services
@@ -19,8 +20,11 @@ namespace DelegationStation.Services
             {
                 throw new Exception("DeviceDBService appsettings configuration is null.");
             }
-            if (string.IsNullOrEmpty(configuration.GetSection("COSMOS_CONNECTION_STRING").Value) &&
-               string.IsNullOrEmpty(configuration.GetSection("COSMOS_ENDPOINT").Value))
+
+            string cosmosEndpoint = configuration.GetSection("COSMOS_ENDPOINT").Value ?? "";
+            string cosmosConnectionString = configuration.GetSection("COSMOS_CONNECTION_STRING").Value ?? "";
+
+            if (string.IsNullOrEmpty(cosmosConnectionString) && string.IsNullOrEmpty(cosmosEndpoint))
             {
                 throw new Exception("DeviceDBService appsettings COSMOS_CONNECTION_STRING and COSMOS_ENDPOINT settings are both null or empty. At least one must be set.");
             }
@@ -37,8 +41,6 @@ namespace DelegationStation.Services
                 _logger.LogInformation("COSMOS_CONTAINER_NAME is null or empty, using default value of DeviceData");
             }
 
-            string cosmosEndpoint = configuration.GetSection("COSMOS_ENDPOINT").Value;
-            string cosmosConnectionString = configuration.GetSection("COSMOS_CONNECTION_STRING").Value;
             string dbName = string.IsNullOrEmpty(configuration.GetSection("COSMOS_DATABASE_NAME").Value) ? "DelegationStationData" : configuration.GetSection("COSMOS_DATABASE_NAME").Value!;
             string containerName = string.IsNullOrEmpty(configuration.GetSection("COSMOS_CONTAINER_NAME").Value) ? "DeviceData" : configuration.GetSection("COSMOS_CONTAINER_NAME").Value!;
 
@@ -248,7 +250,7 @@ namespace DelegationStation.Services
                 throw new Exception("DeviceDBService GetDeviceAsync was sent null tagId");
             }
 
-            if (!System.Text.RegularExpressions.Regex.Match(tagId, "^([0-9A-Fa-f]{8}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{12})$").Success)
+            if (!System.Text.RegularExpressions.Regex.Match(tagId,DSConstants.GUID_REGEX).Success)
             {
                 throw new Exception($"DeviceDBService GetDeviceAsync tagId did not match GUID format {tagId}");
             }
@@ -258,11 +260,7 @@ namespace DelegationStation.Services
         }
 
 
-        public async Task<DeviceTag> AddOrUpdateDeviceTagAsync(DeviceTag deviceTag)
-        {
-            ItemResponse<DeviceTag> response = await this._container.UpsertItemAsync<DeviceTag>(deviceTag);
-            return response;
-        }
+
 
         public async Task<int> GetDeviceCountByTagIdAsync(string tagId)
         {
@@ -285,6 +283,12 @@ namespace DelegationStation.Services
 
             return response.Resource.FirstOrDefault<int>();
 
+        }
+
+        public async Task<DeviceTag> AddOrUpdateDeviceTagAsync(DeviceTag deviceTag)
+        {
+            ItemResponse<DeviceTag> response = await this._container.UpsertItemAsync<DeviceTag>(deviceTag);
+            return response;
         }
 
         public async Task DeleteDeviceTagAsync(DeviceTag deviceTag)

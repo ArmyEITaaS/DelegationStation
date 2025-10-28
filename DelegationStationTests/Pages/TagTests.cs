@@ -42,7 +42,7 @@ namespace DelegationStationTests.Pages
                         (groupIds, pageNumber, pageSize) => Task.FromResult(deviceTags)
                 };
 
-                var myConfiguration = new Dictionary<string, string>
+                var myConfiguration = new Dictionary<string, string?>
                 {
                     {"DefaultAdminGroupObjectId", defaultId.ToString()},
                     {"Nested:Key1", "NestedValue1"},
@@ -102,7 +102,7 @@ namespace DelegationStationTests.Pages
                         (groupIds, pageNumber, pageSize) => Task.FromResult(deviceTags)
                 };
 
-                var myConfiguration = new Dictionary<string, string>
+                var myConfiguration = new Dictionary<string, string?>
                 {
                     {"DefaultAdminGroupObjectId", defaultId.ToString()},
                     {"Nested:Key1", "NestedValue1"},

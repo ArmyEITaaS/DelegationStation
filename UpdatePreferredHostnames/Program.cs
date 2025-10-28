@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace RemoveCaseSensitiveDuplicates
+namespace UpdatePreferredHostnames
 {
     public class Program
     {
@@ -11,11 +11,11 @@ namespace RemoveCaseSensitiveDuplicates
                 builder.AddConsole();
                 builder.AddApplicationInsightsWebJobs(o => { o.ConnectionString = Environment.GetEnvironmentVariable("APPINSIGHTS_CONNECTION_STRING"); });
             });
-            ILogger<RemoveDupes> logger = loggerFactory.CreateLogger<RemoveDupes>();
+            ILogger<UpdateHostnames> logger = loggerFactory.CreateLogger<UpdateHostnames>();
 
 
-            var dupeRemover = new RemoveDupes(loggerFactory);
-            dupeRemover.RunAsync().Wait();
+            var hostnameUpdater = new UpdateHostnames(loggerFactory);
+            hostnameUpdater.RunAsync().Wait();
 
         }
     }

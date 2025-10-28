@@ -1,8 +1,10 @@
-﻿using DelegationStation.Pages;
-using Microsoft.Extensions.DependencyInjection;
-using DelegationStation.Interfaces;
-using Microsoft.QualityTools.Testing.Fakes;
+﻿using DelegationStation.Interfaces;
+using DelegationStation.Pages;
+using DelegationStationShared.Enums;
+using DelegationStationShared.Models;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.QualityTools.Testing.Fakes;
 using System.Text.RegularExpressions;
 
 namespace DelegationStationTests.Pages
@@ -24,13 +26,64 @@ namespace DelegationStationTests.Pages
                 authContext.SetClaims(new System.Security.Claims.Claim("name", "TEST USER"));
                 authContext.SetClaims(new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", defaultId.ToString()));
 
+                // Create fake services
+                List<DeviceTag> deviceTags = new List<DeviceTag>();
+                DeviceTag deviceTag = new DeviceTag();
+                deviceTag.Name = "testName";
+                deviceTag.Description = "testDescription";
+                deviceTags.Add(deviceTag);
+
+                var fakeDeviceTagDBService = new DelegationStation.Interfaces.Fakes.StubIDeviceTagDBService()
+                {
+                    GetDeviceTagsAsyncIEnumerableOfString =
+                        (groupIds) => Task.FromResult(deviceTags),
+                    GetDeviceTagCountAsyncIEnumerableOfString =
+                        (groupIds) => Task.FromResult(2),
+                    GetDeviceTagsByPageAsyncIEnumerableOfStringInt32Int32 =
+                        (groupIds, pageNumber, pageSize) => Task.FromResult(deviceTags)
+                };
+
+                List<Device> devices = new List<Device>();
+                Device device = new Device();
+                device.Make = "testMake";
+                device.Model = "testModel";
+                device.SerialNumber = "1111";
+                device.PreferredHostname = "testHostname";
+                device.Tags.Add(deviceTag.Name);
+                devices.Add(device);
+
+                var fakeDeviceDBService = new DelegationStation.Interfaces.Fakes.StubIDeviceDBService()
+                {
+                    GetDevicesAsyncIEnumerableOfString =
+                        (groupIds) => Task.FromResult(devices),
+                };
+
+                
+                var myConfiguration = new Dictionary<string, string?>
+                {
+                    {"DefaultAdminGroupObjectId", defaultId.ToString()},
+                    {"Nested:Key1", "NestedValue1"},
+                    {"Nested:Key2", "NestedValue2"}
+                };
+
+                var configuration = new ConfigurationBuilder()
+                    .AddInMemoryCollection(myConfiguration)
+                    .Build();
+
+
+                // Add Dependent Services
+                Services.AddSingleton<IDeviceTagDBService>(fakeDeviceTagDBService);
+                Services.AddSingleton<IDeviceDBService>(fakeDeviceDBService);
+                Services.AddSingleton<Microsoft.Extensions.Configuration.IConfiguration>(configuration);
+
                 // Act
                 var cut = RenderComponent<Devices>();
 
                 // Assert
-                string match = @"<td>1<\/td>(.|\n)*<td>2<\/td>(.|\n)*<td>3<\/td>";
-                
-                Assert.IsTrue(Regex.IsMatch(cut.Markup, match), $"Expected Match:\n{match}\nActual:\n{cut.Markup}");
+                Assert.IsTrue(cut.Markup.Contains("testMake</td>"), $"testMake should be rendered in the table as a Make. \\nActual:\\n{cut.Markup}\"");
+                Assert.IsTrue(cut.Markup.Contains("testModel</td>"), "testModel should be rendered in the table as a Model.");
+                Assert.IsTrue(cut.Markup.Contains("1111</td>"), "1111 should be rendered in the table as a serialNumber.");
+                Assert.IsTrue(cut.Markup.Contains("testHostname</td>"), "testHostname should be rendered in the table as a Hostname.");
             }
         }
 
@@ -75,11 +128,14 @@ namespace DelegationStationTests.Pages
                     (groupIds) => Task.FromResult(deviceTags)
             };
 
+
             DelegationStationShared.Models.Device device1 = new DelegationStationShared.Models.Device()
             {
                 Make = "1",
                 Model = "2",
-                SerialNumber = "3"
+                SerialNumber = "3",
+                Status = DeviceStatus.Added,
+                Tags = new List<string>() { deviceTag1.Id.ToString() }
             };
             List<DelegationStationShared.Models.Device> devices = new List<DelegationStationShared.Models.Device>();
             devices.Add(device1);
@@ -89,7 +145,7 @@ namespace DelegationStationTests.Pages
                     Task.FromResult(devices)
             };
 
-            var myConfiguration = new Dictionary<string, string>
+            var myConfiguration = new Dictionary<string, string?>
                 {
                     {"DefaultAdminGroupObjectId", defaultId},
                     {"Nested:Key1", "NestedValue1"},

@@ -15,7 +15,11 @@ namespace DelegationStation.Pages
 
         private List<string> groups = new List<string>();
         private List<DeviceTag> deviceTags = new List<DeviceTag>();
-        private DeviceTag newTag = new DeviceTag();
+        private DeviceTag newTag = new DeviceTag()
+        {
+            // default to set for new tags only
+            CorpIDSyncEnabled = true
+        };
         private string userMessage = string.Empty;
         private bool tagsLoading = true;
         private int TotalTags = 0;
@@ -137,6 +141,8 @@ namespace DelegationStation.Pages
             {
                 DeviceTag resp = await deviceTagDBService.AddOrUpdateDeviceTagAsync(newTag);
                 newTag = new DeviceTag();
+                newTag.CorpIDSyncEnabled = true;
+
                 userMessage = "Tag added successfully.";
             }
             catch (Exception ex)
