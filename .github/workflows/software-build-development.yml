@@ -1,0 +1,114 @@
+name: software-build-development
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - development
+
+permissions:
+  contents: read
+#   actions: read
+#   checks: write
+
+
+env:
+  AZ_ENVIRONMENT: AzureUSGovernment
+  CONFIGURATION: Release
+
+  DOTNET_CORE_VERSION: 8.0.x
+
+  AZURE_UPDATE_FUNCTION_PACKAGE_PATH: .\UpdateDevices\published
+  AZURE_UPDATE_FUNCTION_PKG_NAME: update-function
+
+  AZURE_APP_PACKAGE_PATH: .\DelegationStation\published
+  AZURE_APP_PKG_NAME: webapp
+
+  AZURE_SYNC_FUNCTION_PACKAGE_PATH: .\CorporateIdentifierSync\published
+  AZURE_SYNC_FUNCTION_PKG_NAME: sync-function
+
+  AZURE_WEBJOB_PACKAGE_PATH: .\UpdatePreferredHostnames\published
+  AZURE_WEBJOB_PKG_NAME: webjob
+
+  SRC_DIR: .
+  # TEST_DIR: ./src/WinGet.RestSource.UnitTest
+  
+jobs:
+
+   build-test:
+     runs-on: windows-latest
+     steps:
+
+     - uses: actions/checkout@v4.2.0
+
+     - name: Setup .NET SDK
+       uses: actions/setup-dotnet@v4.0.1
+       with:
+         dotnet-version: ${{ env.DOTNET_CORE_VERSION }}
+
+     - name: Setup MSBuild
+       uses: microsoft/setup-msbuild@v2
+
+     - name: Setup NuGet
+       uses: NuGet/setup-nuget@v2.0.0
+
+     - name: Setup VSTest
+       uses: darenm/Setup-VSTest@v1
+
+     - name: Restore
+       run: dotnet restore /p:BuildWithNetFrameworkHostedCompiler=true "${{ env.SRC_DIR }}" 
+
+     - name: Build
+       run: |
+         msbuild.exe ${{ env.SRC_DIR }}/DelegationStation.sln /p:platform="Any CPU" /p:configuration="Release"
+
+
+     - name: Run Tests
+       continue-on-error: true 
+       run: |
+         vstest.console.exe ${{ env.SRC_DIR }}/DelegationStationTests/bin/Release/net8.0/DelegationStationTests.dll /logger:trx
+     
+    #  - name: Generate Test Report
+    #    if: always()
+    #    uses:  dorny/test-reporter@v1
+    #    with:
+    #      name: Unit Tests
+    #      path: '${{ env.TEST_DIR }}/TestResults/*.trx'
+    #      reporter: dotnet-trx
+
+     - name: Publish
+       run: |
+         dotnet publish ${{ env.SRC_DIR }}/DelegationStation --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_APP_PACKAGE_PATH }}"
+         dotnet publish ${{ env.SRC_DIR }}/UpdateDevices --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_UPDATE_FUNCTION_PACKAGE_PATH }}"
+         dotnet publish ${{ env.SRC_DIR }}/CorporateIdentifierSync --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_SYNC_FUNCTION_PACKAGE_PATH }}"
+         dotnet publish ${{ env.SRC_DIR }}/UpdatePreferredHostnames --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_WEBJOB_PACKAGE_PATH }}"
+
+     - name: Upload Update Function Artifact
+       uses: actions/upload-artifact@v4.6.0
+       with:
+         name: ${{ env.AZURE_UPDATE_FUNCTION_PKG_NAME}}
+         path: ${{ env.AZURE_UPDATE_FUNCTION_PACKAGE_PATH }}
+         if-no-files-found: error
+         include-hidden-files: true
+
+     - name: Upload WebApp Artifact
+       uses: actions/upload-artifact@v4.6.0
+       with:
+         name: ${{ env.AZURE_APP_PKG_NAME}}
+         path: ${{ env.AZURE_APP_PACKAGE_PATH }}
+         if-no-files-found: error
+
+     - name: Upload CorpID Sync Function Artifact
+       uses: actions/upload-artifact@v4.6.0
+       with:
+         name: ${{ env.AZURE_SYNC_FUNCTION_PKG_NAME }}
+         path: ${{ env.AZURE_SYNC_FUNCTION_PACKAGE_PATH }}
+         if-no-files-found: error
+         include-hidden-files: true
+
+     - name: Upload WebJob Artifact
+       uses: actions/upload-artifact@v4.6.0
+       with:
+         name: ${{ env.AZURE_WEBJOB_PKG_NAME }}
+         path: ${{ env.AZURE_WEBJOB_PACKAGE_PATH }}
+         if-no-files-found: error
