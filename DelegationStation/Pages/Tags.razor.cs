@@ -26,7 +26,6 @@ namespace DelegationStation.Pages
         private int TotalPages = 0;
         private int PageSize = 10;
         private DeviceTag searchTag = new DeviceTag();
-        private List<DeviceTag> AllTags = new List<DeviceTag>();
 
         [Parameter] public int PageNumber { get; set; }
 
