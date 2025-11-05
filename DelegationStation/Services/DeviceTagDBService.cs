@@ -144,9 +144,7 @@ namespace DelegationStation.Services
                 var response = await queryIterator.ReadNextAsync();
                 deviceTags.AddRange(response.ToList());
             }
-            //Quick sort device tags by Name case insensitive
-            //deviceTags = deviceTags.OrderBy(t => t.Name, StringComparer.OrdinalIgnoreCase).ToList();
-
+            
             CurrentSearch = new DeviceTagSearch()
             {
                 pageNumber = pageNumber,
@@ -223,8 +221,7 @@ namespace DelegationStation.Services
                 var response = await queryIterator.ReadNextAsync();
                 deviceTags.AddRange(response.ToList());
             }
-            //Quick sort device tags by Name case insensitive
-            //deviceTags = deviceTags.OrderBy(t => t.Name, StringComparer.OrdinalIgnoreCase).ToList();
+            
             return deviceTags;
         }
         public async Task<int> GetDeviceTagCountAsync(IEnumerable<string> groupIds, string name = null)

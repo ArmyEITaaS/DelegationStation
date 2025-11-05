@@ -38,10 +38,7 @@ namespace DelegationStation.Pages
                 userName = user.Claims.Where(c => c.Type == "name").Select(c => c.Value.ToString()).FirstOrDefault() ?? "";
                 userId = user.Claims.Where(c => c.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier").Select(c => c.Value.ToString()).FirstOrDefault() ?? "";
             }
-            //if (PageNumber < 1)
-            //{
-            //    PageNumber = 1;
-            //}
+            
             PageSize = deviceTagDBService.CurrentSearch.pageSize;
             PageNumber = deviceTagDBService.CurrentSearch.pageNumber;
             searchTag.Name = deviceTagDBService.CurrentSearch.name ?? string.Empty;
