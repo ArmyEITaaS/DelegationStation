@@ -38,10 +38,13 @@ namespace DelegationStation.Pages
                 userName = user.Claims.Where(c => c.Type == "name").Select(c => c.Value.ToString()).FirstOrDefault() ?? "";
                 userId = user.Claims.Where(c => c.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier").Select(c => c.Value.ToString()).FirstOrDefault() ?? "";
             }
-            if (PageNumber < 1)
-            {
-                PageNumber = 1;
-            }
+            //if (PageNumber < 1)
+            //{
+            //    PageNumber = 1;
+            //}
+            PageSize = deviceTagDBService.CurrentSearch.pageSize;
+            PageNumber = deviceTagDBService.CurrentSearch.pageNumber;
+            searchTag.Name = deviceTagDBService.CurrentSearch.name ?? string.Empty;
             UpdateClaims();
             await GetTags();
         }
@@ -52,7 +55,7 @@ namespace DelegationStation.Pages
             {
                 PageNumber = 1;
             }
-            deviceTags = await deviceTagDBService.GetDeviceTagsByPageAsync(groups, PageNumber, PageSize);
+            deviceTags = await deviceTagDBService.GetDeviceTagsByPageAsync(groups, PageNumber, PageSize, searchTag.Name);
         }
         private async Task GetTagsSearch()
         {

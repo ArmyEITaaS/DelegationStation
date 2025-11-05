@@ -1,9 +1,11 @@
+using DelegationStation.Services;
 using DelegationStationShared.Models;
 
 namespace DelegationStation.Interfaces
 {
     public interface IDeviceTagDBService
     {
+        DeviceTagSearch CurrentSearch { get; set; }
         Task<List<DeviceTag>> GetDeviceTagsAsync(IEnumerable<string> groupIds, string name = null);
         Task<DeviceTag> AddOrUpdateDeviceTagAsync(DeviceTag deviceTag);
         Task<DeviceTag> GetDeviceTagAsync(string tagId);

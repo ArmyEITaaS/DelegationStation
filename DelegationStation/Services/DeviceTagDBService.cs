@@ -13,6 +13,13 @@ namespace DelegationStation.Services
         private readonly Container _container;
         private string? _DefaultGroup;
 
+        public DeviceTagSearch CurrentSearch { get; set; } = new DeviceTagSearch()
+        {
+            pageNumber = 1,
+            pageSize = 10,
+            name = null
+        };
+
         public DeviceTagDBService(IConfiguration configuration, ILogger<DeviceDBService> logger)
         {
             this._logger = logger;
@@ -139,6 +146,13 @@ namespace DelegationStation.Services
             }
             //Quick sort device tags by Name case insensitive
             //deviceTags = deviceTags.OrderBy(t => t.Name, StringComparer.OrdinalIgnoreCase).ToList();
+
+            CurrentSearch = new DeviceTagSearch()
+            {
+                pageNumber = pageNumber,
+                pageSize = pageSize,
+                name = name
+            };
             return deviceTags;
 
         }
@@ -355,5 +369,11 @@ namespace DelegationStation.Services
         {
             await this._container.DeleteItemAsync<DeviceTag>(deviceTag.Id.ToString(), new PartitionKey(deviceTag.PartitionKey));
         }
+    }
+    public class DeviceTagSearch
+    {
+        public int pageNumber;
+        public int pageSize;
+        public string name = null;
     }
 }
