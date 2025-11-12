@@ -31,7 +31,7 @@ env:
   AZURE_WEBJOB_PKG_NAME: webjob
 
   AZURE_WEBJOB2_PACKAGE_PATH: .\SyncDeviceNames\published
-  AZURE_WEBJOB2_PKG_NAME: webjob
+  AZURE_WEBJOB2_PKG_NAME: webjob2
 
   SRC_DIR: .
   # TEST_DIR: ./src/WinGet.RestSource.UnitTest
