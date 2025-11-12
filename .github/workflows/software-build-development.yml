@@ -30,7 +30,7 @@ env:
   AZURE_WEBJOB_PACKAGE_PATH: .\UpdatePreferredHostnames\published
   AZURE_WEBJOB_PKG_NAME: webjob
 
-  AZURE_WEBJOB2_PACKAGE_PATH: .\UpdatePreferredHostnames\published
+  AZURE_WEBJOB2_PACKAGE_PATH: .\SyncDeviceNames\published
   AZURE_WEBJOB2_PKG_NAME: webjob
 
   SRC_DIR: .
