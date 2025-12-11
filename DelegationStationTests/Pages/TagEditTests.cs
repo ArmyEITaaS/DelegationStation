@@ -370,8 +370,8 @@ namespace DelegationStationTests.Pages
             deviceTags.Add(deviceTag2);
             var fakeDeviceTagDBService = new DelegationStation.Interfaces.Fakes.StubIDeviceTagDBService()
             {
-                GetDeviceTagsAsyncIEnumerableOfString =
-                    (groupIds) => Task.FromResult<List<DeviceTag>>(deviceTags),
+                GetDeviceTagsAsyncIEnumerableOfStringString =
+                    (groupIds, name) => Task.FromResult<List<DeviceTag>>(deviceTags),
                 GetDeviceTagAsyncString =
                     (input) => Task.FromResult(deviceTag1)
             };
@@ -460,8 +460,8 @@ namespace DelegationStationTests.Pages
             deviceTags.Add(deviceTag2);
             var fakeDeviceTagDBService = new DelegationStation.Interfaces.Fakes.StubIDeviceTagDBService()
             {
-                GetDeviceTagsAsyncIEnumerableOfString =
-                    (groupIds) => Task.FromResult<List<DeviceTag>>(deviceTags),
+                GetDeviceTagsAsyncIEnumerableOfStringString =
+                    (groupIds, name) => Task.FromResult<List<DeviceTag>>(deviceTags),
                 GetDeviceTagAsyncString =
                     (input) => Task.FromResult(deviceTag1)
             };

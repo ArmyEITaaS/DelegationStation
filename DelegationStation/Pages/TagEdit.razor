@@ -392,6 +392,7 @@
 
                         <button id="SaveButton" class="btn btn-success" type="submit">Save</button>
                         <button id="DeleteButton" type="button" class="btn btn-danger @(authorizationService.AuthorizeAsync(authContext.User, _tag, Authorization.DeviceTagOperations.Update).Result.Succeeded ? "" : "disabled")" @onclick=@(() => ConfirmDeleteTag())>Delete</button>
+                        <button class="btn btn-secondary" type="button" @onclick=@(() => nav.NavigateTo("/Tags"))>Exit</button>
                     </Authorized>
                     <NotAuthorized>
                         <div class="container">

@@ -25,6 +25,7 @@ namespace DelegationStation.Pages
         private int TotalTags = 0;
         private int TotalPages = 0;
         private int PageSize = 10;
+        private DeviceTag searchTag = new DeviceTag();
 
         [Parameter] public int PageNumber { get; set; }
 
@@ -37,10 +38,10 @@ namespace DelegationStation.Pages
                 userName = user.Claims.Where(c => c.Type == "name").Select(c => c.Value.ToString()).FirstOrDefault() ?? "";
                 userId = user.Claims.Where(c => c.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier").Select(c => c.Value.ToString()).FirstOrDefault() ?? "";
             }
-            if (PageNumber < 1)
-            {
-                PageNumber = 1;
-            }
+            
+            PageSize = deviceTagDBService.CurrentSearch.pageSize;
+            PageNumber = deviceTagDBService.CurrentSearch.pageNumber;
+            searchTag.Name = deviceTagDBService.CurrentSearch.name ?? string.Empty;
             UpdateClaims();
             await GetTags();
         }
@@ -51,9 +52,22 @@ namespace DelegationStation.Pages
             {
                 PageNumber = 1;
             }
-            deviceTags = await deviceTagDBService.GetDeviceTagsByPageAsync(groups, PageNumber, PageSize);
+            deviceTags = await deviceTagDBService.GetDeviceTagsByPageAsync(groups, PageNumber, PageSize, searchTag.Name);
         }
-
+        private async Task GetTagsSearch()
+        {
+            Guid c = Guid.NewGuid();
+            userMessage = string.Empty;
+            try
+            {
+                await FirstPage();
+            }
+            catch (Exception ex)
+            {
+                userMessage = $"Error retrieving searching Devices.\nCorrelation Id: {c.ToString()}";
+                logger.LogError($"{userMessage}\n{ex.Message}\nUser: {userName} {userId}");
+            }
+        }
 
         private async Task NextPage()
         {
@@ -104,10 +118,10 @@ namespace DelegationStation.Pages
             userMessage = "";
             try
             {
-                TotalTags = await deviceTagDBService.GetDeviceTagCountAsync(groups);
+                TotalTags = await deviceTagDBService.GetDeviceTagCountAsync(groups, searchTag.Name);
                 TotalPages = (int)Math.Ceiling((decimal)TotalTags / PageSize);
 
-                deviceTags = await deviceTagDBService.GetDeviceTagsByPageAsync(groups, PageNumber, PageSize);
+                deviceTags = await deviceTagDBService.GetDeviceTagsByPageAsync(groups, PageNumber, PageSize, searchTag.Name);
             }
             catch (Exception ex)
             {
