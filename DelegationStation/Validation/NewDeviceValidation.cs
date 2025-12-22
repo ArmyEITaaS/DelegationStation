@@ -6,8 +6,22 @@ namespace DelegationStation.Validation
 {
     public static class NewDeviceValidation
     {
-        public static Dictionary<string, List<string>> ValidateDevice(Device device, List<DeviceTag> selectedTags
-            )
+
+        public static Dictionary<string, List<string>> ValidateBulkDevice(DeviceBulk deviceBulk, List<DeviceTag> selectedTags)
+        {
+            var device = new Device
+            {
+                Make = deviceBulk.Make,
+                Model = deviceBulk.Model,
+                SerialNumber = deviceBulk.SerialNumber,
+                PreferredHostname = deviceBulk.PreferredHostname,
+                OS = deviceBulk.OS,
+                Tags = selectedTags.Select(t => t.Id.ToString()).ToList()
+            };
+            return ValidateDevice(device, selectedTags);
+        }
+
+        public static Dictionary<string, List<string>> ValidateDevice(Device device, List<DeviceTag> selectedTags)
         {
             var errors = new Dictionary<string, List<string>>();
 
