@@ -7,6 +7,55 @@ namespace DelegationStationTests.Validation
     [TestClass]
     public class DeviceBulkModelValidationTests
     {
+
+        [TestMethod]
+        public void VerifyMakeIsRequired()
+        {
+            var device = new Device
+            {
+                Make = "",
+                Model = "Model",
+                SerialNumber = "99999",
+                PreferredHostname = "hostname",
+                OS = DeviceOS.Windows
+            };
+
+            Assert.IsTrue(ValidateModel(device).Any(
+                v => (v.ErrorMessage ?? "").Contains("Required")));
+        }
+
+        [TestMethod]
+        public void VerifyModelIsRequired()
+        {
+            var device = new Device
+            {
+                Make = "Make",
+                Model = "",
+                SerialNumber = "99999",
+                PreferredHostname = "hostname",
+                OS = DeviceOS.Windows
+            };
+
+            Assert.IsTrue(ValidateModel(device).Any(
+                v => (v.ErrorMessage ?? "").Contains("Required")));
+        }
+
+        [TestMethod]
+        public void VerifySNIsRequired()
+        {
+            var device = new Device
+            {
+                Make = "Make",
+                Model = "Model",
+                SerialNumber = "",
+                PreferredHostname = "hostname",
+                OS = DeviceOS.Windows
+            };
+
+            Assert.IsTrue(ValidateModel(device).Any(
+                v => (v.ErrorMessage ?? "").Contains("Required")));
+        }
+
         [TestMethod]
         [DataRow("ValidMake123")]
         [DataRow("ValidMake123-")]
@@ -192,6 +241,7 @@ namespace DelegationStationTests.Validation
         }
 
         [TestMethod]
+        [DataRow("")]
         [DataRow("ValidHostname123")]
         [DataRow("valid-hostname")]
         [DataRow("valid-host-name")]
@@ -273,7 +323,7 @@ namespace DelegationStationTests.Validation
             };
             // Only testing length in this test
             Assert.IsTrue(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("must be 1-15 characters")));
+                v => (v.ErrorMessage ?? "").Contains("cannot exceed 15")));
         }
 
         private IList<ValidationResult> ValidateModel(object model)
