@@ -60,6 +60,8 @@ namespace DelegationStation.Pages
 
         private string testEnrollmentUser = "";
         private bool? testEnrollmentUserResult = false;
+        private string testEnrollmentDevice = "";
+        private bool? testEnrollmentDeviceResult = false;
         private bool displayTestResult = false;
 
         private int deviceCount = 0;
@@ -474,6 +476,14 @@ namespace DelegationStation.Pages
             {
                 tagSuccessMessage = "";
                 tagErrorMessage = $"Error: Invalid Allowed User Principal Name Regex Pattern. Correlation Id:{g.ToString()}";
+                logger.LogWarning(tagErrorMessage);
+                return;
+            }
+
+            if (String.IsNullOrEmpty(tag.DeviceNameRegex) == false && IsRegexPatternValid(tag.DeviceNameRegex) == false)
+            {
+                tagSuccessMessage = "";
+                tagErrorMessage = $"Error: Invalid Device Name Regex Pattern. Correlation Id:{g.ToString()}";
                 logger.LogWarning(tagErrorMessage);
                 return;
             }
@@ -918,11 +928,31 @@ namespace DelegationStation.Pages
             displayTestResult = true;
         }
 
+        private void ValidateTestEnrollmentDevice()
+        {
+            if (testEnrollmentDevice != null)
+            {
+                if (IsRegexPatternValid(tag.DeviceNameRegex))
+                {
+                    testEnrollmentDeviceResult = System.Text.RegularExpressions.Regex.IsMatch(testEnrollmentDevice, tag.DeviceNameRegex);
+                }
+                else
+                {
+                    testEnrollmentDeviceResult = null;
+                }
+            }
+
+            if (string.IsNullOrEmpty(tag.DeviceNameRegex))
+            {
+                testEnrollmentDeviceResult = true;
+            }
+            displayTestResult = true;
+        }
+
         private void ClearTestEnrollmentResult()
         {
             displayTestResult = false;
         }
-
         private void RoleSearchSecurityGroupsKeyUp(KeyboardEventArgs e)
         {
             if (e.Key == "Enter")

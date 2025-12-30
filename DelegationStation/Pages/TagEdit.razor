@@ -33,36 +33,65 @@
                 <hr />
                 <AuthorizeView Context="TagUpdateContext" Policy="TagUpdate" Resource="_tag">
                     <Authorized>
-                        <label>Name:</label>
-                        <InputText @bind-Value=tag.Name class="form-control"></InputText>
-                        <label>Description:</label>
-                        <InputTextArea @bind-Value=tag.Description class="form-control"></InputTextArea>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" role="switch" @bind=tag.CorpIDSyncEnabled id="corpIDSwitch">
-                            <label class="form-check-label" for="corpIDSwitch">Enable Corporate Identifier Sync</label>
-                        </div>
-                        <label class="my-1">Allowed User Principal Name RegEx:</label>
-                        <InputText @bind-Value=tag.AllowedUserPrincipalName @oninput=@ClearTestEnrollmentResult class="form-control"></InputText>
                         <div class="border rounded my-3 p-3">
-                            <h4>Validate RegEx</h4>
-                            <label>Enter Test User Principal Name:</label>
-                            <InputText @bind-Value=testEnrollmentUser @oninput=@ClearTestEnrollmentResult class="form-control"></InputText>
-                            <button type="button" @onclick=@ValidateTestEnrollmentUser class="btn btn-primary my-2">Test</button>
-                            @if (displayTestResult)
-                            {
-                                @if (testEnrollmentUserResult == null)
+                            <label>Name:</label>
+                            <InputText @bind-Value=tag.Name class="form-control"></InputText>
+                            <label>Description:</label>
+                            <InputTextArea @bind-Value=tag.Description class="form-control"></InputTextArea>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" @bind=tag.CorpIDSyncEnabled id="corpIDSwitch">
+                                <label class="form-check-label" for="corpIDSwitch">Enable Corporate Identifier Sync</label>
+                            </div>
+                            <label class="my-1">Allowed User Principal Name RegEx:</label>
+                            <InputText @bind-Value=tag.AllowedUserPrincipalName @oninput=@ClearTestEnrollmentResult class="form-control"></InputText>
+                            <div class="border rounded my-3 p-3">
+                                <h4>Validate RegEx</h4>
+                                <label>Enter Test User Principal Name:</label>
+                                <InputText @bind-Value=testEnrollmentUser @oninput=@ClearTestEnrollmentResult class="form-control"></InputText>
+                                <button type="button" @onclick=@ValidateTestEnrollmentUser class="btn btn-primary my-2">Test</button>
+                                @if (displayTestResult)
                                 {
-                                    <p class="text-success">Invalid Regular Expression</p>
+                                    @if (testEnrollmentUserResult == null)
+                                    {
+                                        <p class="text-success">Invalid Regular Expression</p>
+                                    }
+                                    else if (testEnrollmentUserResult == true)
+                                    {
+                                        <p class="text-success">User is allowed to enroll</p>
+                                    }
+                                    else
+                                    {
+                                        <p class="text-danger">User is not allowed to enroll</p>
+                                    }
                                 }
-                                else if (testEnrollmentUserResult == true)
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" @bind=tag.DeviceRenameEnabled id="deviceRenamingSwitch">
+                                <label class="form-check-label" for="corpIDSwitch">Enable Device Renaming</label>
+                            </div>
+                            <label class="my-1">Allowed Device Name RegEx:</label>
+                            <InputText @bind-Value=tag.DeviceNameRegex @oninput=@ClearTestEnrollmentResult class="form-control"></InputText>
+                            <div class="border rounded my-3 p-3">
+                                <h4>Validate RegEx</h4>
+                                <label>Enter Test Device Name:</label>
+                                <InputText @bind-Value=testEnrollmentDevice @oninput=@ClearTestEnrollmentResult class="form-control"></InputText>
+                                <button type="button" @onclick=@ValidateTestEnrollmentDevice class="btn btn-primary my-2">Test</button>
+                                @if (displayTestResult)
                                 {
-                                    <p class="text-success">User is allowed to enroll</p>
+                                    @if (testEnrollmentDeviceResult == null)
+                                    {
+                                        <p class="text-success">Invalid Regular Expression</p>
+                                    }
+                                    else if (testEnrollmentDeviceResult == true)
+                                    {
+                                        <p class="text-success">Device is allowed to enroll</p>
+                                    }
+                                    else
+                                    {
+                                        <p class="text-danger">Device is not allowed to enroll</p>
+                                    }
                                 }
-                                else
-                                {
-                                    <p class="text-danger">User is not allowed to enroll</p>
-                                }
-                            }
+                            </div>
                         </div>
                         <br />
                         <hr />
