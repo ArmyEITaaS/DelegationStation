@@ -42,55 +42,61 @@
                                 <input class="form-check-input" type="checkbox" role="switch" @bind=tag.CorpIDSyncEnabled id="corpIDSwitch">
                                 <label class="form-check-label" for="corpIDSwitch">Enable Corporate Identifier Sync</label>
                             </div>
-                            <label class="my-1">Allowed User Principal Name RegEx:</label>
-                            <InputText @bind-Value=tag.AllowedUserPrincipalName @oninput=@ClearTestEnrollmentResult class="form-control"></InputText>
                             <div class="border rounded my-3 p-3">
-                                <h4>Validate RegEx</h4>
-                                <label>Enter Test User Principal Name:</label>
-                                <InputText @bind-Value=testEnrollmentUser @oninput=@ClearTestEnrollmentResult class="form-control"></InputText>
-                                <button type="button" @onclick=@ValidateTestEnrollmentUser class="btn btn-primary my-2">Test</button>
-                                @if (displayTestResult)
-                                {
-                                    @if (testEnrollmentUserResult == null)
+                                <h4>Enrollment Restrictions</h4>
+                                <label class="my-1">Allowed User Principal Name RegEx:</label>
+                                <InputText @bind-Value=tag.AllowedUserPrincipalName @oninput=@ClearTestEnrollmentResult class="form-control"></InputText>
+                                <div class="border rounded my-3 p-3">
+                                    <label>Validate User Principal RegEx</label>
+                                    <label>Enter Test User Principal Name:</label>
+                                    <InputText @bind-Value=testEnrollmentUser @oninput=@ClearTestEnrollmentResult class="form-control"></InputText>
+                                    <button type="button" @onclick=@ValidateTestEnrollmentUser class="btn btn-primary my-2">Test</button>
+                                    @if (displayUserTestResult)
                                     {
-                                        <p class="text-success">Invalid Regular Expression</p>
+                                        @if (testEnrollmentUserResult == null)
+                                        {
+                                            <p class="text-success">Invalid Regular Expression</p>
+                                        }
+                                        else if (testEnrollmentUserResult == true)
+                                        {
+                                            <p class="text-success">User is allowed to enroll</p>
+                                        }
+                                        else
+                                        {
+                                            <p class="text-danger">User is not allowed to enroll</p>
+                                        }
                                     }
-                                    else if (testEnrollmentUserResult == true)
-                                    {
-                                        <p class="text-success">User is allowed to enroll</p>
-                                    }
-                                    else
-                                    {
-                                        <p class="text-danger">User is not allowed to enroll</p>
-                                    }
-                                }
+                                </div>
                             </div>
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" role="switch" @bind=tag.DeviceRenameEnabled id="deviceRenamingSwitch">
-                                <label class="form-check-label" for="corpIDSwitch">Enable Device Renaming</label>
-                            </div>
-                            <label class="my-1">Allowed Device Name RegEx:</label>
-                            <InputText @bind-Value=tag.DeviceNameRegex @oninput=@ClearTestEnrollmentResult class="form-control"></InputText>
                             <div class="border rounded my-3 p-3">
-                                <h4>Validate RegEx</h4>
-                                <label>Enter Test Device Name:</label>
-                                <InputText @bind-Value=testEnrollmentDevice @oninput=@ClearTestEnrollmentResult class="form-control"></InputText>
-                                <button type="button" @onclick=@ValidateTestEnrollmentDevice class="btn btn-primary my-2">Test</button>
-                                @if (displayTestResult)
-                                {
-                                    @if (testEnrollmentDeviceResult == null)
+                                <h4>Device Renaming</h4>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" @bind=tag.DeviceRenameEnabled id="deviceRenamingSwitch">
+                                    <label class="form-check-label" for="corpIDSwitch">Enable Device Renaming</label>
+                                </div>
+                                <label class="my-1">Allowed Device Name RegEx:</label>
+                                <InputText @bind-Value=tag.DeviceNameRegex @oninput=@ClearTestEnrollmentResult class="form-control"></InputText>
+                                <div class="border rounded my-3 p-3">
+                                    <label>Validate Device Name RegEx</label>
+                                    <label>Enter Test Device Name:</label>
+                                    <InputText @bind-Value=testEnrollmentDevice @oninput=@ClearTestEnrollmentResult class="form-control"></InputText>
+                                    <button type="button" @onclick=@ValidateTestEnrollmentDevice class="btn btn-primary my-2">Test</button>
+                                    @if (displayDeviceTestResult)
                                     {
-                                        <p class="text-success">Invalid Regular Expression</p>
+                                        @if (testEnrollmentDeviceResult == null)
+                                        {
+                                            <p class="text-success">Invalid Regular Expression</p>
+                                        }
+                                        else if (testEnrollmentDeviceResult == true)
+                                        {
+                                            <p class="text-success">Device is allowed to enroll</p>
+                                        }
+                                        else
+                                        {
+                                            <p class="text-danger">Device is not allowed to enroll</p>
+                                        }
                                     }
-                                    else if (testEnrollmentDeviceResult == true)
-                                    {
-                                        <p class="text-success">Device is allowed to enroll</p>
-                                    }
-                                    else
-                                    {
-                                        <p class="text-danger">Device is not allowed to enroll</p>
-                                    }
-                                }
+                                </div>
                             </div>
                         </div>
                         <br />

@@ -62,7 +62,8 @@ namespace DelegationStation.Pages
         private bool? testEnrollmentUserResult = false;
         private string testEnrollmentDevice = "";
         private bool? testEnrollmentDeviceResult = false;
-        private bool displayTestResult = false;
+        private bool displayUserTestResult = false;
+        private bool displayDeviceTestResult = false;
 
         private int deviceCount = 0;
 
@@ -925,7 +926,7 @@ namespace DelegationStation.Pages
             {
                 testEnrollmentUserResult = true;
             }
-            displayTestResult = true;
+            displayUserTestResult = true;
         }
 
         private void ValidateTestEnrollmentDevice()
@@ -946,12 +947,13 @@ namespace DelegationStation.Pages
             {
                 testEnrollmentDeviceResult = true;
             }
-            displayTestResult = true;
+            displayDeviceTestResult = true;
         }
 
         private void ClearTestEnrollmentResult()
         {
-            displayTestResult = false;
+            displayUserTestResult = false;
+            displayDeviceTestResult = false;
         }
         private void RoleSearchSecurityGroupsKeyUp(KeyboardEventArgs e)
         {
