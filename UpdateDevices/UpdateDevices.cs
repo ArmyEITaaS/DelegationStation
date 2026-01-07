@@ -44,22 +44,6 @@ namespace UpdateDevices
                 _logger.DSLogWarning("FirstRunPastDays environment variable not set. Defaulting to 30 days", fullMethodName);
             }
 
-            // Get configuration values related to PAW - exit if not found
-            _pawString = Environment.GetEnvironmentVariable("PawDeviceNameContains", EnvironmentVariableTarget.Process);
-            if (String.IsNullOrEmpty(_pawString))
-            {
-                _logger.DSLogError("PawDeviceNameContains environment variable not set. Exiting.", fullMethodName);
-                Environment.Exit(1);
-            }
-            _pawTagID = Environment.GetEnvironmentVariable("PawTagID", EnvironmentVariableTarget.Process);
-            if (String.IsNullOrEmpty(_pawTagID))
-            {
-                _logger.DSLogError("PawTagID environment variable not set. Exiting.", fullMethodName);
-                Environment.Exit(1);
-            }
-            _logger.DSLogInformation($"PAW configuration values loaded successfully. Will block naming devices with {_pawString} in name that are not in tag {_pawTagID}.", fullMethodName);
-
-
         }
 
         [Function("UpdateDevices")]
