@@ -51,29 +51,38 @@ namespace DelegationStation.Validation
             }
 
             //
-            // For tags where DeviceRenameEnabled is true, validate PreferredHostname
-            // against tag specific regex
+            // Tag-specific validations require tag to not be null
             //
-            if (tag != null && tag.DeviceRenameEnabled)
+            if (tag != null)
             {
-                if (string.IsNullOrWhiteSpace(device.PreferredHostname))
+                //
+                // If DeviceRenameEnabled is set, verify hostname is provided
+                //
+                if (tag.DeviceRenameEnabled)
                 {
-                    AddError(errors, nameof(device.PreferredHostname), "Preferred Hostname is required for this tag.");
-                }
-                else
-                {
-                    // If Regex isn't set, treat as valid and skip regex
-                    if (!string.IsNullOrWhiteSpace(tag.DeviceNameRegex))
+                    if (string.IsNullOrWhiteSpace(device.PreferredHostname))
                     {
-                        // add step to validate regex
-                        if (!Regex.IsMatch(device.PreferredHostname, tag.DeviceNameRegex))
-                        {
-                            AddError(errors, nameof(device.PreferredHostname), $"Does not match regex pattern required for this tag: {tag.DeviceNameRegex}");
-                        }
+                        AddError(errors, nameof(device.PreferredHostname), "Preferred Hostname is required for this tag.");
+                    }
+                }
+
+                //
+                // if deviceRegex is set for tag, validate PreferredHostname against it
+                // regardless of whether DeviceRenameEnabled is set
+                //
+                // This ensures device name meets the standard when the tag has renaming enabled
+                //
+
+                // If Regex isn't set, treat as valid and skip regex
+                if (!string.IsNullOrWhiteSpace(tag.DeviceNameRegex))
+                {
+                    // add step to validate regex
+                    if (!Regex.IsMatch(device.PreferredHostname ?? "", tag.DeviceNameRegex))
+                    {
+                        AddError(errors, nameof(device.PreferredHostname), $"Does not match regex pattern required for this tag: {tag.DeviceNameRegex}");
                     }
                 }
             }
-
 
             return errors;
         }
