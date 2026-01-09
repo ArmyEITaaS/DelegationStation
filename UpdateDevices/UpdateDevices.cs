@@ -198,7 +198,7 @@ namespace UpdateDevices
                         }
                         else
                         {
-                            _logger.DSLogInformation("Preferred hostname " + d.PreferredHostname + " for device " + device.Id + " does not match device name regex " + devicenameRegex + " for tag " + tag.Name + ". No rename applied.", fullMethodName);
+                            _logger.DSLogError("Preferred hostname " + d.PreferredHostname + " for device " + device.Id + " does not match device name regex " + devicenameRegex + " for tag " + tag.Name + ". No rename applied.", fullMethodName);
                         }
                     }
 
@@ -207,7 +207,7 @@ namespace UpdateDevices
                         bool result = await _graphBetaService.SetDeviceName(device.Id, d.PreferredHostname);
                         if (!result)
                         {
-                            _logger.DSLogWarning("Failed to rename device: '" + device.Id + "' '" + device.Manufacturer + "' '" + device.Model + "' '" + device.SerialNumber + " from " + device.DeviceName + " to " + d.PreferredHostname + "'.", fullMethodName);
+                            _logger.DSLogError("Failed to rename device: '" + device.Id + "' '" + device.Manufacturer + "' '" + device.Model + "' '" + device.SerialNumber + " from " + device.DeviceName + " to " + d.PreferredHostname + "'.", fullMethodName);
                         }
                         else
                         {
