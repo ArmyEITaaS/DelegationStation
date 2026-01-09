@@ -76,8 +76,15 @@ namespace DelegationStation.Validation
                 // If Regex isn't set, treat as valid and skip regex
                 if (!string.IsNullOrWhiteSpace(tag.DeviceNameRegex))
                 {
+
+                    // Ensure regex is valid
+                    if(!IsRegexPatternValid(tag.DeviceNameRegex))
+                    {
+                        AddError(errors, nameof(device.PreferredHostname), "Cannot validate field.  Contact administrator.");
+                    }
+
                     // add step to validate regex
-                    if (!Regex.IsMatch(device.PreferredHostname ?? "", tag.DeviceNameRegex))
+                    else if (!Regex.IsMatch(device.PreferredHostname ?? "", tag.DeviceNameRegex))
                     {
                         AddError(errors, nameof(device.PreferredHostname), $"Does not match regex pattern required for this tag: {tag.DeviceNameRegex}");
                     }
@@ -94,6 +101,19 @@ namespace DelegationStation.Validation
                 errors[fieldName] = new List<string>();
             }
             errors[fieldName].Add(errorMessage);
+        }
+
+        private static bool IsRegexPatternValid(string pattern)
+        {
+            try
+            {
+                new System.Text.RegularExpressions.Regex(pattern);
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            return true;
         }
     }
 }

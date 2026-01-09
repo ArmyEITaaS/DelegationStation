@@ -1,7 +1,5 @@
 ﻿using DelegationStation.Validation;
 using DelegationStationShared.Enums;
-using DelegationStationShared.Models;
-using System.ComponentModel.DataAnnotations;
 
 namespace DelegationStationTests.Validation
 {
@@ -37,14 +35,7 @@ namespace DelegationStationTests.Validation
                     Name = "RenameAndRegex",
                     DeviceRenameEnabled = true,
                     DeviceNameRegex = @"^match$"
-                },
-               new DeviceTag
-                {
-                    Id = Guid.Parse("00000000-0000-0000-0000-000000000002"),
-                    Name = "NoRenameNoRegex_matchesEmpty",
-                    DeviceRenameEnabled = true,
-                    DeviceNameRegex = @"^$|^[a-zA-Z0-9\-]+$"
-                },
+                }
             };
         }
 
@@ -319,13 +310,314 @@ namespace DelegationStationTests.Validation
             Assert.AreEqual(0, errors.Count);
         }
 
+        [TestMethod]
+        public void ValidateDevice_InvalidRegexPattern_Errors()
+        {
+            // Arrange
+            var device = new Device
+            {
+                Make = "Make",
+                Model = "Model",
+                SerialNumber = "12345",
+                PreferredHostname = "hostname",
+                OS = DeviceOS.Windows,
+                Tags = new List<string> { "00000000-0000-0000-0000-000000000005" }
+            };
+            var tags = new List<DeviceTag>
+    {
+        new DeviceTag
+        {
+            Id = Guid.Parse("00000000-0000-0000-0000-000000000005"),
+            Name = "InvalidRegex",
+            DeviceRenameEnabled = true,
+            DeviceNameRegex = @"[invalid(regex" // Invalid regex
+        }
+    };
 
+            // Act & Assert
+            // Should either handle gracefully or throw expected exception
+            var errors = NewDeviceValidation.ValidateDevice(device, tags);
+
+            // Assert
+            Assert.IsTrue(errors.ContainsKey(nameof(device.PreferredHostname)));
+            Assert.IsTrue(errors[nameof(device.PreferredHostname)].Any(e => e.Contains("Cannot validate")));
+        }
 
         #endregion
 
         #region DeviceBulk Validation Tests
 
-               #endregion
+        [TestMethod]
+        public void ValidateBulkDevice_NoTags_ReturnsError()
+        {
+            // Arrange
+            var deviceBulk = new DeviceBulk
+            {
+                Make = "Make",
+                Model = "Model",
+                SerialNumber = "12345",
+                PreferredHostname = "hostname",
+                OS = DeviceOS.Windows
+            };
+            var tags = new List<DeviceTag>();
+
+            // Act
+            var errors = NewDeviceValidation.ValidateBulkDevice(deviceBulk, tags);
+
+            // Assert
+            Assert.IsTrue(errors.ContainsKey("Tags"));
+            Assert.IsTrue(errors["Tags"].Any(e => e.Contains("at least one Tag")));
+        }
+
+        [TestMethod]
+        public void ValidateBulkDevice_MultipleTags_ReturnsError()
+        {
+            // Arrange
+            var deviceBulk = new DeviceBulk
+            {
+                Make = "Make",
+                Model = "Model",
+                SerialNumber = "12345",
+                PreferredHostname = "hostname",
+                OS = DeviceOS.Windows
+            };
+            var tags = CreateTestTags();
+            var selectedTags = new List<DeviceTag>
+            {
+                tags[0],
+                tags[1]
+            };
+
+            // Act
+            var errors = NewDeviceValidation.ValidateBulkDevice(deviceBulk, selectedTags);
+
+            // Assert
+            Assert.IsTrue(errors.ContainsKey("Tags"));
+            Assert.IsTrue(errors["Tags"].Any(e => e.Contains("only have one Tag")));
+        }
+
+        [TestMethod]
+        [DataRow("")]
+        [DataRow(null)]
+        [DataRow("validhost")]
+        public void ValidateBulkDevice_NoRenameNoRegex_ValidandEmptyHostnames_Allowed(string hostname)
+        {
+            // Arrange
+            var deviceBulk = new DeviceBulk
+            {
+                Make = "Make",
+                Model = "Model",
+                SerialNumber = "12345",
+                PreferredHostname = hostname,
+                OS = DeviceOS.Windows
+            };
+            var tags = CreateTestTags();
+            var selectedTags = new List<DeviceTag> { tags[0] };
+
+            // Act
+            var errors = NewDeviceValidation.ValidateBulkDevice(deviceBulk, selectedTags);
+
+            // Assert
+            Assert.AreEqual(0, errors.Count);
+        }
+
+        [TestMethod]
+        [DataRow("")]
+        [DataRow(null)]
+        public void ValidateBulkDevice_RenameNoRegex_MissingHostname_ReturnsError(string hostname)
+        {
+            // Arrange
+            var deviceBulk = new DeviceBulk
+            {
+                Make = "Make",
+                Model = "Model",
+                SerialNumber = "12345",
+                PreferredHostname = hostname,
+                OS = DeviceOS.Windows
+            };
+            var tags = CreateTestTags();
+            var selectedTags = new List<DeviceTag> { tags[1] };
+
+            // Act
+            var errors = NewDeviceValidation.ValidateBulkDevice(deviceBulk, selectedTags);
+
+            // Assert
+            Assert.IsTrue(errors.ContainsKey("PreferredHostname"));
+            Assert.IsTrue(errors["PreferredHostname"].Any(e => e.Contains("required for this tag")));
+        }
+
+        [TestMethod]
+        public void ValidateBulkDevice_RenameNoRegex_AnyHostname_ReturnsNoErrors()
+        {
+            // Arrange
+            var deviceBulk = new DeviceBulk
+            {
+                Make = "Make",
+                Model = "Model",
+                SerialNumber = "12345",
+                PreferredHostname = "any-hostname-works",
+                OS = DeviceOS.Windows
+            };
+            var tags = CreateTestTags();
+            var selectedTags = new List<DeviceTag> { tags[1] };
+
+            // Act
+            var errors = NewDeviceValidation.ValidateBulkDevice(deviceBulk, selectedTags);
+
+            // Assert
+            Assert.AreEqual(0, errors.Count);
+        }
+
+        [TestMethod]
+        [DataRow("")]
+        [DataRow(null)]
+        [DataRow("notamatch")]
+        public void ValidateBulkDevice_RegexNoRename_NoMatch_Errors(string hostname)
+        {
+            // Arrange
+            var deviceBulk = new DeviceBulk
+            {
+                Make = "Make",
+                Model = "Model",
+                SerialNumber = "12345",
+                PreferredHostname = hostname,
+                OS = DeviceOS.Windows
+            };
+            var tags = CreateTestTags();
+            var selectedTags = new List<DeviceTag> { tags[2] };
+
+            // Act
+            var errors = NewDeviceValidation.ValidateBulkDevice(deviceBulk, selectedTags);
+
+            // Assert
+            Assert.IsTrue(errors.ContainsKey("PreferredHostname"));
+            Assert.IsTrue(errors["PreferredHostname"].Any(e => e.Contains("Does not match regex")));
+        }
+
+        [TestMethod]
+        [DataRow("match")]
+        public void ValidateBulkDevice_RegexNoRename_Matches_Allowed(string hostname)
+        {
+            // Arrange
+            var deviceBulk = new DeviceBulk
+            {
+                Make = "Make",
+                Model = "Model",
+                SerialNumber = "12345",
+                PreferredHostname = hostname,
+                OS = DeviceOS.Windows
+            };
+            var tags = CreateTestTags();
+            var selectedTags = new List<DeviceTag> { tags[2] };
+
+            // Act
+            var errors = NewDeviceValidation.ValidateBulkDevice(deviceBulk, selectedTags);
+
+            // Assert
+            Assert.AreEqual(0, errors.Count);
+        }
+
+        [TestMethod]
+        [DataRow("")]
+        [DataRow(null)]
+        public void ValidateBulkDevice_RegexAndRename_MissingHostname_Errors(string hostname)
+        {
+            // Arrange
+            var deviceBulk = new DeviceBulk
+            {
+                Make = "Make",
+                Model = "Model",
+                SerialNumber = "12345",
+                PreferredHostname = hostname,
+                OS = DeviceOS.Windows
+            };
+            var tags = CreateTestTags();
+            var selectedTags = new List<DeviceTag> { tags[3] };
+
+            // Act
+            var errors = NewDeviceValidation.ValidateBulkDevice(deviceBulk, selectedTags);
+
+            // Assert
+            Assert.IsTrue(errors.ContainsKey("PreferredHostname"));
+            Assert.IsTrue(errors["PreferredHostname"].Any(e => e.Contains("required for this tag")));
+        }
+
+        [TestMethod]
+        [DataRow("nomatch")]
+        public void ValidateBulkDevice_RegexAndRename_NoMatch_Errors(string hostname)
+        {
+            // Arrange
+            var deviceBulk = new DeviceBulk
+            {
+                Make = "Make",
+                Model = "Model",
+                SerialNumber = "12345",
+                PreferredHostname = hostname,
+                OS = DeviceOS.Windows
+            };
+            var tags = CreateTestTags();
+            var selectedTags = new List<DeviceTag> { tags[3] };
+
+            // Act
+            var errors = NewDeviceValidation.ValidateBulkDevice(deviceBulk, selectedTags);
+
+            // Assert
+            Assert.IsTrue(errors.ContainsKey("PreferredHostname"));
+            Assert.IsTrue(errors["PreferredHostname"].Any(e => e.Contains("Does not match regex")));
+        }
+
+        [TestMethod]
+        [DataRow("match")]
+        public void ValidateBulkDevice_RegexAndRename_Matches_Allowed(string hostname)
+        {
+            // Arrange
+            var deviceBulk = new DeviceBulk
+            {
+                Make = "Make",
+                Model = "Model",
+                SerialNumber = "12345",
+                PreferredHostname = hostname,
+                OS = DeviceOS.Windows
+            };
+            var tags = CreateTestTags();
+            var selectedTags = new List<DeviceTag> { tags[3] };
+
+            // Act
+            var errors = NewDeviceValidation.ValidateBulkDevice(deviceBulk, selectedTags);
+
+            // Assert
+            Assert.AreEqual(0, errors.Count);
+        }
+
+        [TestMethod]
+        public void ValidateBulkDevice_InvalidRegexPattern_HandlesGracefully()
+        {
+            // Arrange
+            var deviceBulk = new DeviceBulk
+            {
+                Make = "Make",
+                Model = "Model",
+                SerialNumber = "12345",
+                PreferredHostname = "hostname",
+                OS = DeviceOS.Windows,
+            };
+            var selectedTags = new List<DeviceTag>
+            {
+                new DeviceTag
+                {
+                    Id = Guid.Parse("00000000-0000-0000-0000-000000000005"),
+                    Name = "InvalidRegex",
+                    DeviceRenameEnabled = true,
+                    DeviceNameRegex = @"[invalid(regex" // Invalid regex
+                }
+            };
+
+            // Act & Assert
+            // Should either handle gracefully or throw expected exception
+            var errors = NewDeviceValidation.ValidateBulkDevice(deviceBulk, selectedTags);
+        }
+
+        #endregion
 
     }
 }
