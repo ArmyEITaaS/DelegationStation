@@ -199,7 +199,7 @@ namespace DelegationStationTests.Validation
                 Make = "Make",
                 Model = "Model",
                 SerialNumber = "12345",
-                PreferredHostname = "",
+                PreferredHostname = hostname,
                 OS = DeviceOS.Windows,
                 Tags = new List<string> { "00000000-0000-0000-0000-000000000003" }
             };
