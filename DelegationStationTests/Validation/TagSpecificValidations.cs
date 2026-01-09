@@ -26,7 +26,7 @@ namespace DelegationStationTests.Validation
                 {
                     Id = Guid.Parse("00000000-0000-0000-0000-000000000003"),
                     Name = "RegexNoRename",
-                    DeviceRenameEnabled = true,
+                    DeviceRenameEnabled = false,
                     DeviceNameRegex = @"^match$"
                 },
                 new DeviceTag

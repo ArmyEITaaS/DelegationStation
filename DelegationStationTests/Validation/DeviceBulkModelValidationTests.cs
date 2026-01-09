@@ -11,7 +11,7 @@ namespace DelegationStationTests.Validation
         [TestMethod]
         public void VerifyMakeIsRequired()
         {
-            var device = new Device
+            var device = new DeviceBulk
             {
                 Make = "",
                 Model = "Model",
@@ -21,13 +21,13 @@ namespace DelegationStationTests.Validation
             };
 
             Assert.IsTrue(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("Required")));
+                v => (v.ErrorMessage ?? "").Contains("required")));
         }
 
         [TestMethod]
         public void VerifyModelIsRequired()
         {
-            var device = new Device
+            var device = new DeviceBulk
             {
                 Make = "Make",
                 Model = "",
@@ -37,13 +37,13 @@ namespace DelegationStationTests.Validation
             };
 
             Assert.IsTrue(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("Required")));
+                v => (v.ErrorMessage ?? "").Contains("required")));
         }
 
         [TestMethod]
         public void VerifySNIsRequired()
         {
-            var device = new Device
+            var device = new DeviceBulk
             {
                 Make = "Make",
                 Model = "Model",
@@ -53,7 +53,7 @@ namespace DelegationStationTests.Validation
             };
 
             Assert.IsTrue(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("Required")));
+                v => (v.ErrorMessage ?? "").Contains("required")));
         }
 
         [TestMethod]

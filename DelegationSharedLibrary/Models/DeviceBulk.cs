@@ -19,7 +19,7 @@ namespace DelegationStationShared.Models
         public string SerialNumber { get; set; }
 
         // Validation applicable to all devices done here
-        // Validation for specific tags handled in customer validation class
+        // Validation for specific tags handled in custom validation class
         [RegularExpression(@"^$|^[0-9a-zA-Z](?:[0-9a-zA-Z-]*[0-9a-zA-Z])?$", ErrorMessage = "Only use letters, numbers, or hyphen for Preferred Hostname value. Hyphens may not be at beginning or end.")]
         [MaxLength(15, ErrorMessage = "Preferred Hostname cannot exceed 15 characters.")]
         public string PreferredHostname { get; set; }

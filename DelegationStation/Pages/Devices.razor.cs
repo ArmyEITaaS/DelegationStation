@@ -230,6 +230,8 @@ namespace DelegationStation.Pages
 
                 // Reset form
                 newDevice = new Device();
+
+                //TODO:  Can we safely remove these two lines
                 editContext.OnValidationRequested += HandleValidationRequested;
                 messageStore = new ValidationMessageStore(editContext);
 
