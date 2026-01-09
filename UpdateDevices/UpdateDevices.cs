@@ -178,27 +178,43 @@ namespace UpdateDevices
                 //
                 // Rename device based on tag settings
                 //
-                bool renameEnabled = tag.DeviceRenameEnabled;
-                string devicenameRegex = tag.DeviceNameRegex;
 
                 if (tag.DeviceRenameEnabled)
                 {
                     bool renameDevice = false;
-                    if (string.IsNullOrEmpty(devicenameRegex))
+                    if (string.IsNullOrEmpty(tag.DeviceNameRegex))
                     {
                         renameDevice = true;
                         _logger.DSLogInformation("No device name regex set for tag " + tag.Name + ". Proceeding with rename for device " + device.Id + ".", fullMethodName);
                     }
                     else
                     {
-                        if (Regex.IsMatch(d.PreferredHostname, devicenameRegex))
+                        try
                         {
-                            renameDevice = true;
-                            _logger.DSLogInformation("Preferred hostname " + d.PreferredHostname + " for device " + device.Id + " matches device name regex " + devicenameRegex + " for tag " + tag.Name + ". Proceeding with rename.", fullMethodName);
+                            if (Regex.IsMatch(d.PreferredHostname, tag.DeviceNameRegex))
+                            {
+                                renameDevice = true;
+                                _logger.DSLogInformation("Preferred hostname " + d.PreferredHostname + " for device " + device.Id + " matches device name regex " +
+                                    tag.DeviceNameRegex + " for tag " + tag.Name + ". Proceeding with rename.", fullMethodName);
+                            }
+                            else
+                            {
+                                renameDevice = false;
+                                _logger.DSLogError("Preferred hostname " + d.PreferredHostname + " for device " + device.Id + " does not match device name regex " +
+                                    tag.DeviceNameRegex + " for tag " + tag.Name + ". No rename applied.", fullMethodName);
+                            }
                         }
-                        else
+                        catch (ArgumentException ex)
                         {
-                            _logger.DSLogError("Preferred hostname " + d.PreferredHostname + " for device " + device.Id + " does not match device name regex " + devicenameRegex + " for tag " + tag.Name + ". No rename applied.", fullMethodName);
+                            renameDevice = false;
+                            _logger.DSLogException("Device name regex " + tag.DeviceNameRegex + " for tag " + tag.Name + " is invalid. No rename applied for device " +
+                                device.Id + ".", ex, fullMethodName);
+                        }
+                        catch (RegexMatchTimeoutException ex)
+                        {
+                            renameDevice = false;
+                            _logger.DSLogException("Regex match timed out while evaluating preferred hostname " + d.PreferredHostname + " against device name regex " +
+                                tag.DeviceNameRegex + " for tag " + tag.Name + ". No rename applied for device " + device.Id + ".", ex, fullMethodName);
                         }
                     }
 
@@ -207,7 +223,8 @@ namespace UpdateDevices
                         bool result = await _graphBetaService.SetDeviceName(device.Id, d.PreferredHostname);
                         if (!result)
                         {
-                            _logger.DSLogError("Failed to rename device: '" + device.Id + "' '" + device.Manufacturer + "' '" + device.Model + "' '" + device.SerialNumber + " from " + device.DeviceName + " to " + d.PreferredHostname + "'.", fullMethodName);
+                            _logger.DSLogError("Failed to rename device: '" + device.Id + "' '" + device.Manufacturer + "' '" + device.Model + "' '" + device.SerialNumber +
+                                " from " + device.DeviceName + " to " + d.PreferredHostname + "'.", fullMethodName);
                         }
                         else
                         {

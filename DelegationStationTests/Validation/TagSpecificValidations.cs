@@ -199,7 +199,7 @@ namespace DelegationStationTests.Validation
                 Make = "Make",
                 Model = "Model",
                 SerialNumber = "12345",
-                PreferredHostname = "",
+                PreferredHostname = hostname,
                 OS = DeviceOS.Windows,
                 Tags = new List<string> { "00000000-0000-0000-0000-000000000003" }
             };
@@ -615,6 +615,11 @@ namespace DelegationStationTests.Validation
             // Act & Assert
             // Should either handle gracefully or throw expected exception
             var errors = NewDeviceValidation.ValidateBulkDevice(deviceBulk, selectedTags);
+
+
+            // Assert
+            Assert.IsTrue(errors.ContainsKey(nameof(deviceBulk.PreferredHostname)));
+            Assert.IsTrue(errors[nameof(deviceBulk.PreferredHostname)].Any(e => e.Contains("Cannot validate")));
         }
 
         #endregion
