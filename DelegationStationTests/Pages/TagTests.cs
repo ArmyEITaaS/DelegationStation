@@ -34,6 +34,8 @@ namespace DelegationStationTests.Pages
                 deviceTags.Add(deviceTag2);
                 var fakeDeviceTagDBService = new DelegationStation.Interfaces.Fakes.StubIDeviceTagDBService()
                 {
+                    CurrentSearchGet = () => new DelegationStation.Services.DeviceTagSearch() 
+                        { pageNumber = 1, pageSize = 10, name = string.Empty },
                     GetDeviceTagsAsyncIEnumerableOfStringString =
                         (groupIds, name) => Task.FromResult(deviceTags),
                     GetDeviceTagCountAsyncIEnumerableOfStringString =
@@ -94,6 +96,8 @@ namespace DelegationStationTests.Pages
                 deviceTags.Add(deviceTag2);
                 var fakeDeviceTagDBService = new DelegationStation.Interfaces.Fakes.StubIDeviceTagDBService()
                 {
+                    CurrentSearchGet = () => new DelegationStation.Services.DeviceTagSearch() 
+                        { pageNumber = 1, pageSize = 10, name = string.Empty },
                     GetDeviceTagsAsyncIEnumerableOfStringString =
                         (groupIds, name) => Task.FromResult(deviceTags),
                     GetDeviceTagCountAsyncIEnumerableOfStringString =
