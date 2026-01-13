@@ -303,7 +303,6 @@ namespace DelegationStationTests.Pages
         }
 
         [TestMethod]
-        [ExpectedException(typeof(Bunit.ElementNotFoundException))]
         public void SaveButtonShouldNotRender()
         {
             // Arrange
@@ -316,12 +315,14 @@ namespace DelegationStationTests.Pages
 
             AddDefaultServices(defaultId.ToString());
 
-            // Act
-            var cut = RenderComponent<TagEdit>();
-            var buttonElement = cut.Find("#SaveButton");
-
-            // Assert
-            Assert.IsNull(buttonElement);
+            // Act & Assert
+            Assert.ThrowsExactly<Bunit.ElementNotFoundException>(() =>
+            {
+                var cut = RenderComponent<TagEdit>();
+                var buttonElement = cut.Find("#SaveButton");
+                // The following line will not be reached if exception is thrown as expected
+                Assert.IsNull(buttonElement);
+            });
         }
 
         [TestMethod]

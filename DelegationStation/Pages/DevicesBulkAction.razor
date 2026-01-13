@@ -46,12 +46,34 @@
             </p>
         </div>
     </div>
+
+    <div class="row align-items-start mt-2">
+        <div class="col-6">
+            <label for="Tags" class="form-label">Tags:</label>
+            <input @bind=tagSearch @bind:event="oninput" class="form-control" placeholder="Filter tags">
+            @foreach (DeviceTag tag in deviceTags.Where(t => t.Name.ToLower().Contains(tagSearch.ToLower())))
+            {
+                <div class="form-check form-switch mt-2">
+                    <input class="form-check-input" type="checkbox" @onchange=@(() => AddRemoveTag(tag)) checked="@((appliedTags.Where(t => t == tag.Id.ToString()).Count() > 0) ? "checked" : null)">
+                    <label class="form-check-label" for="flexSwitchCheckDefault">@tag.Name</label>
+                </div>
+            }
+        </div>
+
+    </div>
     <div class="row align-items-start mt-3">
         <div class="col">
             <p>
                 <label>
                     Upload @maxAllowedFiles file up to @GetBytes(maxFileSize):
-                    <InputFile OnChange="@LoadFiles" />
+                    @if (appliedTags?.Count > 0)
+                    {
+                        <InputFile OnChange="@LoadFiles" />
+                    }
+                    else
+                    {
+                        <InputFile disabled />
+                    }
                 </label>
             </p>
         </div>
@@ -88,21 +110,8 @@
         }
 
         <div class="row align-items-start mt-2">
-            <div class="col-6">
-                <label for="Tags" class="form-label">Tags:</label>
-                <input @bind=tagSearch @bind:event="oninput" class="form-control" placeholder="Filter tags">
-                @foreach (DeviceTag tag in deviceTags.Where(t => t.Name.ToLower().Contains(tagSearch.ToLower())))
-                {
-                    <div class="form-check form-switch mt-2">
-                        <input class="form-check-input" type="checkbox" @onchange=@(() => AddRemoveTag(tag)) checked="@((appliedTags.Where(t => t == tag.Id.ToString()).Count() > 0) ? "checked" : null)">
-                        <label class="form-check-label" for="flexSwitchCheckDefault">@tag.Name</label>
-                    </div>
-                }
-            </div>
-        </div>
-        <div class="row align-items-start mt-2">
             <div class="col">
-                <button type="button" class="btn btn-primary mt-2 @(isUpdating ? "disabled" : "" )" @onclick=@UpdateDevices title="Run actions on data">Add / Remove Devices</button>
+                <button type="button" class="btn btn-primary mt-2 @((appliedTags?.Count() < 1) || isUpdating ? "disabled" : "")" @onclick=@UpdateDevices title="Run actions on data">Add / Remove Devices</button>
                 <a class="btn btn-success mt-2 @((appliedTags?.Count() < 1) || isUpdating ? "disabled" : "" )" href="/api/BulkDevice?id=@(appliedTags?.FirstOrDefault() ?? "")">Download Devices</a>
                 <button type="button" class="btn btn-danger mt-2 @(isUpdating ? "disabled" : "" )" @onclick=@Clear title="Remove all data references">Clear</button>
             </div>

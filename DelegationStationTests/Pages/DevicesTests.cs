@@ -15,12 +15,12 @@ namespace DelegationStationTests.Pages
         [TestMethod]
         public void DevicesShouldRender()
         {
-            using (ShimsContext.Create()) 
+            using (ShimsContext.Create())
             {
                 // Arrange
                 Guid defaultId = Guid.NewGuid();
                 AddDefaultServices(defaultId.ToString());
-                
+
                 var authContext = this.AddTestAuthorization();
                 authContext.SetAuthorized("TEST USER");
                 authContext.SetClaims(new System.Security.Claims.Claim("name", "TEST USER"));
@@ -56,9 +56,11 @@ namespace DelegationStationTests.Pages
                 {
                     GetDevicesAsyncIEnumerableOfString =
                         (groupIds) => Task.FromResult(devices),
+                    GetDevicesAsyncIEnumerableOfStringStringInt32Int32 =
+                        (groupIds,search,pageSize,currentPage) => Task.FromResult(devices)
                 };
 
-                
+
                 var myConfiguration = new Dictionary<string, string?>
                 {
                     {"DefaultAdminGroupObjectId", defaultId.ToString()},
@@ -96,7 +98,7 @@ namespace DelegationStationTests.Pages
                 AddDefaultServices();
 
                 var authContext = this.AddTestAuthorization();
-                authContext.SetNotAuthorized();                
+                authContext.SetNotAuthorized();
 
                 // Act
                 var cut = RenderComponent<Devices>();
@@ -111,7 +113,7 @@ namespace DelegationStationTests.Pages
 
         private void AddDefaultServices(string defaultId = "")
         {
-            
+
             //      Create fake services
             List<DeviceTag> deviceTags = new List<DeviceTag>();
             DeviceTag deviceTag1 = new DeviceTag();

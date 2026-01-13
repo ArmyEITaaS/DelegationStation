@@ -108,6 +108,8 @@ namespace UpdateDevices
             }
 
 
+
+
             DelegationStationShared.Models.Device d = await _dbService.GetDevice(device.Manufacturer, device.Model, device.SerialNumber);
             if (d == null)
             {
@@ -124,20 +126,6 @@ namespace UpdateDevices
             }
             _logger.DSLogInformation("Found matching device in DB for: '" + device.Id + "' '" + device.Manufacturer + "' '" + device.Model + "' '" + device.SerialNumber + "'.", fullMethodName);
 
-            // Updated managed device name if provided and not already equal
-            if (!String.IsNullOrEmpty(d.PreferredHostname) && (d.PreferredHostname != device.DeviceName))
-            {
-                bool result = await _graphBetaService.SetDeviceName(device.Id, d.PreferredHostname);
-
-                if (!result)
-                {
-                    _logger.DSLogWarning("Failed to rename device: '" + device.Id + "' '" + device.Manufacturer + "' '" + device.Model + "' '" + device.SerialNumber + " from " + device.DeviceName + " to " + d.PreferredHostname + "'.", fullMethodName);
-                }
-                else
-                {
-                    _logger.DSLogInformation("Updated device name for: '" + device.Id + "from '" + device.DeviceName + "' to '" + d.PreferredHostname + "'.", fullMethodName);
-                }
-            }
 
             string deviceObjectID = await _graphService.GetDeviceObjectID(device.AzureADDeviceId);
             if (String.IsNullOrEmpty(deviceObjectID))
@@ -168,7 +156,7 @@ namespace UpdateDevices
                         // If the user principal name is not in the allowed list, skip the tag
                         if (!string.IsNullOrEmpty(device.UserPrincipalName))
                         {
-                            if(!Regex.IsMatch(device.UserPrincipalName, tag.AllowedUserPrincipalName))
+                            if (!Regex.IsMatch(device.UserPrincipalName, tag.AllowedUserPrincipalName))
                             {
                                 _logger.DSLogWarning("Primary user " + device.UserPrincipalName + " on ManagedDevice Id " + device.Id + " does not match Tag " + tag.Name + " allowed user principal names regex '" + tag.AllowedUserPrincipalName + "'.", fullMethodName);
                                 return;
@@ -186,6 +174,71 @@ namespace UpdateDevices
                     _logger.DSLogException("UserPrincipalName " + device.UserPrincipalName + " on ManagedDevice Id " + device.Id + " on " + tag.Id + " allowed user principal names " + tag.AllowedUserPrincipalName + ".", ex, fullMethodName);
                     return;
                 }
+
+                //
+                // Rename device based on tag settings
+                //
+
+                if (tag.DeviceRenameEnabled)
+                {
+                    bool renameDevice = false;
+                    if (string.IsNullOrEmpty(tag.DeviceNameRegex))
+                    {
+                        renameDevice = true;
+                        _logger.DSLogInformation("No device name regex set for tag " + tag.Name + ". Proceeding with rename for device " + device.Id + ".", fullMethodName);
+                    }
+                    else
+                    {
+                        try
+                        {
+                            if (Regex.IsMatch(d.PreferredHostname, tag.DeviceNameRegex))
+                            {
+                                renameDevice = true;
+                                _logger.DSLogInformation("Preferred hostname " + d.PreferredHostname + " for device " + device.Id + " matches device name regex " +
+                                    tag.DeviceNameRegex + " for tag " + tag.Name + ". Proceeding with rename.", fullMethodName);
+                            }
+                            else
+                            {
+                                renameDevice = false;
+                                _logger.DSLogError("Preferred hostname " + d.PreferredHostname + " for device " + device.Id + " does not match device name regex " +
+                                    tag.DeviceNameRegex + " for tag " + tag.Name + ". No rename applied.", fullMethodName);
+                            }
+                        }
+                        catch (ArgumentException ex)
+                        {
+                            renameDevice = false;
+                            _logger.DSLogException("Device name regex " + tag.DeviceNameRegex + " for tag " + tag.Name + " is invalid. No rename applied for device " +
+                                device.Id + ".", ex, fullMethodName);
+                        }
+                        catch (RegexMatchTimeoutException ex)
+                        {
+                            renameDevice = false;
+                            _logger.DSLogException("Regex match timed out while evaluating preferred hostname " + d.PreferredHostname + " against device name regex " +
+                                tag.DeviceNameRegex + " for tag " + tag.Name + ". No rename applied for device " + device.Id + ".", ex, fullMethodName);
+                        }
+                    }
+
+                    if (renameDevice)
+                    {
+                        bool result = await _graphBetaService.SetDeviceName(device.Id, d.PreferredHostname);
+                        if (!result)
+                        {
+                            _logger.DSLogError("Failed to rename device: '" + device.Id + "' '" + device.Manufacturer + "' '" + device.Model + "' '" + device.SerialNumber +
+                                " from " + device.DeviceName + " to " + d.PreferredHostname + "'.", fullMethodName);
+                        }
+                        else
+                        {
+                            _logger.DSLogInformation("Updated device name for: '" + device.Id + "from '" + device.DeviceName + "' to '" + d.PreferredHostname + "'.", fullMethodName);
+                        }
+                    }
+
+                }
+                else
+                {
+                    _logger.DSLogInformation("Device renaming is disabled for tag " + tag.Name + ". No rename applied for device " + device.Id + ".", fullMethodName);
+                }
+
+
 
                 if (tag.UpdateActions == null || tag.UpdateActions.Count < 1)
                 {
