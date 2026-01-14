@@ -76,6 +76,8 @@
                                 </div>
                                 <label class="my-1">Allowed Device Name RegEx:</label>
                                 <InputText @bind-Value=tag.DeviceNameRegex @oninput=@ClearTestEnrollmentResult class="form-control"></InputText>
+                                <label class="my-1">Regex Description:</label>
+                                <InputText @bind-Value=tag.DeviceNameRegexDescription class="form-control"></InputText>
                                 <div class="border rounded my-3 p-3">
                                     <label>Validate Device Name RegEx</label>
                                     <label>Enter Test Device Name:</label>
@@ -89,11 +91,11 @@
                                         }
                                         else if (testEnrollmentDeviceResult == true)
                                         {
-                                            <p class="text-success">Device is allowed to enroll</p>
+                                            <p class="text-success">Device name valid</p>
                                         }
                                         else
                                         {
-                                            <p class="text-danger">Device is not allowed to enroll</p>
+                                            <p class="text-danger">Device name invalid</p>
                                         }
                                     }
                                 </div>

@@ -86,7 +86,7 @@ namespace DelegationStation.Validation
                     // add step to validate regex
                     else if (!Regex.IsMatch(device.PreferredHostname ?? "", tag.DeviceNameRegex))
                     {
-                        AddError(errors, nameof(device.PreferredHostname), $"Does not match regex pattern required for this tag: {tag.DeviceNameRegex}");
+                        AddError(errors, nameof(device.PreferredHostname), $"Does not match name requirements for this tag: {tag.DeviceNameRegexDescription}");
                     }
                 }
             }
