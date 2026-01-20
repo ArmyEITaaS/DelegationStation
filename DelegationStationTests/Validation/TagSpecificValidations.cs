@@ -210,7 +210,7 @@ namespace DelegationStationTests.Validation
 
             // Assert
             Assert.IsTrue(errors.ContainsKey(nameof(device.PreferredHostname)));
-            Assert.IsTrue(errors[nameof(device.PreferredHostname)].Any(e => e.Contains("Does not match regex")));
+            Assert.IsTrue(errors[nameof(device.PreferredHostname)].Any(e => e.Contains("Does not match name requirements")));
         }
 
 
@@ -284,7 +284,7 @@ namespace DelegationStationTests.Validation
 
             // Assert
             Assert.IsTrue(errors.ContainsKey(nameof(device.PreferredHostname)));
-            Assert.IsTrue(errors[nameof(device.PreferredHostname)].Any(e => e.Contains("Does not match regex")));
+            Assert.IsTrue(errors[nameof(device.PreferredHostname)].Any(e => e.Contains("Does not match name requirements")));
         }
 
         [TestMethod]
@@ -491,7 +491,7 @@ namespace DelegationStationTests.Validation
 
             // Assert
             Assert.IsTrue(errors.ContainsKey("PreferredHostname"));
-            Assert.IsTrue(errors["PreferredHostname"].Any(e => e.Contains("Does not match regex")));
+            Assert.IsTrue(errors["PreferredHostname"].Any(e => e.Contains("Does not match name requirements")));
         }
 
         [TestMethod]
@@ -563,7 +563,7 @@ namespace DelegationStationTests.Validation
 
             // Assert
             Assert.IsTrue(errors.ContainsKey("PreferredHostname"));
-            Assert.IsTrue(errors["PreferredHostname"].Any(e => e.Contains("Does not match regex")));
+            Assert.IsTrue(errors["PreferredHostname"].Any(e => e.Contains("Does not match name requirements")));
         }
 
         [TestMethod]
