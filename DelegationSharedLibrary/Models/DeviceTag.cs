@@ -24,6 +24,7 @@ namespace DelegationStationShared.Models
 
         public bool DeviceRenameEnabled { get; set; }
         public string DeviceNameRegex { get; set; }
+        public string DeviceNameRegexDescription { get; set; } = string.Empty;
 
         public DeviceTag()
         {
