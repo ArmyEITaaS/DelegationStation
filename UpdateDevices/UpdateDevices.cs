@@ -191,7 +191,8 @@ namespace UpdateDevices
                     {
                         try
                         {
-                            if (Regex.IsMatch(d.PreferredHostname, tag.DeviceNameRegex))
+                            if (!string.IsNullOrEmpty(d.PreferredHostname) &&
+                                Regex.IsMatch(d.PreferredHostname, tag.DeviceNameRegex))
                             {
                                 renameDevice = true;
                                 _logger.DSLogInformation("Preferred hostname " + d.PreferredHostname + " for device " + device.Id + " matches device name regex " +
@@ -228,7 +229,7 @@ namespace UpdateDevices
                         }
                         else
                         {
-                            _logger.DSLogInformation("Updated device name for: '" + device.Id + "from '" + device.DeviceName + "' to '" + d.PreferredHostname + "'.", fullMethodName);
+                            _logger.DSLogInformation("Updated device name for: '" + device.Id + " from '" + device.DeviceName + "' to '" + d.PreferredHostname + "'.", fullMethodName);
                         }
                     }
 
