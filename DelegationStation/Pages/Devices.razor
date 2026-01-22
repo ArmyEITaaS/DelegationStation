@@ -3,6 +3,7 @@
 @using DelegationStationShared.Models;
 @using DelegationStationShared.Enums;
 @using DelegationStation.Shared;
+@using DelegationStation.Validation;
 
 @inject IDeviceTagDBService deviceTagDBService
 @inject IDeviceDBService deviceDBService
@@ -194,13 +195,26 @@
             </tbody>
         </table>
 
-        <EditForm Model="@newDevice" OnValidSubmit="AddDevice" class="form-control mb-5">
+        @if (!string.IsNullOrEmpty(userMessage.Value))
+        {
+            @if (userMessage.ToString().ToLower().Contains("error"))
+            {
+                <div class="alert alert-danger" role="alert">
+                    @userMessage
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-success" role="alert">
+                    @userMessage
+                </div>
+            }
+        }
+
+        <EditForm EditContext="@editContext" OnValidSubmit="AddDevice" class="form-control mb-5">
                             <DataAnnotationsValidator />
                             <h4>Add device</h4>
-                            @if ((deviceAddValidationMessage.Value != null) && !deviceAddValidationMessage.Value.Equals(""))
-                            {
-                                <p class="text-danger">@deviceAddValidationMessage</p>
-                            }
+
                             <div class="mb-3">
                                 <label for="DeviceMake" class="form-label">Device Make</label>
                                 <InputText @bind-Value=newDevice.Make class="form-control" id="DeviceMake"></InputText>
@@ -236,36 +250,22 @@
                                 <ValidationMessage For=@(() => newDevice.PreferredHostname) />
                             </div>
                             <div class="mb-3">
-                                <label for="Tags" class="form-label">Tags:
-                            </label>
-                <input @bind=tagSearch @bind:event="oninput" class="form-control" placeholder="Filter tags">
-                @foreach (DeviceTag tag in deviceTags.Where(t => t.Name.ToLower().Contains(tagSearch.ToLower())))
-                {
-                    <div class="form-check form-switch mt-2">
-                        <input class="form-check-input" type="checkbox" @onchange=@(() => AddRemoveTag(tag)) checked="@(newDevice.Tags.Any(t => t == tag.Id.ToString()))">
-                        <label class="form-check-label" for="flexSwitchCheckDefault">@tag.Name</label>
-                    </div>
-                }
-            </div>
+                                <label for="Tags" class="form-label">Tags:</label>
+                                <input @bind=tagSearch @bind:event="oninput" class="form-control" placeholder="Filter tags">
+                                <ValidationMessage For=@(() => newDevice.Tags) />
+                                @foreach (DeviceTag tag in deviceTags.Where(t => t.Name.ToLower().Contains(tagSearch.ToLower())))
+                                {
+                                    <div class="form-check form-switch mt-2">
+                                        <input class="form-check-input" type="checkbox" @onchange=@(() => AddRemoveTag(tag)) checked="@(newDevice.Tags.Any(t => t == tag.Id.ToString()))">
+                                        <label class="form-check-label" for="flexSwitchCheckDefault">@tag.Name</label>
+                                    </div>
+                                }
+                            </div>
 
             <input type="submit" class="btn btn-primary mb-3" value="Add" />
         </EditForm>
 
-        @if (!string.IsNullOrEmpty(userMessage))
-        {
-            @if (userMessage.ToLower().Contains("error"))
-            {
-                <div class="alert alert-danger" role="alert">
-                    @userMessage
-                </div>
-            }
-            else
-            {
-                <div class="alert alert-success" role="alert">
-                    @userMessage
-                </div>
-            }
-        }
+
 
        <ConfirmMessage MessageBody=@confirmMessage ConfirmAction="@(async() =>await DeleteDevice())" @ref="ConfirmDelete" />
 

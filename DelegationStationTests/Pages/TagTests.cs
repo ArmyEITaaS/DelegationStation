@@ -34,12 +34,14 @@ namespace DelegationStationTests.Pages
                 deviceTags.Add(deviceTag2);
                 var fakeDeviceTagDBService = new DelegationStation.Interfaces.Fakes.StubIDeviceTagDBService()
                 {
-                    GetDeviceTagsAsyncIEnumerableOfString =
-                        (groupIds) => Task.FromResult(deviceTags),
-                    GetDeviceTagCountAsyncIEnumerableOfString =
-                        (groupIds) => Task.FromResult(2),
-                    GetDeviceTagsByPageAsyncIEnumerableOfStringInt32Int32 =
-                        (groupIds, pageNumber, pageSize) => Task.FromResult(deviceTags)
+                    CurrentSearchGet = () => new DelegationStation.Services.DeviceTagSearch() 
+                        { pageNumber = 1, pageSize = 10, name = string.Empty },
+                    GetDeviceTagsAsyncIEnumerableOfStringString =
+                        (groupIds, name) => Task.FromResult(deviceTags),
+                    GetDeviceTagCountAsyncIEnumerableOfStringString =
+                        (groupIds, name) => Task.FromResult(2),
+                    GetDeviceTagsByPageAsyncIEnumerableOfStringInt32Int32String =
+                        (groupIds, pageNumber, pageSize, name) => Task.FromResult(deviceTags)
                 };
 
                 var myConfiguration = new Dictionary<string, string?>
@@ -94,12 +96,14 @@ namespace DelegationStationTests.Pages
                 deviceTags.Add(deviceTag2);
                 var fakeDeviceTagDBService = new DelegationStation.Interfaces.Fakes.StubIDeviceTagDBService()
                 {
-                    GetDeviceTagsAsyncIEnumerableOfString =
-                        (groupIds) => Task.FromResult(deviceTags),
-                    GetDeviceTagCountAsyncIEnumerableOfString =
-                        (groupIds) => Task.FromResult(2),
-                    GetDeviceTagsByPageAsyncIEnumerableOfStringInt32Int32 =
-                        (groupIds, pageNumber, pageSize) => Task.FromResult(deviceTags)
+                    CurrentSearchGet = () => new DelegationStation.Services.DeviceTagSearch() 
+                        { pageNumber = 1, pageSize = 10, name = string.Empty },
+                    GetDeviceTagsAsyncIEnumerableOfStringString =
+                        (groupIds, name) => Task.FromResult(deviceTags),
+                    GetDeviceTagCountAsyncIEnumerableOfStringString =
+                        (groupIds, name) => Task.FromResult(2),
+                    GetDeviceTagsByPageAsyncIEnumerableOfStringInt32Int32String =
+                        (groupIds, pageNumber, pageSize, name) => Task.FromResult(deviceTags)
                 };
 
                 var myConfiguration = new Dictionary<string, string?>

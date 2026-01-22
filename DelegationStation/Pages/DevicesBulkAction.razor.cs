@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.QuickGrid;
-using Microsoft.Azure.Cosmos.Linq;
 using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
 
@@ -122,6 +121,7 @@ namespace DelegationStation.Pages
             string path = "";
             devices = new();
 
+
             foreach (var file in e.GetMultipleFiles(maxAllowedFiles))
             {
                 try
@@ -234,6 +234,7 @@ namespace DelegationStation.Pages
                                 var context = new ValidationContext(newDevice, null, null);
                                 var results = new List<ValidationResult>();
 
+                                // Do data annotation validations
                                 if (!Validator.TryValidateObject(newDevice, context, results, true))
                                 {
                                     // Ignore preferred hostname validation and OS if action is remove
@@ -254,6 +255,31 @@ namespace DelegationStation.Pages
                                         sb.AppendLine($"Correlation Id: {c.ToString()}");
                                         fileError.Add(sb.ToString());
                                         logger.LogWarning($"{sb.ToString()}\nUser: {userName} {userId}");
+                                        continue;
+                                    }
+                                }
+
+                                // Do custom tag-specific validation (only for add action)
+                                DeviceTag tag = deviceTags.Where(t => t.Id.ToString() == appliedTags[0]).FirstOrDefault() ?? new DeviceTag();
+                                List<DeviceTag> selectedTags = new List<DeviceTag>();
+                                selectedTags.Add(tag);
+
+                                if (newDevice.Action == DeviceBulkAction.add)
+                                {
+
+                                    var validationErrors = Validation.NewDeviceValidation.ValidateBulkDevice( newDevice, selectedTags);
+                                    foreach (var err in validationErrors)
+                                    {
+                                        foreach (var errorMsg in err.Value)
+                                        {
+                                            var message = $"Line {line}:\n {errorMsg}\nCorrelation Id: {c.ToString()}";
+                                            fileError.Add(message);
+                                            logger.LogWarning($"{message}\nUser: {userName} {userId}");
+
+                                        }
+                                    }
+                                    if(validationErrors.Count > 0)
+                                    {
                                         continue;
                                     }
                                 }

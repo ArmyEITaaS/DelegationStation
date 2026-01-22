@@ -1,8 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Newtonsoft.Json;
 using DelegationStationShared.Enums;
-using Microsoft.Graph.Beta;
-using Microsoft.Graph.Beta.Models;
 
 namespace DelegationStationShared.Models
 {
@@ -24,9 +22,10 @@ namespace DelegationStationShared.Models
         [RegularExpression(@"^[a-zA-Z0-9\-_.\s]+$", ErrorMessage = "Only use letters, numbers, -, _, or . for SerialNumber value.")]
         public string SerialNumber { get; set; }
 
-        [RegularExpression(@"^[0-9a-zA-Z](?:[0-9a-zA-Z-]*[0-9a-zA-Z])?$", ErrorMessage = "Only use letters, numbers, or hyphen for Preferred Hostname value. Hyphens may not be at beginning or end.")]
-        [StringLength(15, ErrorMessage = "Preferred Hostname must be 1-15 characters.")]
-        [Required(AllowEmptyStrings = false, ErrorMessage = "Preferred Hostname is Required")]
+        // Validation applicable to all devices done here
+        // Validation for specific tags handled in custom validation class
+        [RegularExpression(@"^$|^[0-9a-zA-Z](?:[0-9a-zA-Z-]*[0-9a-zA-Z])?$", ErrorMessage = "Only use letters, numbers, or hyphen for Preferred Hostname value. Hyphens may not be at beginning or end.")]
+        [MaxLength(15, ErrorMessage = "Preferred Hostname cannot exceed 15 characters.")]
         public string PreferredHostname { get; set; }
 
         public string PartitionKey { get; set; }
@@ -39,14 +38,13 @@ namespace DelegationStationShared.Models
         // Note:  Because we don't allow modifications from GUI is really AddedUTC
         public DateTime ModifiedUTC { get; set; }
 
+        // GUID of user who created device in webapp
         public string? AddedBy { get; set; }
 
         // Corporate Identifier related
         public string CorporateIdentity { get; set; }
         public DateTime LastCorpIdentitySync { get; set; }
         public string CorporateIdentityID { get; set; }
-
-
         public DeviceStatus Status { get; set; }
 
         [Required]
@@ -77,7 +75,6 @@ namespace DelegationStationShared.Models
             MarkedToDeleteUTC = null;
 
             CorporateIdentity = string.Empty;
-            //CorporateIdentityType = "manufacturerModelSerial";
             LastCorpIdentitySync = DateTime.MinValue;
             CorporateIdentityID = string.Empty;
 
