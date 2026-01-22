@@ -22,6 +22,10 @@ namespace DelegationStationShared.Models
 
         public bool CorpIDSyncEnabled { get; set; }
 
+        public bool DeviceRenameEnabled { get; set; }
+        public string DeviceNameRegex { get; set; }
+        public string DeviceNameRegexDescription { get; set; } = string.Empty;
+
         public DeviceTag()
         {
             Id = Guid.NewGuid();
