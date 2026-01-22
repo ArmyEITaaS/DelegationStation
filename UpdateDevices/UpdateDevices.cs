@@ -191,17 +191,16 @@ namespace UpdateDevices
                     {
                         try
                         {
-                            if (!string.IsNullOrEmpty(d.PreferredHostname) &&
-                                Regex.IsMatch(d.PreferredHostname, tag.DeviceNameRegex))
+                            if (Regex.IsMatch(d.PreferredHostname, tag.DeviceNameRegex))
                             {
                                 renameDevice = true;
-                                _logger.DSLogInformation("Preferred hostname " + d.PreferredHostname + " for device " + device.Id + " matches device name regex " +
+                                _logger.DSLogInformation("Preferred hostname '" + d.PreferredHostname + "' for device " + device.Id + " matches device name regex " +
                                     tag.DeviceNameRegex + " for tag " + tag.Name + ". Proceeding with rename.", fullMethodName);
                             }
                             else
                             {
                                 renameDevice = false;
-                                _logger.DSLogError("Preferred hostname " + d.PreferredHostname + " for device " + device.Id + " does not match device name regex " +
+                                _logger.DSLogError("Preferred hostname '" + d.PreferredHostname + "' for device " + device.Id + " does not match device name regex " +
                                     tag.DeviceNameRegex + " for tag " + tag.Name + ". No rename applied.", fullMethodName);
                             }
                         }
@@ -214,22 +213,29 @@ namespace UpdateDevices
                         catch (RegexMatchTimeoutException ex)
                         {
                             renameDevice = false;
-                            _logger.DSLogException("Regex match timed out while evaluating preferred hostname " + d.PreferredHostname + " against device name regex " +
+                            _logger.DSLogException("Regex match timed out while evaluating preferred hostname '" + d.PreferredHostname + "' against device name regex " +
                                 tag.DeviceNameRegex + " for tag " + tag.Name + ". No rename applied for device " + device.Id + ".", ex, fullMethodName);
                         }
                     }
 
                     if (renameDevice)
                     {
-                        bool result = await _graphBetaService.SetDeviceName(device.Id, d.PreferredHostname);
-                        if (!result)
+                        if (!String.IsNullOrEmpty(d.PreferredHostname))
                         {
-                            _logger.DSLogError("Failed to rename device: '" + device.Id + "' '" + device.Manufacturer + "' '" + device.Model + "' '" + device.SerialNumber +
-                                " from " + device.DeviceName + " to " + d.PreferredHostname + "'.", fullMethodName);
+                            bool result = await _graphBetaService.SetDeviceName(device.Id, d.PreferredHostname);
+                            if (!result)
+                            {
+                                _logger.DSLogError("Failed to rename device: '" + device.Id + "' '" + device.Manufacturer + "' '" + device.Model + "' '" + device.SerialNumber +
+                                    " from '" + device.DeviceName + "' to '" + d.PreferredHostname + "'.", fullMethodName);
+                            }
+                            else
+                            {
+                                _logger.DSLogInformation("Updated device name for: '" + device.Id + " from '" + device.DeviceName + "' to '" + d.PreferredHostname + "'.", fullMethodName);
+                            }
                         }
                         else
                         {
-                            _logger.DSLogInformation("Updated device name for: '" + device.Id + " from '" + device.DeviceName + "' to '" + d.PreferredHostname + "'.", fullMethodName);
+                            _logger.DSLogInformation("Skipping rename since Preferred Hostname is null/empty: '" + device.Id + "' '" + device.Manufacturer + "' '" + device.Model + "' '" + device.SerialNumber, fullMethodName);
                         }
                     }
 
