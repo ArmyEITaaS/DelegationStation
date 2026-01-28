@@ -18,9 +18,10 @@ namespace DelegationStationShared.Models
         [RegularExpression(@"^[a-zA-Z0-9\-_.\s]+$", ErrorMessage = "Only use letters, numbers, -, _, or . for SerialNumber value.")]
         public string SerialNumber { get; set; }
 
-        [RegularExpression(@"^[0-9a-zA-Z](?:[0-9a-zA-Z-]*[0-9a-zA-Z])?$", ErrorMessage = "Only use letters, numbers, or hyphen for Preferred Hostname value. Hyphens must not be first or last character.")]
-        [StringLength(15, ErrorMessage = "Preferred Hostname must be 1-15 characters.")]
-        [Required(AllowEmptyStrings = false, ErrorMessage ="Preferred Hostname is a required field for new device entries.")]
+        // Validation applicable to all devices done here
+        // Validation for specific tags handled in custom validation class
+        [RegularExpression(@"^$|^[0-9a-zA-Z](?:[0-9a-zA-Z-]*[0-9a-zA-Z])?$", ErrorMessage = "Only use letters, numbers, or hyphen for Preferred Hostname value. Hyphens may not be at beginning or end.")]
+        [MaxLength(15, ErrorMessage = "Preferred Hostname cannot exceed 15 characters.")]
         public string PreferredHostname { get; set; }
 
         [Required]
