@@ -7,11 +7,8 @@ using Azure.Identity;
 using DelegationStationShared;
 using DelegationStationShared.Extensions;
 using Microsoft.Graph.Beta.DeviceManagement.ManagedDevices.Item.SetDeviceName;
-using Microsoft.Graph.Beta.Models;
-using Microsoft.Graph.Beta.Models.ODataErrors;
 using System;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 using System.Linq;
 
 

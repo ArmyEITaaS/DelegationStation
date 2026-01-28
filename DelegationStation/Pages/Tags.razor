@@ -47,6 +47,15 @@
                     <th>Tag Description</th>
                     <th></th>
                 </tr>
+                <tr>
+                    <td>
+                        <input type="text" @bind="searchTag.Name" class="form-control" placeholder="Tag Name" />
+                    </td>
+                    <td></td>
+                    <td>
+                        <button type="button" class="btn btn-primary" @onclick=@(() => GetTagsSearch())>Search</button>
+                    </td>
+                </tr>
             </thead>
             <tbody>
                 @if (tagsLoading)

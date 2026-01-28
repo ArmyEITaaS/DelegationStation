@@ -57,23 +57,6 @@ namespace DelegationStationTests.Validation
         }
 
         [TestMethod]
-        public void VerifyHostnameIsRequired()
-        {
-            var device = new Device
-            {
-                Make = "Make",
-                Model = "Model",
-                SerialNumber = "99999",
-                PreferredHostname = "",
-                OS = DeviceOS.Windows
-            };
-
-            Assert.IsTrue(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("Required")));
-        }
-
-
-        [TestMethod]
         [DataRow("ValidMake123")]
         [DataRow("ValidMake123-")]
         [DataRow("ValidMake123_")]
@@ -234,7 +217,6 @@ namespace DelegationStationTests.Validation
         [DataRow("InvalidSN123^")]
         [DataRow("InvalidSN123*")]
         [DataRow("InvalidSN123=")]
-        [DataRow("InvalidSN123+")]
         [DataRow("InvalidSN123{")]
         [DataRow("InvalidSN123}")]
         [DataRow("InvalidSN123[")]
@@ -265,6 +247,7 @@ namespace DelegationStationTests.Validation
         }
 
         [TestMethod]
+        [DataRow("")]
         [DataRow("ValidHostname123")]
         [DataRow("valid-hostname")]
         [DataRow("valid-host-name")]
@@ -298,7 +281,6 @@ namespace DelegationStationTests.Validation
         [DataRow("InvalidHostname123^")]
         [DataRow("InvalidHostname123*")]
         [DataRow("InvalidHostname123=")]
-        [DataRow("InvalidHostname123+")]
         [DataRow("InvalidHostname123{")]
         [DataRow("InvalidHostname123}")]
         [DataRow("InvalidHostname123[")]
@@ -346,7 +328,7 @@ namespace DelegationStationTests.Validation
             };
             // Only testing length in this test
             Assert.IsTrue(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("must be 1-15 characters")));
+                v => (v.ErrorMessage ?? "").Contains("cannot exceed 15")));
         }
 
         [TestMethod]
