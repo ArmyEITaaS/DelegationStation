@@ -8,5 +8,6 @@
             },
             "enableLiveMetricsFilters": true
         }
-    }
+    },
+    "functionTimeout": "4:00:00"
 }
