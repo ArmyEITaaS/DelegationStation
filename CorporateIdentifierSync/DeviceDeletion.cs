@@ -117,7 +117,7 @@ namespace CorporateIdentifierSync
                         }
                         else
                         {
-                            _logger.LogInformation($"Device not synced yet. No Corp Identifier to delete.  {device.Make} {device.Model} {device.SerialNumber}", fullMethodName);
+                            _logger.DSLogInformation($"Device not synced yet. No Corp Identifier to delete.  {device.Make} {device.Model} {device.SerialNumber}", fullMethodName);
                             delCorpID = true;
                         }
                     }
