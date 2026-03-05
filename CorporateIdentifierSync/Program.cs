@@ -1,5 +1,6 @@
 using CorporateIdentifierSync.Interfaces;
 using CorporateIdentifierSync.Services;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -13,22 +14,31 @@ namespace CorporateIdentifierSync
         static void Main(string[] args)
         {
 
-            // Application Insights isn't enabled by default. See https://aka.ms/AAt8mw4.
-            // builder.Services
-            //     .AddApplicationInsightsTelemetryWorkerService()
-            //     .ConfigureFunctionsApplicationInsights();
-
             var host = new HostBuilder()
                 .ConfigureFunctionsWebApplication()
-                .ConfigureLogging(logging =>
+                .ConfigureServices(services =>
                 {
-                    logging.SetMinimumLevel(LogLevel.Debug);
-                }).
-                ConfigureServices(services =>
-                {
+                    services.AddApplicationInsightsTelemetryWorkerService(options =>
+                    {
+                        options.EnableAdaptiveSampling = false;
+                    });
+                    services.ConfigureFunctionsApplicationInsights();
                     services.AddSingleton<ICosmosDbService, CosmosDbService>();
                     services.AddSingleton<IGraphService, GraphService>();
                     services.AddSingleton<IGraphBetaService, GraphBetaService>();
+                })
+                .ConfigureLogging(logging =>
+                {
+                    //disables the default that only logs warnings and above to Application Insights
+                    logging.Services.Configure<LoggerFilterOptions>(options =>
+                    {
+                        LoggerFilterRule defaultRule = options.Rules.FirstOrDefault(rule => rule.ProviderName
+                            == "Microsoft.Extensions.Logging.ApplicationInsights.ApplicationInsightsLoggerProvider");
+                        if (defaultRule is not null)
+                        {
+                            options.Rules.Remove(defaultRule);
+                        }
+                    });
                 })
                 .Build();
 

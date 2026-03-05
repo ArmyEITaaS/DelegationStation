@@ -1,18 +1,12 @@
-using System;
-using System.IO;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using System.Collections.Generic;
 using System.Net.Http.Headers;
-using System.Net.Http;
 using System.Text.RegularExpressions;
 using Microsoft.Azure.Cosmos;
-using System.Linq;
 using System.Reflection;
 using DelegationStationShared.Models;
 using System.Text;
@@ -26,7 +20,6 @@ namespace DelegationStation.Function
         //private static GraphServiceClient _graphClient;
         private static ILogger _logger;
         //private static HttpClient _graphHttpClient;
-        private static string _guidRegex = "^([0-9A-Fa-f]{8}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{12})$";
 
         [FunctionName("IntuneEnrollmentTrigger")]
         public static async Task<IActionResult> Run(

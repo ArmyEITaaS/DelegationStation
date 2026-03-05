@@ -148,7 +148,7 @@ namespace UpdatePreferredHostnames
                 _graphClient = new GraphServiceClient(clientSecretCredential, scopes, baseUrl);
             }
         }
-       
+
         private async Task<int> UpdateHostnamesAsync()
         {
             string? methodName = ExtensionHelper.GetMethodName();
@@ -180,7 +180,7 @@ namespace UpdatePreferredHostnames
                         devicesToCheck.Enqueue(device);
                     }
                 }
-                
+
             }
             catch (Exception ex)
             {
@@ -220,7 +220,7 @@ namespace UpdatePreferredHostnames
                 return count;
             }
 
-            Queue<Device> devicesToUpdate = new Queue<Device>();            
+            Queue<Device> devicesToUpdate = new Queue<Device>();
             // For each device, check if the Hostname in Intune matches the PreferredHostname in Cosmos.
             while (devicesToCheck.Count > 0)
             {
@@ -228,6 +228,13 @@ namespace UpdatePreferredHostnames
                 string deviceHostname = "";
                 try
                 {
+                    // Added checking here to resolve warning, even though we shouldn't get here if _graphClient is null.
+                    if (_graphClient == null)
+                    {
+                        _logger.DSLogError("Failed to connect to Graph, exiting.", fullMethodName);
+                        Environment.Exit(1);
+                    }
+
                     var deviceObj = await _graphClient.DeviceManagement.ManagedDevices.GetAsync((requestConfiguration) =>
                     {
                         requestConfiguration.QueryParameters.Filter = $"serialNumber eq '{device.SerialNumber}' and manufacturer eq '{device.Make}' and model eq '{device.Model}'";
@@ -239,7 +246,8 @@ namespace UpdatePreferredHostnames
                         PresentUnenrolledDevices.Add($"{idsToTags[device.Tags[0]]},{device.Make},{device.Model},{device.SerialNumber},,,");
                         continue;
                     }
-                    deviceHostname = deviceObj.Value.FirstOrDefault().DeviceName ?? "";
+                    var deviceMatch = deviceObj.Value.FirstOrDefault();
+                    deviceHostname = deviceMatch?.DeviceName ?? "";
                     if(!string.IsNullOrEmpty(device.PreferredHostname))
                     {
                         _logger.DSLogInformation($"Device {device.Id} PreferredHostname '{device.PreferredHostname}' not empty, no update needed.", fullMethodName);
@@ -272,10 +280,10 @@ namespace UpdatePreferredHostnames
                 catch (Exception ex)
                 {
                     _logger.DSLogException($"Failed to delete duplicate device from Delegation Station: {device.Id}", ex, fullMethodName);
-                }                
+                }
             }
             _logger.DSLogInformation($"Updated {count} devices.", fullMethodName);
-            
+
             string unenrolledDevicesResult = "";
             foreach (var device in PresentUnenrolledDevices)
             {
