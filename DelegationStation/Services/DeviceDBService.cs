@@ -294,6 +294,22 @@ namespace DelegationStation.Services
             {
                 throw new Exception("Device already exists.");
             }
+            if (!String.IsNullOrEmpty(device.PreferredHostname))
+            {
+                q = new QueryDefinition("SELECT * FROM d WHERE d.Type = \"Device\" AND STRINGEQUALS(d.PreferredHostname,@name,true)");
+                q.WithParameter("@name", device.PreferredHostname);
+                deviceQueryIterator = this._container.GetItemQueryIterator<Device>(q);
+                while (deviceQueryIterator.HasMoreResults)
+                {
+                    var qIresponse = await deviceQueryIterator.ReadNextAsync();
+                    devices.AddRange(qIresponse.ToList());
+                }
+                if (devices.Count != 0)
+                {
+                    throw new Exception("PreferredHostname already in use.");
+                }
+            }
+            
 
             ItemResponse<Device> response = await this._container.UpsertItemAsync<Device>(device);
             return response;
