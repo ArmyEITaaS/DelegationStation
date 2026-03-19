@@ -102,6 +102,13 @@ namespace CorporateIdentifierSync.Services
 
             // Note:  If entry already exists, it will just return object
             var result = await _graphClient.DeviceManagement.ImportedDeviceIdentities.ImportDeviceIdentityList.PostAsImportDeviceIdentityListPostResponseAsync(requestBody);
+            if ((result == null) || (result.Value[0] == null) || (result.Value[0].Status != true))
+            {
+                string message = $"Graph returned non-true status attempting to add identifer: {identifier}";
+                _logger.DSLogError(message, fullMethodName);
+                throw new Exception(message);
+            }
+
             deviceIdentity = result.Value[0];
             _logger.DSLogInformation($"Identifier Added: {deviceIdentity.ImportedDeviceIdentifier}", fullMethodName);
 

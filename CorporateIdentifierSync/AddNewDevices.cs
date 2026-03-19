@@ -157,7 +157,7 @@ namespace CorporateIdentifierSync
                 }
                 catch (Exception ex)
                 {
-                    _logger.DSLogError($"Error adding Corporate Identifier for device {device.Make} {device.Model} {device.SerialNumber}: {ex.Message}", fullMethodName);
+                    _logger.DSLogException($"Error adding Corporate Identifier for device {device.Make} {device.Model} {device.SerialNumber}: ", ex, fullMethodName);
                 }
             }
 

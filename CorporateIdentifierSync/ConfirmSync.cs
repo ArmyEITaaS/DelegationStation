@@ -120,7 +120,11 @@ namespace CorporateIdentifierSync
                         }
                         catch (Exception ex)
                         {
-                            _logger.DSLogError($"Error adding corporate identifier for device {device.Id}: {ex.Message}", fullMethodName);
+                            _logger.DSLogException($"Error adding corporate identifier for device {device.Id}: ", ex, fullMethodName);
+                            // if we can't re-add remove the ID and change state back to added
+                            // AddNewDevice will retry it more frequently -- which feels appropriate for transient Graph errors
+                            device.CorporateIdentityID = null;
+                            device.Status = DeviceStatus.Added;
                         }
 
                     }
@@ -133,6 +137,7 @@ namespace CorporateIdentifierSync
                     {
                         device.Status = DeviceStatus.Synced;
                     }
+
                 }
                 else  // !tagSetToSync
                 {
@@ -160,13 +165,16 @@ namespace CorporateIdentifierSync
                     }
                 }
 
-                if ((!tagSetToSync && successfullyUnsynced) || corpIDFound || corpIDUpdated)
-                {
 
-                    // Update the sync date and status for devices successfully processed
-                    // For devices that error, we want to try again on the next run
-                    device.LastCorpIdentitySync = DateTime.UtcNow;
-                    _logger.DSLogInformation($"New sync date: {device.LastCorpIdentitySync}", fullMethodName);
+                if ((!tagSetToSync && successfullyUnsynced) || corpIDFound || corpIDUpdated || (!corpIDFound && !corpIDUpdated))
+                {
+                    if ((!tagSetToSync && successfullyUnsynced) || corpIDFound || corpIDUpdated)
+                    {
+                        // Update the sync date and status for devices successfully processed
+                        // For devices that error, we want to try again on the next run
+                        device.LastCorpIdentitySync = DateTime.UtcNow;
+                        _logger.DSLogInformation($"New sync date: {device.LastCorpIdentitySync}", fullMethodName);
+                    }
 
                     // Update device entry in DS
                     try
@@ -176,7 +184,7 @@ namespace CorporateIdentifierSync
                     }
                     catch (Exception ex)
                     {
-                        _logger.DSLogError($"Error updating device {device.Id}: {ex.Message}", fullMethodName);
+                        _logger.DSLogException($"Error updating device {device.Id}: ", ex, fullMethodName);
                     }
                 }
 

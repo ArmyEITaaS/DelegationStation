@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.1.11304.174 d18.0
+VisualStudioVersion = 18.1.11304.174
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DelegationStation", "DelegationStation\DelegationStation.csproj", "{A0EFFE9F-E89F-42C8-886F-1EBF5C8DA6B0}"
 EndProject
@@ -25,6 +25,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UpdatePreferredHostnames", "UpdatePreferredHostnames\UpdatePreferredHostnames.csproj", "{937DE50A-AA46-4832-8A03-09463D907316}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SyncDeviceNames", "SyncDeviceNames\SyncDeviceNames.csproj", "{42E820D3-B2AA-4D49-B6B1-38D0FB10B222}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResetSyncedDevices", "ResetSyncedDevices\ResetSyncedDevices.csproj", "{38B7CD3D-FE25-4BC8-8D24-223A51CB49F8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -132,6 +134,18 @@ Global
 		{42E820D3-B2AA-4D49-B6B1-38D0FB10B222}.Release|x64.Build.0 = Release|Any CPU
 		{42E820D3-B2AA-4D49-B6B1-38D0FB10B222}.Release|x86.ActiveCfg = Release|Any CPU
 		{42E820D3-B2AA-4D49-B6B1-38D0FB10B222}.Release|x86.Build.0 = Release|Any CPU
+		{38B7CD3D-FE25-4BC8-8D24-223A51CB49F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{38B7CD3D-FE25-4BC8-8D24-223A51CB49F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{38B7CD3D-FE25-4BC8-8D24-223A51CB49F8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{38B7CD3D-FE25-4BC8-8D24-223A51CB49F8}.Debug|x64.Build.0 = Debug|Any CPU
+		{38B7CD3D-FE25-4BC8-8D24-223A51CB49F8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{38B7CD3D-FE25-4BC8-8D24-223A51CB49F8}.Debug|x86.Build.0 = Debug|Any CPU
+		{38B7CD3D-FE25-4BC8-8D24-223A51CB49F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{38B7CD3D-FE25-4BC8-8D24-223A51CB49F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{38B7CD3D-FE25-4BC8-8D24-223A51CB49F8}.Release|x64.ActiveCfg = Release|Any CPU
+		{38B7CD3D-FE25-4BC8-8D24-223A51CB49F8}.Release|x64.Build.0 = Release|Any CPU
+		{38B7CD3D-FE25-4BC8-8D24-223A51CB49F8}.Release|x86.ActiveCfg = Release|Any CPU
+		{38B7CD3D-FE25-4BC8-8D24-223A51CB49F8}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
