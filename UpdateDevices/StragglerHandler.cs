@@ -79,7 +79,7 @@ namespace UpdateDevices
             {
 
                 // Use Managed ID to get the device object from Graph
-                ManagedDevice device = null;
+                ManagedDevice? device = null;
                 try
                 {
                     device = await _graphService.GetManagedDevice(straggler.ManagedDeviceID);

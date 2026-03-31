@@ -17,24 +17,21 @@
 
   <ItemGroup>
     <PackageReference Include="bunit" Version="1.40.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid" Version="8.0.18" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid" Version="8.0.20" />
     <PackageReference Include="Microsoft.NET.Sdk.Razor" Version="3.1.32" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="Microsoft.QualityTools.Testing.Fakes" Version="17.14.1" />
-    <PackageReference Include="MSTest.TestAdapter" Version="3.10.0" />
-    <PackageReference Include="MSTest.TestFramework" Version="3.10.0" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.10.4" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.10.4" />
     <PackageReference Include="coverlet.collector" Version="6.0.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <!-- Adding to resolve conflicting versions -->
-    <PackageReference Include="System.Security.Permissions" Version="9.0.7" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\DelegationSharedLibrary\DelegationSharedLibrary.csproj" />
     <ProjectReference Include="..\DelegationStation\DelegationStation.csproj" />
-    <ProjectReference Include="..\IntuneEnrollment\IntuneEnrollment.csproj" />
   </ItemGroup>
 
   <ItemGroup>

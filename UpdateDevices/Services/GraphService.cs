@@ -315,14 +315,14 @@ namespace UpdateDevices.Services
         }
 
 
-
+        //NOTE: Method not currently in use, but do not delete as it may be useful in the future
         public async Task<ManagedDevice> GetManagedDevice(string make, string model, string serialNum)
         {
             string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
-            ManagedDevice result = null;
+            ManagedDevice? result = null;
             try
             {
                 var devices = await _graphClient.DeviceManagement.ManagedDevices.GetAsync((requestConfiguration) =>
@@ -354,7 +354,7 @@ namespace UpdateDevices.Services
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
-            ManagedDevice result = null;
+            ManagedDevice? result = null;
 
             try
             {
