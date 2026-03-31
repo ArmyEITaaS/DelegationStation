@@ -29,7 +29,6 @@ namespace DelegationStation.Pages
         private int currentPage = 0;
         //private int TotalDevices = 0;
         //private int TotalPages = 0;
-        private string search = "";
         private Device searchDevice = new Device();
         private bool devicesLoading = true;
         private MarkupString userMessage = new MarkupString("");
@@ -147,7 +146,7 @@ namespace DelegationStation.Pages
                 //TotalDevices = AllDevices.Count;
                 //TotalPages = (int)Math.Ceiling((double)AllDevices.Count / pageSize);
                 //devices = GetDevicesByPage(PageNumber, pageSize);
-                devices = await deviceDBService.GetDevicesAsync(groups, search, pageSize, currentPage);
+                devices = await deviceDBService.GetDevicesAsync(groups, pageSize, currentPage);
             }
             catch (Exception ex)
             {
@@ -198,7 +197,7 @@ namespace DelegationStation.Pages
                 //TotalDevices = AllDevices.Count;
                 //TotalPages = (int)Math.Ceiling((double)AllDevices.Count / pageSize);
                 //FirstPage();
-                devices = await deviceDBService.GetDevicesSearchAsync(searchDevice.Make, searchDevice.Model, searchDevice.SerialNumber, deviceOSID, searchDevice.PreferredHostname);
+                devices = await deviceDBService.GetDevicesSearchAsync(groups, searchDevice.Make, searchDevice.Model, searchDevice.SerialNumber, deviceOSID, searchDevice.PreferredHostname);
             }
             catch (Exception ex)
             {
