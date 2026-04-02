@@ -179,6 +179,27 @@ namespace DeviceAudit
 
             bool testMode = Environment.GetEnvironmentVariable("AUDIT_TEST_MODE") == "true" ? true : false;
 
+            // if present pull in list of tags we can skip
+            List<string> skippableTags = new List<string>();
+            string? tagsToSkip = Environment.GetEnvironmentVariable("AUDIT_TAGS_TO_SKIP");
+            if(!string.IsNullOrEmpty(tagsToSkip))
+            {
+                _logger.DSLogInformation($"Detecting configuration to skip some tags:  {tagsToSkip}", fullMethodName);
+                skippableTags = tagsToSkip.Split(',').Where(item => !string.IsNullOrEmpty(item)).ToList();
+            }
+
+            // Setup directory for output file
+            string outputDir = "D:\\home\\device_audit_outputs";
+            if(!Directory.Exists(outputDir))
+            {
+                _logger.DSLogInformation($"Output path does not exist.  Creating {outputDir}", fullMethodName);
+                Directory.CreateDirectory(outputDir);
+            }
+            string fileName = $"DeviceAudit_{DateTime.UtcNow:yyyyMMdd_HHmmss}.csv";
+            string filePath = Path.Combine(outputDir, fileName);
+            _logger.DSLogInformation($"Audit results will be written to: {filePath}", fullMethodName);
+
+
             List<string> uniqueIDs = await GetUniqueAddedBys();
 
             // Get all the unique UserIDs in the AddedBy field and their UPNs to minimize Graph calls
@@ -188,10 +209,8 @@ namespace DeviceAudit
             Dictionary<string, string> tagMapping = await GetTagMappings();
 
 
-            string fileName = $"DeviceAudit_{DateTime.UtcNow:yyyyMMdd_HHmmss}.csv";
-            _logger.DSLogInformation($"Audit results will be written to: {fileName}", fullMethodName);
 
-            await using var writer = new StreamWriter(fileName);
+            await using var writer = new StreamWriter(filePath);
             writer.AutoFlush = true;
             await writer.WriteLineAsync("Tag,Make,Model,SerialNumber,Date Added to DS,AddedBy,AddedBy UPN,Found in Intune,How Many,Intune Device IDs");
 
@@ -201,34 +220,42 @@ namespace DeviceAudit
                 var tagID = tag_kvp.Key;
                 var tagName = tag_kvp.Value;
 
-                List<Device> devices = await GetDevicesInTag(tagID, testMode);
-                _logger.DSLogInformation($"Processing {devices.Count} devices for tag {tagName} ({tagID}).", fullMethodName);
-
-                foreach (var device in devices)
+                if (!skippableTags.Contains(tagName))
                 {
-                    List<ManagedDevice> intuneMatches = await GetIntuneDevicesAsync(device.Make, device.Model, device.SerialNumber);
-                    bool foundInIntune = intuneMatches.Count > 0;
-                    int matchCount = intuneMatches.Count;
-                    string intuneIds = string.Join("|", intuneMatches.Select(m => m.Id ?? string.Empty));
 
-                    string upn = userMapping[device.AddedBy ?? string.Empty];
+                    List<Device> devices = await GetDevicesInTag(tagID, testMode);
+                    _logger.DSLogInformation($"Processing {devices.Count} devices for tag {tagName} ({tagID}).", fullMethodName);
 
-                    string line = string.Join(",",
-                        CsvEscape(tagName),
-                        CsvEscape(device.Make),
-                        CsvEscape(device.Model),
-                        CsvEscape(device.SerialNumber),
-                        CsvEscape(device.ModifiedUTC.ToString("MM/dd/yyyy HH:mm:ss")),
-                        CsvEscape(device.AddedBy ?? string.Empty),
-                        CsvEscape(upn),
-                        foundInIntune ? "Yes" : "No",
-                        matchCount.ToString(),
-                        CsvEscape(intuneIds)
-                    );
-                    await writer.WriteLineAsync(line);
+                    foreach (var device in devices)
+                    {
+                        List<ManagedDevice> intuneMatches = await GetIntuneDevicesAsync(device.Make, device.Model, device.SerialNumber);
+                        bool foundInIntune = intuneMatches.Count > 0;
+                        int matchCount = intuneMatches.Count;
+                        string intuneIds = string.Join("|", intuneMatches.Select(m => m.Id ?? string.Empty));
 
+                        string upn = userMapping[device.AddedBy ?? string.Empty];
+
+                        string line = string.Join(",",
+                            CsvEscape(tagName),
+                            CsvEscape(device.Make),
+                            CsvEscape(device.Model),
+                            CsvEscape(device.SerialNumber),
+                            CsvEscape(device.ModifiedUTC.ToString("MM/dd/yyyy HH:mm:ss")),
+                            CsvEscape(device.AddedBy ?? string.Empty),
+                            CsvEscape(upn),
+                            foundInIntune ? "Yes" : "No",
+                            matchCount.ToString(),
+                            CsvEscape(intuneIds)
+                        );
+                        await writer.WriteLineAsync(line);
+
+                    }
+                    _logger.DSLogInformation($"Completed auditing tag: {tagName}", fullMethodName);
                 }
-                _logger.DSLogInformation($"Completed auditing tag: {tagName}", fullMethodName);
+                else
+                {
+                    _logger.DSLogInformation($"Skipped tag:  {tagName}", fullMethodName);
+                }
 
             }
 
