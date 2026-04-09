@@ -233,7 +233,7 @@ namespace DeviceAudit
                         int matchCount = intuneMatches.Count;
                         string intuneIds = string.Join("|", intuneMatches.Select(m => m.Id ?? string.Empty));
 
-                        string upn = userMapping[device.AddedBy ?? string.Empty];
+                        string upn = userMapping.TryGetValue(device.AddedBy ?? string.Empty, out string? mappedUpn) ? mappedUpn : "Unknown User";
 
                         string line = string.Join(",",
                             CsvEscape(tagName),
