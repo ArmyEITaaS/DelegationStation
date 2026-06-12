@@ -109,9 +109,9 @@ jobs:
          if-no-files-found: error
          include-hidden-files: true
 
-     - name: Upload WebJob Artifact
-       uses: actions/upload-artifact@v4.6.0
-       with:
-         name: ${{ env.AZURE_WEBJOB_PKG_NAME }}
-         path: ${{ env.AZURE_WEBJOB_PACKAGE_PATH }}
-         if-no-files-found: error
+     #- name: Upload WebJob Artifact
+       #uses: actions/upload-artifact@v4.6.0
+       #with:
+         #name: ${{ env.AZURE_WEBJOB_PKG_NAME }}
+         #path: ${{ env.AZURE_WEBJOB_PACKAGE_PATH }}
+         #if-no-files-found: error
