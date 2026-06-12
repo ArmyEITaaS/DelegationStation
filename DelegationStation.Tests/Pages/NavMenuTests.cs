@@ -6,7 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Http;
 using DelegationStation.Shared;
 
-namespace DelegationStationTests.Pages
+namespace DelegationStation.Tests.Pages
 {
     [TestClass]
     public class NavMenuTests : Bunit.TestContext

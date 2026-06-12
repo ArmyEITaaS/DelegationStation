@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Azure.Cosmos;
 using CorporateIdentifierSync.Interfaces;
+using CorporateIdentifierSync.Models;
 using DelegationStationShared.Extensions;
 using Device = DelegationStationShared.Models.Device;
 using DelegationStationShared;
@@ -108,6 +109,99 @@ namespace CorporateIdentifierSync.Services
             return devices;
 
         }
+        public async Task<List<Device>> GetAddedDevicesToSync(List<string> tagIds, int batchSize)
+        {
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
+            string className = GetType().Name;
+            string fullMethodName = className + "." + methodName;
+
+            if (tagIds.Count == 0)
+            {
+                _logger.DSLogInformation("No tag IDs provided. Returning empty list.", fullMethodName);
+                return new List<Device>();
+            }
+
+            _logger.DSLogInformation($"Getting up to {batchSize} Added devices in {tagIds.Count} sync-enabled tag(s).", fullMethodName);
+
+            string tagFilter = string.Join(" OR ", tagIds.Select((_, i) => $"t = @tag{i}"));
+
+            QueryDefinition query = new QueryDefinition(
+                "SELECT * FROM c WHERE c.Type = \"Device\" " +
+                "AND (NOT IS_DEFINED(c.Status) OR c.Status = @status) " +
+                $"AND EXISTS(SELECT VALUE t FROM t IN c.Tags WHERE {tagFilter}) " +
+                "ORDER BY c.ModifiedUTC ASC " +
+                "OFFSET 0 LIMIT @batchSize");
+
+            query.WithParameter("@status", DeviceStatus.Added);
+            query.WithParameter("@batchSize", batchSize);
+            for (int i = 0; i < tagIds.Count; i++)
+            {
+                query.WithParameter($"@tag{i}", tagIds[i]);
+            }
+
+            var queryIterator = _container.GetItemQueryIterator<Device>(query);
+            List<Device> devices = new List<Device>();
+            try
+            {
+                while (queryIterator.HasMoreResults)
+                {
+                    var response = await queryIterator.ReadNextAsync();
+                    devices.AddRange(response.ToList());
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.DSLogException("Failed to query Cosmos DB for Added devices in sync-enabled tags.", ex, fullMethodName);
+            }
+            return devices;
+        }
+
+        public async Task<List<Device>> GetAddedDevicesNotSyncing(List<string> tagIds, int batchSize)
+        {
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
+            string className = GetType().Name;
+            string fullMethodName = className + "." + methodName;
+
+            if (tagIds.Count == 0)
+            {
+                _logger.DSLogInformation("No tag IDs provided. Returning empty list.", fullMethodName);
+                return new List<Device>();
+            }
+
+            _logger.DSLogInformation($"Getting up to {batchSize} Added devices in {tagIds.Count} sync-disabled tag(s).", fullMethodName);
+
+            string tagFilter = string.Join(" OR ", tagIds.Select((_, i) => $"t = @tag{i}"));
+
+            QueryDefinition query = new QueryDefinition(
+                "SELECT * FROM c WHERE c.Type = \"Device\" " +
+                "AND (NOT IS_DEFINED(c.Status) OR c.Status = @status) " +
+                $"AND EXISTS(SELECT VALUE t FROM t IN c.Tags WHERE {tagFilter}) " +
+                "ORDER BY c.ModifiedUTC ASC " +
+                "OFFSET 0 LIMIT @batchSize");
+
+            query.WithParameter("@status", DeviceStatus.Added);
+            query.WithParameter("@batchSize", batchSize);
+            for (int i = 0; i < tagIds.Count; i++)
+            {
+                query.WithParameter($"@tag{i}", tagIds[i]);
+            }
+
+            var queryIterator = _container.GetItemQueryIterator<Device>(query);
+            List<Device> devices = new List<Device>();
+            try
+            {
+                while (queryIterator.HasMoreResults)
+                {
+                    var response = await queryIterator.ReadNextAsync();
+                    devices.AddRange(response.ToList());
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.DSLogException("Failed to query Cosmos DB for Added devices in sync-disabled tags.", ex, fullMethodName);
+            }
+            return devices;
+        }
 
         public async Task<List<Device>> GetDevicesMarkedForDeletion()
         {
@@ -144,13 +238,37 @@ namespace CorporateIdentifierSync.Services
             string className = GetType().Name;
             string fullMethodName = className + "." + methodName;
 
-            _logger.DSLogInformation("Updating device " + device.Id + ".", fullMethodName);
+            _logger.DSLogInformation($"Updating device {device.Make} {device.Model} {device.SerialNumber}.", fullMethodName);
 
-            ItemResponse<Device> response;
-            response = await _container.UpsertItemAsync(device);
-            _logger.DSLogInformation("Updated device " + device.Id + ".", fullMethodName);
+            var options = string.IsNullOrEmpty(device.ETag)
+                ? null
+                : new ItemRequestOptions { IfMatchEtag = device.ETag };
 
-            return;
+            ItemResponse<Device> response = await _container.ReplaceItemAsync<Device>(
+                device, device.Id.ToString(), new PartitionKey(device.PartitionKey), options);
+
+            device.ETag = response.ETag;
+
+            _logger.DSLogInformation($"Updated device {device.Make} {device.Model} {device.SerialNumber}.", fullMethodName);
+        }
+
+        public async Task<Device?> GetDevice(Guid id, string partitionKey)
+        {
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
+            string className = GetType().Name;
+            string fullMethodName = className + "." + methodName;
+
+            try
+            {
+                var response = await _container.ReadItemAsync<Device>(
+                    id.ToString(), new PartitionKey(partitionKey));
+                return response.Resource;
+            }
+            catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.DSLogInformation($"Device {id} not found.", fullMethodName);
+                return null;
+            }
         }
 
         public async Task DeleteDevice(Device device)
@@ -188,6 +306,126 @@ namespace CorporateIdentifierSync.Services
 
         }
 
+        public async Task<List<Device>> GetSyncedDevicesSyncedBefore(DateTime date)
+        {
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
+            string className = GetType().Name;
+            string fullMethodName = className + "." + methodName;
+
+            // Only return devices that are in Synced status
+            QueryDefinition query = new QueryDefinition("SELECT * FROM c WHERE c.Type = \"Device\" AND c.Status = @status AND c.LastCorpIdentitySync <= @date");
+            query.WithParameter("@status", DeviceStatus.Synced);
+            query.WithParameter("@date", date);
+            var queryIterator = _container.GetItemQueryIterator<Device>(query);
+            List<Device> devices = new List<Device>();
+            try
+            {
+                while (queryIterator.HasMoreResults)
+                {
+                    var response = await queryIterator.ReadNextAsync();
+                    devices.AddRange(response.ToList());
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.DSLogException("Failure querying Cosmos DB for devices missing CorporateIdentityID.\n", ex, fullMethodName);
+            }
+            return devices;
+
+        }
+
+        public async Task<List<Device>> GetNotSyncingDevicesInTags(List<string> tagIds, int batchSize)
+        {
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
+            string className = GetType().Name;
+            string fullMethodName = className + "." + methodName;
+
+            if (tagIds.Count == 0)
+            {
+                _logger.DSLogInformation("No tag IDs provided. Returning empty list.", fullMethodName);
+                return new List<Device>();
+            }
+
+            _logger.DSLogInformation($"Getting up to {batchSize} NotSyncing devices in {tagIds.Count} enabled tag(s).", fullMethodName);
+
+            string tagFilter = string.Join(" OR ", tagIds.Select((_, i) => $"t = @tag{i}"));
+
+            QueryDefinition query = new QueryDefinition(
+                "SELECT * FROM c WHERE c.Type = \"Device\" AND c.Status = @status " +
+                $"AND EXISTS(SELECT VALUE t FROM t IN c.Tags WHERE {tagFilter}) " +
+                "ORDER BY c.ModifiedUTC ASC " +
+                "OFFSET 0 LIMIT @batchSize");
+
+            query.WithParameter("@status", DeviceStatus.NotSyncing);
+            query.WithParameter("@batchSize", batchSize);
+            for (int i = 0; i < tagIds.Count; i++)
+            {
+                query.WithParameter($"@tag{i}", tagIds[i]);
+            }
+
+            var queryIterator = _container.GetItemQueryIterator<Device>(query);
+            List<Device> devices = new List<Device>();
+            try
+            {
+                while (queryIterator.HasMoreResults)
+                {
+                    var response = await queryIterator.ReadNextAsync();
+                    devices.AddRange(response.ToList());
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.DSLogException("Failed to query Cosmos DB for NotSyncing devices in enabled tags.", ex, fullMethodName);
+            }
+            return devices;
+        }
+
+        public async Task<List<Device>> GetSyncedDevicesInTags(List<string> tagIds, int batchSize)
+        {
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
+            string className = GetType().Name;
+            string fullMethodName = className + "." + methodName;
+
+            if (tagIds.Count == 0)
+            {
+                _logger.DSLogInformation("No tag IDs provided. Returning empty list.", fullMethodName);
+                return new List<Device>();
+            }
+
+            _logger.DSLogInformation($"Getting up to {batchSize} Synced devices in {tagIds.Count} disabled tag(s).", fullMethodName);
+
+            string tagFilter = string.Join(" OR ", tagIds.Select((_, i) => $"t = @tag{i}"));
+
+            QueryDefinition query = new QueryDefinition(
+                "SELECT * FROM c WHERE c.Type = \"Device\" AND c.Status = @status " +
+                $"AND EXISTS(SELECT VALUE t FROM t IN c.Tags WHERE {tagFilter}) " +
+                "ORDER BY c.ModifiedUTC ASC " +
+                "OFFSET 0 LIMIT @batchSize");
+
+            query.WithParameter("@status", DeviceStatus.Synced);
+            query.WithParameter("@batchSize", batchSize);
+            for (int i = 0; i < tagIds.Count; i++)
+            {
+                query.WithParameter($"@tag{i}", tagIds[i]);
+            }
+
+            var queryIterator = _container.GetItemQueryIterator<Device>(query);
+            List<Device> devices = new List<Device>();
+            try
+            {
+                while (queryIterator.HasMoreResults)
+                {
+                    var response = await queryIterator.ReadNextAsync();
+                    devices.AddRange(response.ToList());
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.DSLogException("Failed to query Cosmos DB for Synced devices in disabled tags.", ex, fullMethodName);
+            }
+            return devices;
+        }
+
         public async Task<DelegationStationShared.Models.DeviceTag> GetDeviceTag(string id)
         {
             string methodName = ExtensionHelper.GetMethodName() ?? "";
@@ -209,7 +447,7 @@ namespace CorporateIdentifierSync.Services
 
         }
 
-        public async Task<List<string>> GetSyncEnabledDeviceTags()
+        public async Task<List<string>> GetSyncingDeviceTags()
         {
             string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = GetType().Name;
@@ -233,5 +471,85 @@ namespace CorporateIdentifierSync.Services
             return tagIDs;
 
         }
+
+        public async Task<List<string>> GetNonSyncingDeviceTags()
+        {
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
+            string className = GetType().Name;
+            string fullMethodName = className + "." + methodName;
+
+            QueryDefinition query = new QueryDefinition(
+                "SELECT * FROM c WHERE c.PartitionKey = \"DeviceTag\" AND (NOT IS_DEFINED(c.CorpIDSyncEnabled) OR c.CorpIDSyncEnabled = false)");
+            var queryIterator = _container.GetItemQueryIterator<DeviceTag>(query);
+            List<string> tagIDs = new List<string>();
+            try
+            {
+                while (queryIterator.HasMoreResults)
+                {
+                    var response = await queryIterator.ReadNextAsync();
+                    tagIDs.AddRange(response.Select(t => t.Id.ToString()).ToList());
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.DSLogException("Failure querying Cosmos DB for sync-disabled device tags.", ex, fullMethodName);
+            }
+            return tagIDs;
+        }
+
+        public async Task<CorpIDCounter> GetCorpIDCounter()
+        {
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
+            string className = GetType().Name;
+            string fullMethodName = className + "." + methodName;
+
+            _logger.DSLogInformation("Getting CorpIDCounter from Cosmos DB.", fullMethodName);
+
+            QueryDefinition query = new QueryDefinition("SELECT * FROM c WHERE c.PartitionKey = \"CorpIDCounter\"");
+            var queryIterator = _container.GetItemQueryIterator<CorpIDCounter>(query);
+            while (queryIterator.HasMoreResults)
+            {
+                var response = await queryIterator.ReadNextAsync();
+                var counter = response.FirstOrDefault();
+                if (counter != null)
+                {
+                    _logger.DSLogInformation($"CorpIDCounter found: {counter}.", fullMethodName);
+                    return counter;
+                }
+            }
+
+            // Counter document does not exist — throw rather than returning a default zero counter,
+            // which would incorrectly imply full capacity is available.
+            _logger.DSLogError("CorpIDCounter not found in Cosmos DB. Cannot safely continue without a valid counter.", fullMethodName);
+            throw new InvalidOperationException("CorpIDCounter document was not found in Cosmos DB.");
+        }
+
+        public async Task<bool> TrySetCorpIDCounter(CorpIDCounter counter, string etag)
+        {
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
+            string className = GetType().Name;
+            string fullMethodName = className + "." + methodName;
+
+            counter.ModifiedDT = DateTime.UtcNow;
+
+            _logger.DSLogInformation($"Upserting CorpIDCounter: {counter}.", fullMethodName);
+
+            try
+            {
+                var options = new ItemRequestOptions { IfMatchEtag = etag };
+                await _container.UpsertItemAsync(counter, new PartitionKey(counter.PartitionKey), options);
+
+                _logger.DSLogInformation("CorpIDCounter updated successfully.", fullMethodName);
+                return true;
+            }
+            catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.PreconditionFailed)
+            {
+                _logger.DSLogInformation("Counter changed before updated requested. Should be handled by calling code.", fullMethodName);
+                return false;
+            }
+            // TBD:  do we want to handle any other exception types in here??
+
+        }
+
     }
 }

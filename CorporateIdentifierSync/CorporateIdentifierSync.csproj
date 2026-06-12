@@ -19,6 +19,7 @@
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" Version="2.0.5" />
     <PackageReference Include="Microsoft.Graph" Version="5.87.0" />
     <PackageReference Include="Microsoft.Graph.Beta" Version="5.106.0-preview" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.22.2" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DelegationSharedLibrary\DelegationSharedLibrary.csproj" />
@@ -34,5 +35,8 @@
   </ItemGroup>
   <ItemGroup>
     <Using Include="System.Threading.ExecutionContext" Alias="ExecutionContext" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="CorporateIdentifierSync.Tests" />
   </ItemGroup>
 </Project>

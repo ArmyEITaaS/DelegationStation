@@ -26,6 +26,7 @@ namespace CorporateIdentifierSync
                     services.AddSingleton<ICosmosDbService, CosmosDbService>();
                     services.AddSingleton<IGraphService, GraphService>();
                     services.AddSingleton<IGraphBetaService, GraphBetaService>();
+                    services.AddSingleton<IFunctionSingletonLock, BlobLeaseSingletonLock>();
                 })
                 .ConfigureLogging(logging =>
                 {

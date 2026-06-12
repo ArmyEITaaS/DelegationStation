@@ -1,6 +1,6 @@
 ﻿using DelegationStation.Shared;
 
-namespace DelegationStationTests.Pages
+namespace DelegationStation.Tests.Pages
 {
     [TestClass]
     public class LoginDisplayTests : Bunit.TestContext

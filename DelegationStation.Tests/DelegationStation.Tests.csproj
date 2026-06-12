@@ -32,9 +32,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\CorporateIdentifierSync\CorporateIdentifierSync.csproj" />
     <ProjectReference Include="..\DelegationSharedLibrary\DelegationSharedLibrary.csproj" />
     <ProjectReference Include="..\DelegationStation\DelegationStation.csproj" />
-    <ProjectReference Include="..\IntuneEnrollment\IntuneEnrollment.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -7,12 +7,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DelegationStation", "Delega
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IntuneEnrollment", "IntuneEnrollment\IntuneEnrollment.csproj", "{AF970A00-F7E4-43B7-B542-A9BC3E280D56}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DelegationStationTests", "DelegationStationTests\DelegationStationTests.csproj", "{86E2271F-95E8-4485-9F42-72C399914025}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DelegationStation.Tests", "DelegationStation.Tests\DelegationStation.Tests.csproj", "{86E2271F-95E8-4485-9F42-72C399914025}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DelegationSharedLibrary", "DelegationSharedLibrary\DelegationSharedLibrary.csproj", "{E400A002-298F-4EBF-BD81-E5BB38068188}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{19234540-DE93-460B-9830-53BAEE8A9EFA}"
 	ProjectSection(SolutionItems) = preProject
+		delegationstation.runsettings = delegationstation.runsettings
 		README.md = README.md
 	EndProjectSection
 EndProject
@@ -27,6 +28,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SyncDeviceNames", "SyncDeviceNames\SyncDeviceNames.csproj", "{42E820D3-B2AA-4D49-B6B1-38D0FB10B222}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResetSyncedDevices", "ResetSyncedDevices\ResetSyncedDevices.csproj", "{38B7CD3D-FE25-4BC8-8D24-223A51CB49F8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CorporateIdentifierSync.Tests", "CorporateIdentifierSync.Tests\CorporateIdentifierSync.Tests.csproj", "{8203ED1A-6462-41B9-90D3-2B893BB6DF62}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,7 +54,6 @@ Global
 		{A0EFFE9F-E89F-42C8-886F-1EBF5C8DA6B0}.Release|x86.ActiveCfg = Release|Any CPU
 		{A0EFFE9F-E89F-42C8-886F-1EBF5C8DA6B0}.Release|x86.Build.0 = Release|Any CPU
 		{AF970A00-F7E4-43B7-B542-A9BC3E280D56}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AF970A00-F7E4-43B7-B542-A9BC3E280D56}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AF970A00-F7E4-43B7-B542-A9BC3E280D56}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{AF970A00-F7E4-43B7-B542-A9BC3E280D56}.Debug|x64.Build.0 = Debug|Any CPU
 		{AF970A00-F7E4-43B7-B542-A9BC3E280D56}.Debug|x86.ActiveCfg = Debug|Any CPU
@@ -146,6 +148,18 @@ Global
 		{38B7CD3D-FE25-4BC8-8D24-223A51CB49F8}.Release|x64.Build.0 = Release|Any CPU
 		{38B7CD3D-FE25-4BC8-8D24-223A51CB49F8}.Release|x86.ActiveCfg = Release|Any CPU
 		{38B7CD3D-FE25-4BC8-8D24-223A51CB49F8}.Release|x86.Build.0 = Release|Any CPU
+		{8203ED1A-6462-41B9-90D3-2B893BB6DF62}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8203ED1A-6462-41B9-90D3-2B893BB6DF62}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8203ED1A-6462-41B9-90D3-2B893BB6DF62}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8203ED1A-6462-41B9-90D3-2B893BB6DF62}.Debug|x64.Build.0 = Debug|Any CPU
+		{8203ED1A-6462-41B9-90D3-2B893BB6DF62}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8203ED1A-6462-41B9-90D3-2B893BB6DF62}.Debug|x86.Build.0 = Debug|Any CPU
+		{8203ED1A-6462-41B9-90D3-2B893BB6DF62}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8203ED1A-6462-41B9-90D3-2B893BB6DF62}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8203ED1A-6462-41B9-90D3-2B893BB6DF62}.Release|x64.ActiveCfg = Release|Any CPU
+		{8203ED1A-6462-41B9-90D3-2B893BB6DF62}.Release|x64.Build.0 = Release|Any CPU
+		{8203ED1A-6462-41B9-90D3-2B893BB6DF62}.Release|x86.ActiveCfg = Release|Any CPU
+		{8203ED1A-6462-41B9-90D3-2B893BB6DF62}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

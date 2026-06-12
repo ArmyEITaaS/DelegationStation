@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="Code Coverage" uri="datacollector://Microsoft/CodeCoverage/2.0" assemblyQualifiedName="Microsoft.VisualStudio.Coverage.DynamicCoverageDataCollector, Microsoft.VisualStudio.TraceCollector, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+        <Configuration>
+          <CodeCoverage>
+
+            <!-- Only instrument assemblies built from this solution -->
+            <ModulePaths>
+              <Include>
+                <ModulePath>.*DelegationStation\.dll$</ModulePath>
+                <ModulePath>.*DelegationSharedLibrary\.dll$</ModulePath>
+                <ModulePath>.*UpdateDevices\.dll$</ModulePath>
+                <ModulePath>.*CorporateIdentifierSync\.dll$</ModulePath>
+              </Include>
+              <Exclude>
+                <ModulePath>.*DelegationStationTests\.dll$</ModulePath>
+                <ModulePath>.*IntuneEnrollment\.dll$</ModulePath>
+                <ModulePath>.*testhost.*</ModulePath>
+              </Exclude>
+            </ModulePaths>
+
+            <!-- Exclude auto-generated code files (Razor/Blazor .g.cs, migrations, etc.) -->
+            <Sources>
+              <Exclude>
+                <Source>.*\.g\.cs$</Source>
+                <Source>.*\\obj\\.*</Source>
+              </Exclude>
+            </Sources>
+
+            <!-- Exclude compiler-generated and auto-generated attributes -->
+            <Attributes>
+              <Exclude>
+                <Attribute>^System\.Diagnostics\.CodeAnalysis\.ExcludeFromCodeCoverageAttribute$</Attribute>
+                <Attribute>^System\.CodeDom\.Compiler\.GeneratedCodeAttribute$</Attribute>
+                <Attribute>^System\.Runtime\.CompilerServices\.CompilerGeneratedAttribute$</Attribute>
+              </Exclude>
+            </Attributes>
+
+            <UseVerifiableInstrumentation>True</UseVerifiableInstrumentation>
+            <AllowLowIntegrityProcesses>True</AllowLowIntegrityProcesses>
+            <CollectFromChildProcesses>True</CollectFromChildProcesses>
+            <CollectAspDotNet>False</CollectAspDotNet>
+
+          </CodeCoverage>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

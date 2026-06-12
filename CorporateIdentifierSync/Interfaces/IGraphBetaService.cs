@@ -1,4 +1,5 @@
-﻿using Microsoft.Graph.Beta.Models;
+﻿using CorporateIdentifierSync.Enums;
+using Microsoft.Graph.Beta.Models;
 
 namespace CorporateIdentifierSync.Interfaces
 {
@@ -6,8 +7,10 @@ namespace CorporateIdentifierSync.Interfaces
     {
         Task<ImportedDeviceIdentity> AddCorporateIdentifier(ImportedDeviceIdentityType type, string identifier);
 
-        Task<bool> DeleteCorporateIdentifier(string identifierID);
+        Task<DeleteCorpIdResult> DeleteCorporateIdentifier(string identifierID);
 
         Task<bool> CorporateIdentifierExists(string identiferID);
+
+        Task<int> GetCorporateDeviceIdentifierCountAsync();
     }
 }

@@ -1,17 +1,17 @@
-using System.ComponentModel.DataAnnotations;
 using DelegationStationShared.Enums;
+using System.ComponentModel.DataAnnotations;
 
 
-namespace DelegationStationTests.Validation
+namespace DelegationStation.Tests.Validation
 {
     [TestClass]
-    public class DeviceModelValidationTests
+    public class DeviceBulkModelValidationTests
     {
 
         [TestMethod]
         public void VerifyMakeIsRequired()
         {
-            var device = new Device
+            var device = new DeviceBulk
             {
                 Make = "",
                 Model = "Model",
@@ -21,13 +21,13 @@ namespace DelegationStationTests.Validation
             };
 
             Assert.IsTrue(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("Required")));
+                v => (v.ErrorMessage ?? "").Contains("required")));
         }
 
         [TestMethod]
         public void VerifyModelIsRequired()
         {
-            var device = new Device
+            var device = new DeviceBulk
             {
                 Make = "Make",
                 Model = "",
@@ -37,13 +37,13 @@ namespace DelegationStationTests.Validation
             };
 
             Assert.IsTrue(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("Required")));
+                v => (v.ErrorMessage ?? "").Contains("required")));
         }
 
         [TestMethod]
         public void VerifySNIsRequired()
         {
-            var device = new Device
+            var device = new DeviceBulk
             {
                 Make = "Make",
                 Model = "Model",
@@ -53,7 +53,7 @@ namespace DelegationStationTests.Validation
             };
 
             Assert.IsTrue(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("Required")));
+                v => (v.ErrorMessage ?? "").Contains("required")));
         }
 
         [TestMethod]
@@ -67,7 +67,7 @@ namespace DelegationStationTests.Validation
         [DataRow("ValidMake123)")]
         public void VerifyValidMakeAllowed(string make)
         {
-            var device = new Device
+            var device = new DeviceBulk
             {
                 Make = make,
                 Model = "Model",
@@ -76,8 +76,7 @@ namespace DelegationStationTests.Validation
                 OS = DeviceOS.Windows
             };
             Assert.IsFalse(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("Only use")));
-
+                v => (v.ErrorMessage ?? "").Contains("only use")));
         }
 
         [TestMethod]
@@ -106,7 +105,7 @@ namespace DelegationStationTests.Validation
         [DataRow("InvalidMake123`")]
         public void VerifyInvalidMakeNotAllowed(string make)
         {
-            var device = new Device
+            var device = new DeviceBulk
             {
                 Make = make,
                 Model = "Model",
@@ -115,8 +114,7 @@ namespace DelegationStationTests.Validation
                 OS = DeviceOS.Windows
             };
             Assert.IsTrue(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("Only use")));
-
+                v => (v.ErrorMessage ?? "").Contains("only use")));
         }
 
         [TestMethod]
@@ -131,7 +129,7 @@ namespace DelegationStationTests.Validation
         [DataRow("ValidModel123+")]
         public void VerifyValidModelAllowed(string model)
         {
-            var device = new Device
+            var device = new DeviceBulk
             {
                 Make = "Make",
                 Model = model,
@@ -140,10 +138,8 @@ namespace DelegationStationTests.Validation
                 OS = DeviceOS.Windows
             };
             Assert.IsFalse(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("Only use")));
-
+                v => (v.ErrorMessage ?? "").Contains("only use")));
         }
-
 
         [TestMethod]
         [DataRow("InvalidModel123!")]
@@ -170,7 +166,7 @@ namespace DelegationStationTests.Validation
         [DataRow("InvalidModel123`")]
         public void VerifyInvalidModelNotAllowed(string model)
         {
-            var device = new Device
+            var device = new DeviceBulk
             {
                 Make = "Make",
                 Model = model,
@@ -179,8 +175,7 @@ namespace DelegationStationTests.Validation
                 OS = DeviceOS.Windows
             };
             Assert.IsTrue(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("Only use")));
-
+                v => (v.ErrorMessage ?? "").Contains("only use")));
         }
 
         [TestMethod]
@@ -190,7 +185,7 @@ namespace DelegationStationTests.Validation
         [DataRow("ValidSN123.")]
         public void VerifyValidSerialNumberAllowed(string serialNumber)
         {
-            var device = new Device
+            var device = new DeviceBulk
             {
                 Make = "Make",
                 Model = "Model",
@@ -200,7 +195,6 @@ namespace DelegationStationTests.Validation
             };
             Assert.IsFalse(ValidateModel(device).Any(
                 v => (v.ErrorMessage ?? "").Contains("Only use")));
-
         }
 
         [TestMethod]
@@ -233,7 +227,7 @@ namespace DelegationStationTests.Validation
         [DataRow("InvalidSN123`")]
         public void VerifyInvalidSNNotAllowed(string serialNumber)
         {
-            var device = new Device
+            var device = new DeviceBulk
             {
                 Make = "Make",
                 Model = "Model",
@@ -243,7 +237,6 @@ namespace DelegationStationTests.Validation
             };
             Assert.IsTrue(ValidateModel(device).Any(
                 v => (v.ErrorMessage ?? "").Contains("Only use")));
-
         }
 
         [TestMethod]
@@ -253,7 +246,7 @@ namespace DelegationStationTests.Validation
         [DataRow("valid-host-name")]
         public void VerifyValidHostnameAllowed(string hostname)
         {
-            var device = new Device
+            var device = new DeviceBulk
             {
                 Make = "Make",
                 Model = "Model",
@@ -299,7 +292,7 @@ namespace DelegationStationTests.Validation
         [DataRow("InvalidHostname123-")]
         public void VerifyInvalidHostnameNotAllowed(string hostname)
         {
-            var device = new Device
+            var device = new DeviceBulk
             {
                 Make = "Make",
                 Model = "Model",
@@ -318,7 +311,7 @@ namespace DelegationStationTests.Validation
         [DataRow("HostnameTooLong1")]
         public void VerifyHostnameLengthValidation(string hostname)
         {
-            var device = new Device
+            var device = new DeviceBulk
             {
                 Make = "Make",
                 Model = "Model",
@@ -330,22 +323,6 @@ namespace DelegationStationTests.Validation
             Assert.IsTrue(ValidateModel(device).Any(
                 v => (v.ErrorMessage ?? "").Contains("cannot exceed 15")));
         }
-
-        [TestMethod]
-        public void VerifyOSIsRequired()
-        {
-            var device = new Device
-            {
-                Make = "Make",
-                Model = "Model",
-                SerialNumber = "12345",
-                PreferredHostname = "hostname"
-            };
-
-            Assert.IsTrue(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("required")));
-        }
-
 
         private IList<ValidationResult> ValidateModel(object model)
         {

@@ -1,7 +1,7 @@
 ﻿using DelegationStation.Validation;
 using DelegationStationShared.Enums;
 
-namespace DelegationStationTests.Validation
+namespace DelegationStation.Tests.Validation
 {
     [TestClass]
     public class NewDeviceValidationTests

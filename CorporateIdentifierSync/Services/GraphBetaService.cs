@@ -1,4 +1,5 @@
-﻿using CorporateIdentifierSync.Interfaces;
+﻿using CorporateIdentifierSync.Enums;
+using CorporateIdentifierSync.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graph.Beta;
@@ -97,16 +98,38 @@ namespace CorporateIdentifierSync.Services
             requestBody.OverwriteImportedDeviceIdentities = false;
             requestBody.ImportedDeviceIdentities = addList;
 
+            // TODO:  Do we want to alter this to return a status enum of Success, AlreadyExists, Error?
 
             ImportedDeviceIdentity deviceIdentity;
 
-            // Note:  If entry already exists, it will just return object
+            // Note:  Does not throw error or return non-200 status if fails.  Instead it sets status field in object to false that we will need to check
             var result = await _graphClient.DeviceManagement.ImportedDeviceIdentities.ImportDeviceIdentityList.PostAsImportDeviceIdentityListPostResponseAsync(requestBody);
-            if ((result == null) || (result.Value[0] == null) || (result.Value[0].Status != true))
+
+            // If the request failed, throw an exception
+            if ((result == null) || (result?.Value == null) || (result.Value.Count == 0) || (result.Value[0] == null))
             {
-                string message = $"Graph returned non-true status attempting to add identifer: {identifier}";
-                _logger.DSLogError(message, fullMethodName);
+                string message = $"Graph returned null or empty result attempting to add CorpID: {identifier}";
                 throw new Exception(message);
+            }
+            else if (result.Value[0].Status != true)
+            {
+                // important to note that if the identifier already exists, the rest endpoint treats it as a failure
+                // we don't want to handle it that way so we'll check to see if the CorpID exists and only treat it as a failure if it doesn't
+                // if it already exists, we don't report an error
+                string identifierID = result.Value[0].Id;
+
+                bool alreadyExists = false;
+                if (!string.IsNullOrEmpty(identifierID))
+                {
+                    alreadyExists = await CorporateIdentifierExists(identifierID);
+                }
+
+                if (!alreadyExists)
+                {
+                    string message = $"Graph returned non-true status attempting to add identifier: {identifier}";
+                    _logger.DSLogError(message, fullMethodName);
+                    throw new Exception(message);
+                }
             }
 
             deviceIdentity = result.Value[0];
@@ -138,8 +161,7 @@ namespace CorporateIdentifierSync.Services
             }
             catch (ODataError odataError) when (odataError.ResponseStatusCode == 404)
             {
-                // This is the error returned when it tries to delete an object that's not found
-                // Return true since it's already not present
+                // This is the error returned when it tries to retrieve an object that's not found
                 _logger.DSLogInformation($"Device corporate identifier {identifierId} not found in Graph", fullMethodName);
                 return false;
             }
@@ -150,7 +172,7 @@ namespace CorporateIdentifierSync.Services
             }
         }
 
-        public async Task<bool> DeleteCorporateIdentifier(string ID)
+        public async Task<DeleteCorpIdResult> DeleteCorporateIdentifier(string ID)
         {
             string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
@@ -162,21 +184,51 @@ namespace CorporateIdentifierSync.Services
             {
                 await _graphClient.DeviceManagement.ImportedDeviceIdentities[ID].DeleteAsync();
                 _logger.DSLogInformation($"Identifier Deleted: {ID}", fullMethodName);
-                return true;
+                return DeleteCorpIdResult.Success;
             }
             catch (ODataError odataError) when (odataError.Error.Code.Equals("BadRequest"))
             {
                 // This is the error returned when it tries to delete an object that's not found
-                // Return true since it's already not present
                 _logger.DSLogInformation($"Device corporate identifier {ID} not found in Graph.", fullMethodName);
-                return true;
+                return DeleteCorpIdResult.NotFound;
             }
             catch (Exception ex)
             {
                 _logger.DSLogError($"Unable to delete device identifier {ID} from Graph: " + ex, fullMethodName);
-                return false;
+                return DeleteCorpIdResult.Error;
             }
         }
 
+        public async Task<int> GetCorporateDeviceIdentifierCountAsync()
+        {
+            string methodName = ExtensionHelper.GetMethodName() ?? "";
+            string className = this.GetType().Name;
+            string fullMethodName = className + "." + methodName;
+
+            _logger.DSLogInformation("Fetching corporate device identifier count from Graph.", fullMethodName);
+
+            try
+            {
+                var response = await _graphClient.DeviceManagement.ImportedDeviceIdentities.GetAsync(requestConfig =>
+                {
+                    requestConfig.QueryParameters.Count = true;
+                    requestConfig.Headers.Add("ConsistencyLevel", "eventual");
+                });
+
+                int count = (int)(response?.OdataCount ?? 0);
+                _logger.DSLogInformation($"Corporate device identifier count: {count}", fullMethodName);
+                return count;
+            }
+            catch (ODataError odataError)
+            {
+                _logger.DSLogError($"Graph OData error fetching corporate device identifier count: {odataError.Error?.Code} - {odataError.Error?.Message}", fullMethodName);
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.DSLogException("Failed to fetch corporate device identifier count from Graph.", ex, fullMethodName);
+                return 0;
+            }
+        }
     }
 }
