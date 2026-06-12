@@ -27,8 +27,8 @@ env:
   AZURE_SYNC_FUNCTION_PACKAGE_PATH: .\CorporateIdentifierSync\published
   AZURE_SYNC_FUNCTION_PKG_NAME: sync-function
 
-  AZURE_WEBJOB_PACKAGE_PATH: .\ResetSyncedDevices\published
-  AZURE_WEBJOB_PKG_NAME: reset-corpid-webjob
+  #AZURE_WEBJOB_PACKAGE_PATH: .\ResetSyncedDevices\published
+  #AZURE_WEBJOB_PKG_NAME: reset-corpid-webjob
 
   SRC_DIR: .
   # TEST_DIR: ./src/WinGet.RestSource.UnitTest
@@ -66,7 +66,8 @@ jobs:
      - name: Run Tests
        continue-on-error: true 
        run: |
-         vstest.console.exe ${{ env.SRC_DIR }}/DelegationStationTests/bin/Release/net8.0/DelegationStationTests.dll /logger:trx
+         vstest.console.exe ${{ env.SRC_DIR }}/CorporateIdentifierSync.Tests/bin/Release/net8.0/CorporateIdentifierSync.Tests.dll /logger:trx
+         vstest.console.exe ${{ env.SRC_DIR }}/DelegationStation.Tests/bin/Release/net8.0/DelegationStation.Tests.dll /logger:trx
      
     #  - name: Generate Test Report
     #    if: always()
@@ -81,7 +82,7 @@ jobs:
          dotnet publish ${{ env.SRC_DIR }}/DelegationStation --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_APP_PACKAGE_PATH }}"
          dotnet publish ${{ env.SRC_DIR }}/UpdateDevices --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_UPDATE_FUNCTION_PACKAGE_PATH }}"
          dotnet publish ${{ env.SRC_DIR }}/CorporateIdentifierSync --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_SYNC_FUNCTION_PACKAGE_PATH }}"
-         dotnet publish ${{ env.SRC_DIR }}/ResetSyncedDevices --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_WEBJOB_PACKAGE_PATH }}"
+         #dotnet publish ${{ env.SRC_DIR }}/ResetSyncedDevices --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_WEBJOB_PACKAGE_PATH }}"
 
 
 
