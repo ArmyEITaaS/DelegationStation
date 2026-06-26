@@ -69,9 +69,26 @@ namespace DelegationStation.Pages
 
             try
             {
+                var message = "";
+                role.Name = role.Name.Trim();
+                if (string.IsNullOrWhiteSpace(role.Name))
+                {
+                    message = $"Correlation Id: {g.ToString()}\nError: Role is required.";
+                    logger.LogWarning($"{message}\nUser: {userName} {userId}");
+                    userMessage = message;
+                    return;
+                }
+
+                var existingRoles = await roleDBService.GetRolesAsync();
+                if (existingRoles.Any(r => r.Name.Trim().Equals(role.Name, StringComparison.OrdinalIgnoreCase) && r.Id != role.Id))
+                {
+                    userMessage = $"Correlation Id: {g.ToString()}\nError: A role with the name \"{role.Name}\" already exists.";
+                    return;
+                }
+
                 role.Attributes.Where(a => a == AllowedAttributes.All).ToList().ForEach(a => role.Attributes.Remove(a));
                 role = await roleDBService.AddOrUpdateRoleAsync(role);
-                var message = $"Correlation Id: {g.ToString()}\nSaved role.";
+                message = $"Correlation Id: {g.ToString()}\nSaved role.";
                 logger.LogInformation($"{message}\nUser: {userName} {userId}");
                 nav.NavigateTo("/Roles");
             }

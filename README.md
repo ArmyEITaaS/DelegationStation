@@ -2,6 +2,7 @@
 
 ## Table of Contents
 - [Overview](#overview)
+- [Usage](#usage)
 - [Dependencies](#dependencies)
 	- [CosmosDB](#cosmosdb)
 	- [Azure AD Configuration](#azure-ad-configuration)
@@ -47,6 +48,10 @@ This repository contains 4 applications:
 These applications can be deployed into Azure App Services (Windows or Linux) or Container Instances via Azure CLI, Visual Studio, or GitHub Actions.
 
 Software is currently built on .NET8 and function apps are using isolated worker model.
+
+## Usage
+
+For end-user guidance on navigating the web application (Devices page, search, pagination, adding and deleting devices) see the **[User Guide](docs/user-guide.md)**.
 
 ## Dependencies
 

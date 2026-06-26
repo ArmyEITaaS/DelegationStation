@@ -387,8 +387,8 @@ namespace DelegationStationTests.Pages
             devices.Add(device1);
             var fakeDeviceDBService = new DelegationStation.Interfaces.Fakes.StubIDeviceDBService()
             {
-                GetDevicesAsyncIEnumerableOfStringInt32Int32 = (a, c, d) =>
-                    Task.FromResult(devices)
+                GetDevicesAsyncIEnumerableOfStringDeviceInt32Int32 =
+                        (groupIds, searchDevice, pageSize, page) => Task.FromResult(devices)
             };
 
             List<Role> roles = new List<Role>();
@@ -477,8 +477,8 @@ namespace DelegationStationTests.Pages
             devices.Add(device1);
             var fakeDeviceDBService = new DelegationStation.Interfaces.Fakes.StubIDeviceDBService()
             {
-                GetDevicesAsyncIEnumerableOfStringInt32Int32 = (a, c, d) =>
-                    Task.FromResult(devices)
+                GetDevicesAsyncIEnumerableOfStringDeviceInt32Int32 =
+                        (groupIds, searchDevice, pageSize, page) => Task.FromResult(devices)
             };
 
 
