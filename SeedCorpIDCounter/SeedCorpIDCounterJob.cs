@@ -4,7 +4,7 @@ using DelegationStationShared;
 using DelegationStationShared.Extensions;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
-using CorporateIdentifierSync.Models;
+using DelegationStationShared.Models;
 
 namespace SeedCorpIDCounter
 {

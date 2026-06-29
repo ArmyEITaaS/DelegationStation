@@ -1,5 +1,4 @@
-﻿using CorporateIdentifierSync.Models;
-using DelegationStationShared.Models;
+﻿using DelegationStationShared.Models;
 
 namespace CorporateIdentifierSync.Interfaces
 {

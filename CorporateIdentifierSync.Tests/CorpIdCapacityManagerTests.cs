@@ -1,6 +1,6 @@
 using CorporateIdentifierSync;
 using CorporateIdentifierSync.Interfaces;
-using CorporateIdentifierSync.Models;
+using DelegationStationShared.Models;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using Device = DelegationStationShared.Models.Device;

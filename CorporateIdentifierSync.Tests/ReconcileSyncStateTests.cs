@@ -1,6 +1,6 @@
 ﻿using CorporateIdentifierSync.Enums;
 using CorporateIdentifierSync.Interfaces;
-using CorporateIdentifierSync.Models;
+using DelegationStationShared.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graph.Beta.Models;

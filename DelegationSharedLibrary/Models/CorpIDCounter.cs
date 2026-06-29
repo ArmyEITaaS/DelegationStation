@@ -1,7 +1,7 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations;
 
-namespace CorporateIdentifierSync.Models
+namespace DelegationStationShared.Models
 {
     public class CorpIDCounter
     {

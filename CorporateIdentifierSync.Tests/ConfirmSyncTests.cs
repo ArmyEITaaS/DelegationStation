@@ -1,7 +1,6 @@
 ﻿using System.Net;
 using CorporateIdentifierSync.Enums;
 using CorporateIdentifierSync.Interfaces;
-using CorporateIdentifierSync.Models;
 using DelegationStationShared.Enums;
 using DelegationStationShared.Models;
 using Microsoft.Azure.Cosmos;

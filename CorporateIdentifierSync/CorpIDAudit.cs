@@ -1,6 +1,6 @@
 using CorporateIdentifierSync.Interfaces;
-using CorporateIdentifierSync.Models;
 using DelegationStationShared;
+using DelegationStationShared.Models;
 using DelegationStationShared.Extensions;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;

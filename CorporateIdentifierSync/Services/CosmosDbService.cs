@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Azure.Cosmos;
 using CorporateIdentifierSync.Interfaces;
-using CorporateIdentifierSync.Models;
 using DelegationStationShared.Extensions;
 using Device = DelegationStationShared.Models.Device;
 using DelegationStationShared;

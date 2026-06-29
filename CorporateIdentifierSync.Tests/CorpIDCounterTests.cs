@@ -1,4 +1,4 @@
-using CorporateIdentifierSync.Models;
+using DelegationStationShared.Models;
 
 namespace CorporateIdentifierSync.Tests.CorpIDCounterTests
 {
