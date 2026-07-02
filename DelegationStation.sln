@@ -28,6 +28,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SyncDeviceNames", "SyncDevi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeviceAudit", "DeviceAudit\DeviceAudit.csproj", "{E386B8BA-139F-4CA2-B6A1-22842A5EF19A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SyncedDeviceExport", "SyncedDeviceExport\SyncedDeviceExport.csproj", "{F919DBBB-0361-9E42-864B-3C107742B639}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -146,6 +148,18 @@ Global
 		{E386B8BA-139F-4CA2-B6A1-22842A5EF19A}.Release|x64.Build.0 = Release|Any CPU
 		{E386B8BA-139F-4CA2-B6A1-22842A5EF19A}.Release|x86.ActiveCfg = Release|Any CPU
 		{E386B8BA-139F-4CA2-B6A1-22842A5EF19A}.Release|x86.Build.0 = Release|Any CPU
+		{F919DBBB-0361-9E42-864B-3C107742B639}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F919DBBB-0361-9E42-864B-3C107742B639}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F919DBBB-0361-9E42-864B-3C107742B639}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F919DBBB-0361-9E42-864B-3C107742B639}.Debug|x64.Build.0 = Debug|Any CPU
+		{F919DBBB-0361-9E42-864B-3C107742B639}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F919DBBB-0361-9E42-864B-3C107742B639}.Debug|x86.Build.0 = Debug|Any CPU
+		{F919DBBB-0361-9E42-864B-3C107742B639}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F919DBBB-0361-9E42-864B-3C107742B639}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F919DBBB-0361-9E42-864B-3C107742B639}.Release|x64.ActiveCfg = Release|Any CPU
+		{F919DBBB-0361-9E42-864B-3C107742B639}.Release|x64.Build.0 = Release|Any CPU
+		{F919DBBB-0361-9E42-864B-3C107742B639}.Release|x86.ActiveCfg = Release|Any CPU
+		{F919DBBB-0361-9E42-864B-3C107742B639}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
