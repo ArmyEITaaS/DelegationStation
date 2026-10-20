@@ -38,15 +38,25 @@
 This repository contains 4 applications:  
 * Web Application 
 * CorporateIdentifierSync function app
+  * AddNewDevices function: adds newly enrolled devices to the tenant's Corporate Identifiers
+  * ConfirmSync function: confirms that devices remain synced as Corporate Identifiers
+  * DeviceDeletion function: removes devices from Corporate Identifiers and DelegationStation
+  * CorpIDAudit function: periodically reports Corporate Identifier usage and warns when usage nears the configured maximum
+  * ReconcileSyncState function: syncs or unsyncs devices when a tag's "enable sync" setting is changed
 * UpdateDevices function app
   * UpdateDevices function: applies configuration changes for devices in Delegation Station following enrollment
   * StragglerHandler function: re-attempts updates for devices that enrolled but could not be processed due to delays in InTune updating hardware information
   * Cleanup function:  Cleans up old DB entries related to the hand-off between the UpdateDevices and StragglerHandler functions 
 * (WIP) InTuneEnrollment function app
 
+The repository also includes a supporting WebJob used during deployment:
+* **SeedCorpIDCounter** (triggered WebJob): one-time job that seeds an initial `CorpIDCounter` document required by CorporateIdentifierSync. See [`SeedCorpIDCounter/README.md`](SeedCorpIDCounter/README.md).
+
 These applications can be deployed into Azure App Services (Windows or Linux) or Container Instances via Azure CLI, Visual Studio, or GitHub Actions.
 
 Software is currently built on .NET8 and function apps are using isolated worker model.
+
+> **Upgrading an existing deployment?** See [`SPECIAL_INSTRUCTIONS.md`](SPECIAL_INSTRUCTIONS.md) for any one-time migration steps that may be required between releases.
 
 ## Dependencies
 
@@ -462,14 +472,14 @@ Use this setting when using managed-identity based authentication to CosmosDB.  
 <b>"COSMOS_CONTAINER_NAME" : ""</b><br/>
 (Optional) The name of the Cosmos DB container. Default is "DeviceData"
 
-<b>"AddDevicesTriggerTime": "0 */15 * * * *"</b><br/>
-<b>"DeleteDevicesTriggerTime": "0 5-59/15 * * * *"</b><br/>
-<b>"ConfirmSyncTriggerTime": "0 10-59/15 * * * *"</b><br/>
-Must be set to a cron expression to set the frequences of each function. The example is every 15 minutes, where each function is offset by 5 minutes.
+
+<b>"ReconcileSyncStateTriggerTime": "0 0 */4 * * *"</b><br/>
+<b>"CorpIDAuditTriggerTime": "0 0 */2 * * *"</b><br/>
+Must be set to a cron expression to set the frequences of each function. 
 
 <b>"EnableCorpIDSync": "true"</b><br/>
 Set to true to enable the Corporate Identifier Sync function.
-If set to false, Delete function will only attempt to delete devices from InTune and DelegationStation.  The Add/ConfirmSync functions will exit upon running, but we recommend disabling the function from the Azure Portal.
+If set to false, Delete function will only attempt to delete devices from DelegationStation.  The Add/ConfirmSync functions will exit upon running, but we recommend disabling the function from the Azure Portal.
 
 <b>"AzureAd:TenantId" : ""</b><br/>
 Can be found in the Azure Portal under Azure Active Directory -> Properties -> Directory ID
@@ -493,12 +503,23 @@ Will look under CurrentUser\my store for the certificate with the distinguished 
 The URL of the graph instance you will be connecting to. 
 For example, "https://graph.microsoft.com/"
 
-<b>"SyncIntervalHours":  "4"</b><br/>
-Amount of time to pass before checking that a device is still synced.  For example, "4" will pull all devices with a sync time older than Now-4 hours.
+<b>"SyncIntervalHours":  "24"</b><br/>
+Amount of time to pass before checking that a device is still synced.  For example, "24" will pull all devices with a sync time older than Now-24 hours.
 
 <b>"AddDeviceBatchSize": "5000"</b><br/>
 (Optional) Amount of devices the AddDevices function will attempt to add in a single batch.  Default is 5000, which is estimated to run 15 minutes, but can be set lower if you are having issues with the function timing out.
 
+<b>"ReconcileSyncBatchSize": "1000"</b><br/>
+(Optional) Number of devices the **ReconcileSyncState** function processes per batch. Default is 1000.
+
+<b>"MAX_CORPIDS_ALLOWED": "10000"</b><br/>
+(Optional) The maximum number of Corporate Identifiers allowed in the tenant. The Add/ConfirmSync/Audit/Reconcile functions use this as a cap to avoid exceeding tenant limits. Default is 10000.
+
+<b>"MAX_CORPID_RETRIES": "10"</b><br/>
+(Optional) Number of times the AddDevices function will retry adding a device to Corporate Identifiers before marking it as Failed. Default is 10.
+
+<b>"CORPID_WARNING_THRESHOLD_PERCENT": "90"</b><br/>
+(Optional) Usage percentage (of `MAX_CORPIDS_ALLOWED`) at which the CorpIDAudit function logs a warning. Valid range is 1-100; values outside the range are clamped. Default is 90.
 
 #### Certificate Configuration
 

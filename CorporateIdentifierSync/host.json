@@ -8,5 +8,5 @@
             "enableLiveMetricsFilters": true
         }
     },
-    "functionTimeout": "4:00:00"
+    "functionTimeout": "24:00:00"
 }

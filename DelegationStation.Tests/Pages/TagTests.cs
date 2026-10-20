@@ -4,7 +4,7 @@ using Microsoft.QualityTools.Testing.Fakes;
 using Microsoft.Extensions.Configuration;
 using DelegationStation.Interfaces;
 
-namespace DelegationStationTests.Pages
+namespace DelegationStation.Tests.Pages
 {
     [TestClass]
     public class TagTests : Bunit.TestContext

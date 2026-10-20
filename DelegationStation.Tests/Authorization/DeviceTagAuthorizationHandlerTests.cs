@@ -6,7 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Security.Claims;
 
-namespace DelegationStationTests.Authorization;
+namespace DelegationStation.Tests.Authorization;
 
 [TestClass]
 public class DeviceTagAuthorizationHandlerTests

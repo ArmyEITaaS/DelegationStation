@@ -179,7 +179,7 @@ namespace DelegationStation.Services
             }
             else
             {
-                sb.Append("SELECT DISTINCT t.id,t.Name,t.Description,t.RoleDelegations,t.UpdateActions,t.PartitionKey,t.Type FROM t JOIN r IN t.RoleDelegations WHERE t.PartitionKey = \"DeviceTag\" AND (");
+                sb.Append("SELECT DISTINCT t.id,t.Name,t.Description,t.RoleDelegations,t.DeviceNameRegex,t.DeviceNameRegexDescription,t.UpdateActions,t.PartitionKey,t.Type FROM t JOIN r IN t.RoleDelegations WHERE t.PartitionKey = \"DeviceTag\" AND (");
 
                 foreach (string groupId in groupIds)
                 {

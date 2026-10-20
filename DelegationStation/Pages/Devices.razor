@@ -51,6 +51,9 @@
                                             case DeviceStatus.Deleting:
                                                 result = result + "<span class=\"badge rounded-pill bg-dark\">" + status.Key.ToString() + "</span>" + ": " + status.Value.ToString() + "<div/>";
                                                 break;
+                                            case DeviceStatus.Failed:
+                                                result = result + "<span class=\"badge rounded-pill bg-danger\">" + status.Key.ToString() + "</span>" + ": " + status.Value.ToString() + "<div/>";
+                                                break;
                                             default:
                                                 result = result + status.Key.ToString() + ": No Description Available" + "<div/>";
                                                 break;
@@ -118,36 +121,40 @@
                 {
 
                     @foreach (Device device in devices)
-                                    {
-                                        <tr>
-                                            <td class="align-middle">@device.Make</td>
-                                            <td class="align-middle">@device.Model</td>
-                                            <td class="align-middle">@device.SerialNumber</td>
-                                            <td class="align-middle">@device.OS</td>
-                                            <td class="align-middle">@device.PreferredHostname</td>
-                                            <td class="align-middle">
-                                                @foreach (string t in device.Tags)
-                                                {
-                                                    <span class="badge bg-secondary">@deviceTags.Where(tag => tag.Id.ToString() == t).Select(tag => tag.Name.ToString()).FirstOrDefault()</span>
-                                                    <br />
-                                                }
-                                            </td>
-                                            <td class="align-middle">
-                                                @if (@device.Status == @DeviceStatus.Synced)
-                                                {
-                                                    <span class="badge rounded-pill bg-success" data-bas-toggle="tooltip" data-bs-placement="top" title="Last Sync: @device.LastCorpIdentitySync">@device.Status</span>
-                                                }
-                                                else if (@device.Status == @DeviceStatus.NotSyncing)
+                    {
+                        <tr>
+                            <td class="align-middle">@device.Make</td>
+                            <td class="align-middle">@device.Model</td>
+                            <td class="align-middle">@device.SerialNumber</td>
+                            <td class="align-middle">@device.OS</td>
+                            <td class="align-middle">@device.PreferredHostname</td>
+                            <td class="align-middle">
+                                @foreach (string t in device.Tags)
                                 {
-                                                    <span class="badge rounded-pill bg-light text-dark" data-bas-toggle="tooltip" data-bs-placement="top" title="Device in Tag Not Set to Sync. Last confirmed: @device.LastCorpIdentitySync">Added</span>
-                                                }
-                                                else if (@device.Status == @DeviceStatus.Deleting)
+                                    <span class="badge bg-secondary">@deviceTags.Where(tag => tag.Id.ToString() == t).Select(tag => tag.Name.ToString()).FirstOrDefault()</span>
+                                    <br />
+                                }
+                            </td>
+                            <td class="align-middle">
+                                @if (@device.Status == @DeviceStatus.Synced)
                                 {
-                                                    <span class="badge rounded-pill bg-dark" data-bas-toggle="tooltip" data-bs-placement="top" title="Marked To Delete: @device.MarkedToDeleteUTC">@device.Status</span>
-                                                }
-                                                else
+                                    <span class="badge rounded-pill bg-success" data-bas-toggle="tooltip" data-bs-placement="top" title="Last Sync: @device.LastCorpIdentitySync">@device.Status</span>
+                                }
+                                else if (@device.Status == @DeviceStatus.NotSyncing)
                                 {
-                                                    <span class="badge rounded-pill bg-info" data-bas-toggle="tooltip" data-bs-placement="top" title="Device Added: @device.ModifiedUTC">@device.Status</span>
+                                    <span class="badge rounded-pill bg-light text-dark" data-bas-toggle="tooltip" data-bs-placement="top" title="Device in Tag Not Set to Sync. Last confirmed: @device.LastCorpIdentitySync">Added</span>
+                                }
+                                else if (@device.Status == @DeviceStatus.Deleting)
+                                {
+                                    <span class="badge rounded-pill bg-dark" data-bas-toggle="tooltip" data-bs-placement="top" title="Marked To Delete: @device.MarkedToDeleteUTC">@device.Status</span>
+                                }
+                                else if (@device.Status == @DeviceStatus.Failed)
+                                {
+                                    <span class="badge rounded-pill bg-danger" data-bas-toggle="tooltip" data-bs-placement="top" title="Last Sync Failed: @device.LastCorpIdentitySync">@device.Status</span>
+                                }
+                                else
+                                {
+                                    <span class="badge rounded-pill bg-info" data-bas-toggle="tooltip" data-bs-placement="top" title="Device Added: @device.ModifiedUTC">@device.Status</span>
                                 }
                             </td>
                             <td class="align-middle" align="center">

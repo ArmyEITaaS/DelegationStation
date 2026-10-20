@@ -43,7 +43,8 @@ namespace DelegationStation.Pages
             { DeviceStatus.Added, "Device has been added to the system but not yet synced with corporate identifiers." },
             { DeviceStatus.Synced, "Device has been successfully synced with corporate identifiers." },
             { DeviceStatus.Deleting, "Device is in the process of being deleted from the system." },
-            { DeviceStatus.NotSyncing, "Device is not currently in a tag group configured to sync to corporate identifiers." }
+            { DeviceStatus.NotSyncing, "Device is not currently in a tag group configured to sync to corporate identifiers." },
+            { DeviceStatus.Failed, "Device repeatedly failed to sync to Corporate Identifiers." }
         };
 
         private EditContext editContext;
@@ -80,17 +81,43 @@ namespace DelegationStation.Pages
 
         private void HandleValidationRequested(object? sender, ValidationRequestedEventArgs args)
         {
+            // THIS WILL ALWAYS LOG WHEN FORM IS SUBMITTED - even if DataAnnotations fail
+            logger?.LogWarning("=== VALIDATION TRIGGERED === SerialNumber: {SerialNumber}, Make: {Make}, Model: {Model}, Hostname: {PreferredHostname}, Tags: {TagCount}",
+                newDevice.SerialNumber ?? "NULL",
+                newDevice.Make ?? "NULL",
+                newDevice.Model ?? "NULL",
+                newDevice.PreferredHostname ?? "NULL",
+                newDevice.Tags?.Count ?? 0);
+
             if (messageStore == null || editContext == null)
+            {
+                logger?.LogWarning("HandleValidationRequested: messageStore or editContext is null");
                 return;
+            }
 
             messageStore?.Clear();
 
             //custom validation
-            var validationErrors = Validation.NewDeviceValidation.ValidateDevice(newDevice, deviceTags);
+            logger?.LogInformation("Starting custom device validation for SerialNumber: {SerialNumber}, TagCount: {TagCount}",
+                newDevice.SerialNumber, newDevice.Tags?.Count ?? 0);
+
+            var validationErrors = Validation.NewDeviceValidation.ValidateDevice(newDevice, deviceTags, logger);
+
+            if (validationErrors.Count > 0)
+            {
+                logger?.LogWarning("Validation completed with {ErrorCount} error(s) for device SerialNumber: {SerialNumber}",
+                    validationErrors.Count, newDevice.SerialNumber);
+            }
+            else
+            {
+                logger?.LogInformation("Validation passed for device SerialNumber: {SerialNumber}", newDevice.SerialNumber);
+            }
 
             foreach(var err in validationErrors)
             {
                 messageStore.Add(editContext.Field(err.Key), err.Value);
+                logger?.LogInformation("Validation error added - Field: {FieldName}, Errors: {@Errors}", err.Key, err.Value);
+                editContext.NotifyValidationStateChanged();
             }
 
 
@@ -211,21 +238,39 @@ namespace DelegationStation.Pages
             Guid c = Guid.NewGuid();
             userMessage = new MarkupString("");
 
+            logger?.LogInformation("Starting AddDevice operation. SerialNumber: {SerialNumber}, CorrelationId: {CorrelationId}, User: {UserName} {UserId}",
+                newDevice.SerialNumber, c, userName, userId);
+
             try
             {
 
                 DeviceTag tag = deviceTags.Where(t => t.Id.ToString() == newDevice.Tags[0]).FirstOrDefault() ?? new DeviceTag();
-                if (!authorizationService.AuthorizeAsync(user, tag, Authorization.DeviceTagOperations.Read).Result.Succeeded)
+
+                logger?.LogDebug("Retrieved tag {TagId} ({TagName}) and Regex = {DeviceNameRegex} for device {SerialNumber}",
+                    tag.Id, tag.Name, tag.DeviceNameRegex, newDevice.SerialNumber);
+                var authRequest = await authorizationService.AuthorizeAsync(user, tag, Authorization.DeviceTagOperations.Read);
+                if (!authRequest.Succeeded)
+                    //if (!authorizationService.AuthorizeAsync(user, tag, Authorization.DeviceTagOperations.Read).Result.Succeeded)
                 {
                     userMessage = (MarkupString)$"Error: Not authorized to add devices to tag {tag.Id} {tag.Name}.\nCorrelation Id: {c.ToString()}";
-                    logger.LogError($"{userMessage}\nUser: {userName} {userId}");
+                    logger.LogError("Authorization failed: User not authorized to add devices to tag {TagId} ({TagName}). CorrelationId: {CorrelationId}, User: {UserName} {UserId}",
+                        tag.Id, tag.Name, c, userName, userId);
                     return;
                 }
 
+                logger?.LogDebug("Authorization successful for tag {TagId}", tag.Id);
+
                 newDevice.ModifiedUTC = DateTime.UtcNow;
                 newDevice.AddedBy = userId;
+
+                logger?.LogInformation("Adding device to database. Make: {Make}, Model: {Model}, SerialNumber: {SerialNumber}, Tag: {TagId}, CorrelationId: {CorrelationId}",
+                    newDevice.Make, newDevice.Model, newDevice.SerialNumber, tag.Id, c);
+
                 Device resp = await deviceDBService.AddOrUpdateDeviceAsync(newDevice);
                 devices.Add(resp);
+
+                logger?.LogInformation("Device added successfully. DeviceId: {DeviceId}, SerialNumber: {SerialNumber}, CorrelationId: {CorrelationId}, User: {UserName} {UserId}",
+                    resp.Id, resp.SerialNumber, c, userName, userId);
 
                 // Reset form
                 newDevice = new Device();
@@ -239,12 +284,15 @@ namespace DelegationStation.Pages
                 editContext.OnValidationRequested += HandleValidationRequested;
                 messageStore = new ValidationMessageStore(editContext);
 
+                logger?.LogDebug("Form reset completed");
+
                 userMessage = (MarkupString)$"Device added successfully.";
             }
             catch (Exception ex)
             {
                 userMessage = (MarkupString)$"Error adding device: {ex.Message} <br />Correlation Id:{c.ToString()}";
-                logger.LogError($"{userMessage}\n{ex.Message}\nUser: {userName} {userId}");
+                logger.LogError(ex, "Error adding device. SerialNumber: {SerialNumber}, CorrelationId: {CorrelationId}, User: {UserName} {UserId}",
+                    newDevice.SerialNumber, c, userName, userId);
             }
         }
 

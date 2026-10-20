@@ -9,11 +9,10 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.52.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.7" />
 	<PackageReference Include="Microsoft.Azure.WebJobs.Logging.ApplicationInsights" Version="3.0.41" />
 	<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.7" />
 	<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.7" />
-	<PackageReference Include="Microsoft.Graph" Version="5.87.0" />
+	<PackageReference Include="Microsoft.Graph" Version="6.2.0" />
   </ItemGroup>
 
   <ItemGroup>

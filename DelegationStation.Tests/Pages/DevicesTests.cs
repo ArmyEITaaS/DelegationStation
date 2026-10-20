@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.QualityTools.Testing.Fakes;
 using System.Text.RegularExpressions;
 
-namespace DelegationStationTests.Pages
+namespace DelegationStation.Tests.Pages
 {
     [TestClass]
     public class DevicesTests : Bunit.TestContext

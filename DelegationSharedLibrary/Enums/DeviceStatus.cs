@@ -6,6 +6,7 @@ namespace DelegationStationShared.Enums
         Added,
         Synced,
         Deleting,
-        NotSyncing
+        NotSyncing,
+        Failed
     }
 }

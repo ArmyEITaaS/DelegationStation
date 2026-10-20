@@ -8,7 +8,7 @@ using DelegationStation.Authorization;
 using DelegationStation.Interfaces;
 using DelegationStationShared.Enums;
 
-namespace DelegationStationTests.Pages
+namespace DelegationStation.Tests.Pages
 {
     [TestClass]
     public class TagEditTests : Bunit.TestContext

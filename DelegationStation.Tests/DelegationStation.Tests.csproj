@@ -32,6 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\CorporateIdentifierSync\CorporateIdentifierSync.csproj" />
     <ProjectReference Include="..\DelegationSharedLibrary\DelegationSharedLibrary.csproj" />
     <ProjectReference Include="..\DelegationStation\DelegationStation.csproj" />
   </ItemGroup>

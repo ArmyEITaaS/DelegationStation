@@ -5,12 +5,21 @@ using DelegationStationShared;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
-using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
 using System.Text.RegularExpressions;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure the app-wide logging pipeline (applies to DI-injected ILogger<T>)
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddApplicationInsights(
+    configureTelemetryConfiguration: config =>
+        config.ConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"],
+    configureApplicationInsightsLoggerOptions: _ => { }
+);
+
 
 // Setup Ilogger for startup errors
 var loggerFactory = LoggerFactory.Create(loggingBuilder =>

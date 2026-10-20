@@ -267,7 +267,7 @@ namespace DelegationStation.Pages
                                 if (newDevice.Action == DeviceBulkAction.add)
                                 {
 
-                                    var validationErrors = Validation.NewDeviceValidation.ValidateBulkDevice( newDevice, selectedTags);
+                                    var validationErrors = Validation.NewDeviceValidation.ValidateBulkDevice(newDevice, selectedTags, logger);
                                     foreach (var err in validationErrors)
                                     {
                                         foreach (var errorMsg in err.Value)
