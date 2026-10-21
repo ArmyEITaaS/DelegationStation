@@ -1,42 +1,36 @@
-name: software-build-main
+name: ds-build-and-test
+
 
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
+  pull_request:
+  workflow_dispatch:
 
 permissions:
+  statuses: write
   contents: read
   #actions:  read
   #checks:   write
 
 
-
-
 env:
-  AZ_ENVIRONMENT: AzureUSGovernment
   CONFIGURATION: Release
-
   DOTNET_CORE_VERSION: 8.0.x
-
-  AZURE_UPDATE_FUNCTION_PACKAGE_PATH: .\UpdateDevices\published
-  AZURE_UPDATE_FUNCTION_PKG_NAME: update-function
+  SRC_DIR: .
 
   AZURE_APP_PACKAGE_PATH: .\DelegationStation\published
   AZURE_APP_PKG_NAME: webapp
 
+  AZURE_UPDATE_FUNCTION_PACKAGE_PATH: .\UpdateDevices\published
+  AZURE_UPDATE_FUNCTION_PKG_NAME: update-function
+
   AZURE_SYNC_FUNCTION_PACKAGE_PATH: .\CorporateIdentifierSync\published
   AZURE_SYNC_FUNCTION_PKG_NAME: sync-function
 
-  AZURE_WEBJOB_PACKAGE_PATH: .\UpdatePreferredHostnames\published
-  AZURE_WEBJOB_PKG_NAME: webjob
+  #AZURE_WEBJOB_PACKAGE_PATH: .\UpdatePreferredHostnames\published
+  #AZURE_WEBJOB_PKG_NAME: webjob
 
-  AZURE_WEBJOB2_PACKAGE_PATH: .\SyncDeviceNames\published
-  AZURE_WEBJOB2_PKG_NAME: webjob2
-
-  SRC_DIR: .
-  # TEST_DIR: ./src/WinGet.RestSource.UnitTest
+  #TEST_DIR: ./src/WinGet.RestSource.UnitTest
   
 jobs:
 
@@ -71,7 +65,8 @@ jobs:
      - name: Run Tests
        continue-on-error: true 
        run: |
-         vstest.console.exe ${{ env.SRC_DIR }}/DelegationStationTests/bin/Release/net8.0/DelegationStationTests.dll /logger:trx
+         vstest.console.exe ${{ env.SRC_DIR }}/DelegationStation.Tests/bin/Release/net8.0/DelegationStation.Tests.dll /logger:trx
+         vstest.console.exe ${{ env.SRC_DIR }}/CorporateIdentifierSync.Tests/bin/Release/net8.0/CorporateIdentifierSync.tests.dll /logger:trx
      
     #  - name: Generate Test Report
     #    if: always()
@@ -86,8 +81,13 @@ jobs:
          dotnet publish ${{ env.SRC_DIR }}/DelegationStation --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_APP_PACKAGE_PATH }}"
          dotnet publish ${{ env.SRC_DIR }}/UpdateDevices --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_UPDATE_FUNCTION_PACKAGE_PATH }}"
          dotnet publish ${{ env.SRC_DIR }}/CorporateIdentifierSync --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_SYNC_FUNCTION_PACKAGE_PATH }}"
-         dotnet publish ${{ env.SRC_DIR }}/UpdatePreferredHostnames --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_WEBJOB_PACKAGE_PATH }}"
-         dotnet publish ${{ env.SRC_DIR }}/SyncDeviceNames --configuration ${{ env.CONFIGURATION}} --no-build --output "${{ env.AZURE_WEBJOB2_PACKAGE_PATH }}"
+
+     - name: Upload WebApp Artifact
+       uses: actions/upload-artifact@v4.6.0
+       with:
+         name: ${{ env.AZURE_APP_PKG_NAME}}
+         path: ${{ env.AZURE_APP_PACKAGE_PATH }}
+         if-no-files-found: error
 
      - name: Upload Update Function Artifact
        uses: actions/upload-artifact@v4.6.0
@@ -97,13 +97,6 @@ jobs:
          if-no-files-found: error
          include-hidden-files: true
 
-     - name: Upload WebApp Artifact
-       uses: actions/upload-artifact@v4.6.0
-       with:
-         name: ${{ env.AZURE_APP_PKG_NAME}}
-         path: ${{ env.AZURE_APP_PACKAGE_PATH }}
-         if-no-files-found: error
-
      - name: Upload CorpID Sync Function Artifact
        uses: actions/upload-artifact@v4.6.0
        with:
@@ -112,17 +105,10 @@ jobs:
          if-no-files-found: error
          include-hidden-files: true
 
-     - name: Upload WebJob Artifact
-       uses: actions/upload-artifact@v4.6.0
-       with:
-         name: ${{ env.AZURE_WEBJOB_PKG_NAME }}
-         path: ${{ env.AZURE_WEBJOB_PACKAGE_PATH }}
-         if-no-files-found: error
-
-     - name: Upload WebJob2 Artifact
-       uses: actions/upload-artifact@v4.6.0
-       with:
-         name: ${{ env.AZURE_WEBJOB2_PKG_NAME }}
-         path: ${{ env.AZURE_WEBJOB2_PACKAGE_PATH }}
-         if-no-files-found: error
+     #- name: Upload WebJob Artifact
+       #uses: actions/upload-artifact@v4.6.0
+       #with:
+         #name: ${{ env.AZURE_WEBJOB_PKG_NAME }}
+         #path: ${{ env.AZURE_WEBJOB_PACKAGE_PATH }}
+         #if-no-files-found: error
 
