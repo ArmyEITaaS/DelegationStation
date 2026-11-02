@@ -371,6 +371,12 @@ Use this setting when using managed-identity based authentication to CosmosDB.  
 <b>"COSMOS_CONTAINER_NAME" : ""</b><br/>
 (Optional) The name of the Cosmos DB container. Default is "DeviceData"
 
+<b>"MAX_CORPIDS_ALLOWED": "10000"</b><br/>
+(Optional) The maximum number of Corporate Identifiers used by the System Status page to display utilization and available capacity. Default is 10000. Set this to the same value configured on the CorporateIdentifierSync Function App.
+
+<b>"APPLICATIONINSIGHTS_CONNECTION_STRING": ""</b><br/>
+The connection string for the Application Insights resource used by the Web App's telemetry. This setting already existed before 2.4.
+
 <b>"DefaultAdminGroupObjectId" : ""</b><br/>
 AzureAD group that contains Administrative users of the application, who can perform additional delegations within the application.
 Can be found in the Azure Portal under Azure Active Directory -> Groups -> Group -> Properties -> Object ID

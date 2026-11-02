@@ -1,6 +1,9 @@
 # Special Instructions
 
-Working instructions for the 2.4 release. Add the non-managed-identity upgrade steps here.
+Update instructions from 2.3 to 2.4. This release includes both infrastructure and software changes.
+
+
+This software update includes implementing support for Graph Authenticatin via Managed Identity.  However, these instructions only include the configuration required to maintain current authentication until a separate transition activity can occur. 
 
 For managed identity migration steps, see
 [`SPECIAL_INSTRUCTIONS_MANAGED_IDENTITY.md`](SPECIAL_INSTRUCTIONS_MANAGED_IDENTITY.md).
@@ -28,19 +31,20 @@ Requires a down-time so this update cannot be staged.
 - In the function, under **Settings**, go to **Environment Variables**
     - Search for 'Trigger'
     - Click on **Show Values**
-    - Make a note if the frequency of the function doesn't match the following as you will need to adjust some of the steps accordingingly:
+    - Make a note if the frequency of the function doesn't match the following as you will need to adjust some of the steps accordingly:
         - AddDevicesTriggerTime - every 5 minutes
         - DeleteDevicesTriggerTime - every 5 minutes
-        - ConfirmSync - every 4 hours
-        - ReconcileSync - every 12 hours
+        - ConfirmSyncTriggerTime - every 4 hours
+        - ReconcileSyncStateTriggerTime - every 12 hours
+        - CorpIDAuditTriggerTime - every 4 hours
     - Click on Advanced Edit
-        - Add the following entries: 
+        - Add the following entries to the end: 
 ```json
         {  "name": "AzureWebJobs.AddNewDevices.Disabled", "value": "1", "slotSetting": false  },  
         {  "name": "AzureWebJobs.ConfirmSync.Disabled", "value": "1", "slotSetting": false  },  
         {  "name": "AzureWebJobs.CorpIDAudit.Disabled", "value": "1", "slotSetting": false  },  
         {  "name": "AzureWebJobs.DeviceDeletion.Disabled", "value": "1", "slotSetting": false  },  
-        {  "name": "AzureWebJobs.ReconcileSyncState.Disabled", "value": "1", "slotSetting": false  },
+        {  "name": "AzureWebJobs.ReconcileSyncState.Disabled", "value": "1", "slotSetting": false  }
 ```
 
 - Click on **Add**
@@ -48,8 +52,8 @@ Requires a down-time so this update cannot be staged.
 - In a new tab, on the function page under **Development Tools**, go to **Console**
     - Check the current time (which is in UTC):  `date /T`
     - `cd ../../LogFiles/Application/Functions/Host`
-    -  \`ls -ltrh \*.log\`
-    - You are interested in the latest log, which will be at the bottom. Replaced <logfile> in the steps below with that file name.  These commands will return the last start/stop of each function.
+    -  `ls -ltrh \*.log`
+    - You are interested in the latest log, which will be at the bottom. Replace <logfile> in the steps below with that file name.  These commands will return the last start/stop of each function.
     - `grep Execut <logfile> | grep Reconcile`
         - This function shouldn't have any work to do, but to be safe make sure it ran and completed within the last 12 hours.
     - `grep Execut <logfile> | grep Confirm`
@@ -63,7 +67,10 @@ Requires a down-time so this update cannot be staged.
 Under **Settings** --> **Environment Variables**, add the following:
 - ASPNETCORE\_ENVIRONMENT = Development
 
-### Deploy Updated Software
+### Deploy Updated Infrastructure
+Update the infrastructure configuration to the 2.4 baseline which will include resource modifications required to go from .NET8 to .NET10.
+
+### Software
 Deploy v2.4 software to both function apps and the webapp.
 
 ### Configure Banner Notification
@@ -88,8 +95,9 @@ For initial checkout, user will need to validate the following:
 
 - They are able to login
 - They can complete a device search without performance impacts
-- They can search for AUs and Groups related to settings on the 
-- Can access new pages and they look okay
+- They can search for AUs and Groups related to settings on the Tag Edit screen
+- Can access new pages and they display okay
+- 
 #### UpdateDevices
 
 Manually kick off the UpdateDevices function and confirm:
@@ -124,11 +132,22 @@ You will also need to change the value of the setting you just added to the WebA
 
 - MAX\_CORPIDS\_ALLOWED = <new number>
 
+### [End Downtime] Re-enable CorpIDSync functions
+
+- In the function, under **Settings**, go to **Environment Variables**
+- Search for 'Disabled'.
+- Delete each of the settings we added earlier to disable the functions.
+- Click 'Apply'
+- Verify AddNewDevices and DeviceDeletion kick off on their own within the next five minutes.  (Verify the other functions later as they have a longer window.)
+
 
 ## Rollback
+**Note**:  If the CorpID function was re-enabled, you must repeat the steps to try to shut it down without interrupting current processing.
 
-The software can be rolled back by deploying the previous version (2.3).
-N
+To revert to the previous version, the infrastructure changes for .NET10 will need to be backed out.
+Once that is done, v2.3 of DelegationStation can be redeployed.
+
+The other changes can safely remain.
 
 **Note**:  If the CorpID function was re-enabled, you must repeat the steps to try to shut it down without interrupting current processing.
 
@@ -174,4 +193,4 @@ Review existing device entries whose Make, Model, or Serial Number contains whit
 
 ## Cleanup
 
-Remove maintenance-banner.txt.
+Remove maintenance-banner.txt day after completion.
