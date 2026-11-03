@@ -2,6 +2,8 @@
 
 In 2.4, Delegation Station defaults to use Managed Identity authentication to Graph.  The v2.4 special instructions cover the steps to use the exiting methods.  These instructions are specific to the migration to Managed Identity only.  The staging section can be run prior to upgrading to v2.4, but you must be on v2.4 prior to switching over.
 
+The Web App and both Function Apps use `GRAPH_USE_APP_CREDENTIALS=true` to retain app-registration certificate or client secret authentication until transition. Development also retains app-registration authentication without the flag. Removing this setting or setting it to `false` enables Graph managed identity authentication only when the host environment is not Development; leave production apps in Production throughout staging, switch-over, and rollback. The flag does not change Cosmos DB authentication or interactive user sign-in.
+
 For a new deployment, follow the standard setup in [`README.md`](README.md).
 
 FIX:  Keep the Web Application app registration: it is still used for interactive user sign-in. The app-registration Graph application permissions and credentials are only needed if an application cannot use managed identity.
@@ -96,7 +98,7 @@ Keep the existing app-registration Graph permissions and credentials until manag
 
 #### Switch to Managed Identity Auth
 - In the App Settings for the function:
-    - Remove **AZURE\_FUNCTIONS\_ENVIRONMENT**
+    - Remove **GRAPH_USE_APP_CREDENTIALS** (or set it to `false`)
     - Click on **Apply**
     - Return to **Overview** screen and click on **CorpIDAudit** function
     - Click on **Test/Run** and then click on **Run**
@@ -127,7 +129,7 @@ Keep the existing app-registration Graph permissions and credentials until manag
 ### UpdateDevices
 - From the function Overview screen, disable each of the functions.
 - In the App Settings for the function:
-    - Remove **AZURE\_FUNCTIONS\_ENVIRONMENT**
+    - Remove **GRAPH_USE_APP_CREDENTIALS** (or set it to `false`)
     - Click on **Apply**
     - Return to **Overview** screen and click on **UpdateDevices** function
     - Click on **Test/Run** and then click on **Run**
@@ -140,7 +142,7 @@ Keep the existing app-registration Graph permissions and credentials until manag
 
 ### DelegationStation WebApp
 - In the App Settings for the webapp:
-    - Remove **ASPNETCORE\_ENVIRONMENT** 
+    - Remove **GRAPH_USE_APP_CREDENTIALS** (or set it to `false`)
     - Click on **Apply**
 - Have a user verify that they can do the following:
     - Log in successfully.
@@ -153,12 +155,11 @@ We will leave settings related to the old configuration in place until we are sa
 
 ## Rollback
 
-If needed, you can switch back to the previous method of authentication by re-adding the following environment variables:
+If needed, switch back to the previous method of authentication by setting the following environment variable on the Web App and both Function Apps, then applying the changes:
 
-- For each of the functions:
-    - AZURE\_FUNCTIONS\_ENVIRONMENT = Development
-- For the webapp:
-    - ASPNETCORE\_ENVIRONMENT = Development
+- GRAPH_USE_APP_CREDENTIALS = true
+
+Keep the existing app-registration credentials and Graph permissions available until the transition has been validated. Do not change the runtime environment to Development for rollback.
 ## Cleanup
 
 ### [Downtime Required] CorpIDSync
@@ -207,4 +208,3 @@ If the App Registration certs were added to KeyVault they can be deleted.
     - Under API Permissions, remove all Application Graph permissions, leaving the Delegated User.Read and any openid/profile permissions
 
 - The App Registrations for the function apps can both be deleted.
-

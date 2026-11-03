@@ -12,14 +12,16 @@ For managed identity migration steps, see
 
 ### DelegationStation WebApp
 Under **Settings** --> **Environment Variables**, add the following:
-- ASPNETCORE_ENVIRONMENT = Development
+- GRAPH_USE_APP_CREDENTIALS = true
 - MAX\_CORPIDS\_ALLOWED = <current value set in CorpIDSync function>
-This will disable Graph Managed Identity Auth until we can transition.
+
+This will disable Graph Managed Identity Auth until we can transition, using the existing app-registration certificate or client secret instead. Keep `ASPNETCORE_ENVIRONMENT` set to `Production` (or unset, which defaults to Production) so production features remain enabled. If it was previously set to `Development` only for Graph authentication, remove that override after adding `GRAPH_USE_APP_CREDENTIALS`.
+
 ### UpdateDevices
 Under **Settings** --> **Environment Variables**, add the following:
-- AZURE\_FUNCTIONS\_ENVIRONMENT = Development
+- GRAPH_USE_APP_CREDENTIALS = true
 
-This will disable Graph Managed Identity Auth until we can transition.
+This will disable Graph Managed Identity Auth until we can transition. Keep `AZURE_FUNCTIONS_ENVIRONMENT` set to `Production` (or unset). If it was previously set to `Development` only for Graph authentication, remove that override after adding `GRAPH_USE_APP_CREDENTIALS`.
 
 ### CorpIDSync
 Requires a down-time so this update cannot be staged.
@@ -65,7 +67,9 @@ Requires a down-time so this update cannot be staged.
 
 ### Update CorpID Setting
 Under **Settings** --> **Environment Variables**, add the following:
-- ASPNETCORE\_ENVIRONMENT = Development
+- GRAPH_USE_APP_CREDENTIALS = true
+
+This keeps the existing app-registration certificate or client secret authentication for Graph. Keep `AZURE_FUNCTIONS_ENVIRONMENT` set to `Production` (or unset), and remove any `ASPNETCORE_ENVIRONMENT` or `AZURE_FUNCTIONS_ENVIRONMENT` Development override added only for Graph authentication.
 
 ### Deploy Updated Infrastructure
 Update the infrastructure configuration to the 2.4 baseline which will include resource modifications required to go from .NET8 to .NET10.
