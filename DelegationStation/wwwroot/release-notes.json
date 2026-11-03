@@ -1,22 +1,36 @@
 [
   {
+    "version": "2.4",
+    "date": "September 2026",
+    "title": "Improved user experience",
+    "changes": [
+      "New System Status page - Provides insights into Corporate Identifer usage and sync status.",
+      "Reworked Device Search to handle queries with larger numbers of results.",
+      "Expanded Device Search to include searching by tag and device state.",
+      "Devices in Tags not set to sync to Corporate Identifiers will now move out of Added state after sync processing.  These devices will now show as state Non-Syncing.",
+      "Bulk Download now includes a new column with the device state to aid in troubleshooting.",
+      "Added device counts to the Tags and Tag Edit pages.",
+      "New Help page with recent updates and FAQ content."
+    ]
+  },
+  {
     "version": "2.3",
     "date": "July 2026",
     "title": "CorpID Capacity Management Updates",
     "changes": [
-      "Backend updates to prevent exceeding tenant limit of Corporate Identifiers.",
-      "Added a failed status to stop continuous retries on devices that repeatedly fail to sync.",
-      "Stopped allowing duplicate serial number entries for non-Windows devices. If you have duplicates, remove all and add back the correct entry.",
-      "Fixed a bug where preferred hostname regex validation wasn't executing in all cases.",
-      "Regular updates for security and hygiene."
+      "Fixed bug allowing duplicate serial number entries for non-Windows devices. ",
+      "   POSSIBLE USER ACTION NEEDED:  If you have duplicate SNs, remove all entries first and add back the correct entry.  This will ensure the CorpID is resynced promptly, other methods may delay several hours and prevent device enrollment.",
+      "Backend updates to prevent exceeding tenant limit on Corporate Identifiers.",
+      "Added a Failed status to stop continuous retries on devices that repeatedly fail to sync. If your device is in this state, verify M/M/SN and re-enter.",
+      "Fixed a bug where preferred hostname regex validation wasn't executing in all cases."
     ]
   },
   {
     "version": "2.2.1",
     "date": "March 2026",
-    "title": "Security Fix - Device Tag Access",
+    "title": "Security Fix",
     "changes": [
-      "Fixed a security issue on the Devices screen that could allow a user to view devices outside their tags. May also address issues where tag was not displayed in search results."
+      "Fixed a security issue on the Devices screen. Should also address issues where tag was not displayed in search results."
     ]
   },
   {
@@ -53,8 +67,7 @@
       "New state field related to CorpID sync status.",
       "Added a new OS field to support future use of MacOS, iOS, and Android devices. (Currently experimental.)  All devices previously entered are processed will show an OS of Unknown, but will be treated as Windows devices.",
       "Added new Preferred Hostname field to support device naming on enrollment in support of Intune Autopilot 2.0.",
-      "Improved the devices screen and search capabilities.",
-      "Regular updates for security and hygiene."
+      "Improved the devices screen and search capabilities."
     ]
   }
 ]
