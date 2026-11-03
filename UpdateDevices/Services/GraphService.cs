@@ -3,6 +3,7 @@ using UpdateDevices.Interfaces;
 using DelegationStationShared;
 using DelegationStationShared.Extensions;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graph;
 using Microsoft.Graph.Models;
@@ -13,7 +14,6 @@ using System.Collections.Generic;
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Microsoft.Extensions.Hosting;
 
 
 namespace UpdateDevices.Services
@@ -23,7 +23,6 @@ namespace UpdateDevices.Services
 
         private static string _guidRegex = "^([0-9A-Fa-f]{8}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{4}[-]?[0-9A-Fa-f]{12})$";
 
-        private readonly IHostEnvironment _env;
         private readonly ILogger<GraphService> _logger;
         private GraphServiceClient _graphClient;
 
@@ -33,7 +32,6 @@ namespace UpdateDevices.Services
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
-            this._env = env;
             this._logger = logger;
 
 
@@ -49,7 +47,7 @@ namespace UpdateDevices.Services
             string baseUrl = graphEndpoint + "v1.0";
 
 
-            if (_env.IsDevelopment())
+            if (env.IsDevelopment() || configuration.GetValue<bool>("GRAPH_USE_APP_CREDENTIALS"))
             {
 
                 var certDN = configuration.GetSection("CertificateDistinguishedName").Value;

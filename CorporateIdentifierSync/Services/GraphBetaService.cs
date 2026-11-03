@@ -17,7 +17,6 @@ namespace CorporateIdentifierSync.Services
 {
     public class GraphBetaService : IGraphBetaService
     {
-        private readonly IHostEnvironment _env;
         private readonly ILogger<GraphBetaService> _logger;
         private GraphServiceClient _graphClient;
 
@@ -27,7 +26,6 @@ namespace CorporateIdentifierSync.Services
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
-            this._env = env;
             this._logger = logger;
 
             var azureCloud = configuration.GetSection("AzureEnvironment").Value;
@@ -40,7 +38,7 @@ namespace CorporateIdentifierSync.Services
 
             var scopes = new string[] { $"{graphEndpoint}.default" };
             string baseUrl = graphEndpoint + "beta";
-            if (_env.IsDevelopment())
+            if (env.IsDevelopment() || configuration.GetValue<bool>("GRAPH_USE_APP_CREDENTIALS"))
             {
                 var certDN = configuration.GetSection("AzureAd:ClientCertificates:CertificateDistinguishedName").Value;
 

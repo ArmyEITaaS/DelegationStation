@@ -10,12 +10,10 @@ namespace DelegationStation.Services
     {
         private readonly ILogger<GraphService> _logger;
         private GraphServiceClient _graphClient;
-        private IHostEnvironment _env;
 
         public GraphService(IConfiguration configuration, ILogger<GraphService> logger, IHostEnvironment env)
         {
             this._logger = logger;
-            this._env = env;
 
             var azureCloud = configuration.GetSection("AzureEnvironment").Value;
             var graphEndpoint = configuration.GetSection("GraphEndpoint").Value;
@@ -28,7 +26,7 @@ namespace DelegationStation.Services
             var scopes = new string[] { $"{graphEndpoint}.default" };
             string baseUrl = graphEndpoint + "v1.0";
 
-            if (_env.IsDevelopment())
+            if (env.IsDevelopment() || configuration.GetValue<bool>("GRAPH_USE_APP_CREDENTIALS"))
             {
 
                 var certDN = configuration.GetSection("AzureAd:ClientCertificates:CertificateDistinguishedName").Value;

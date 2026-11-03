@@ -109,7 +109,7 @@ To re-enable Cosmos DB key-based authentication, edit the resource group and acc
 
 ##### Local development
 
-Managed identities are used by the deployed applications in Azure. For Microsoft Graph, when `ASPNETCORE_ENVIRONMENT` is `Development`, the applications use the configured app-registration certificate or client secret instead; see the application configuration sections below. For local Cosmos DB development, use `COSMOS_CONNECTION_STRING` unless the development environment has a managed identity endpoint available. The Cosmos setup script's role assignment for the signed-in user grants Cosmos DB data-plane access but does not itself provide managed identity credentials to a local process.
+Managed identities are used by the deployed applications in Azure. For Microsoft Graph, the applications use the configured app-registration certificate or client secret when the host environment is Development or `GRAPH_USE_APP_CREDENTIALS` is `true`, both locally and in Azure; see the application configuration sections below. When the environment is not Development and the flag is unset or `false`, Graph authentication uses managed identity. Keep production apps in Production and use `GRAPH_USE_APP_CREDENTIALS=true` to retain app-registration authentication without changing production features. This switch does not change Cosmos DB authentication or interactive user sign-in. For local Cosmos DB development, use `COSMOS_CONNECTION_STRING` unless the development environment has a managed identity endpoint available. The Cosmos setup script's role assignment for the signed-in user grants Cosmos DB data-plane access but does not itself provide managed identity credentials to a local process.
 
 #### App Registration (Web Application)
 
@@ -393,10 +393,8 @@ For example, "https://graph.microsoft.com/"
 <b>"DefaultActionDisable": "false"</b><br/>
 (Optional) Can be set to "true" to disable the device if not found in the database. If set to "false" the device will be allowed to connect if not found in the database.
 
-<b>"ASPNETCORE_ENVIRONMENT": "Development"</b><br/>
-(Development Only) This is used to determine how to connect to Graph.  By default, it will use Managed Identity authentication.  
-This setting allows you to authenticate using an AppReg with a cert or secret in environments where MSI is not an option.
-For web apps, this works both locally and in Azure.
+<b>"GRAPH_USE_APP_CREDENTIALS": "true"</b><br/>
+(Optional) Set to `true` to authenticate to Graph using the configured app-registration certificate or client secret instead of managed identity, both locally and in Azure. Development also uses app-registration authentication, even when the flag is unset or `false`. Visual Studio's existing launch profiles set `ASPNETCORE_ENVIRONMENT=Development`, so no additional variable is required there. Managed identity is used only when the environment is not Development and the flag is unset or `false`. Keep production web apps in Production and use this flag instead of changing their environment.
 
 #### Certificate Configuration
 
@@ -488,15 +486,8 @@ The default is 5, which is the correct value for using the default UpdateDevices
 <b>"MaxStragglerAttempts": "5"</b><br/>
 (Optional)  The number of times the Straggler Handler will re-attempt to process a device if it encounters errors during processing.  Defaults to 5.
 
-<b>"ASPNETCORE_ENVIRONMENT": "Development"</b><br/>
-(Development Only) This is used to determine how to connect to Graph.  By default, it will use Managed Identity authentication.  
-This setting allows you to authenticate using an AppReg with a cert or secret in environments where MSI is not an option.
-This will only work in local development and not in Azure.
-
-<b>"AZURE_FUNCTIONS_ENVIRONMENT": "Development"</b><br/>
-(Development Only) This is used to determine how to connect to Graph.  By default, it will use Managed Identity authentication.  
-This setting allows you to authenticate using an AppReg with a cert or secret in environments where MSI is not an option.
-This setting only works in Azure and not locally.
+<b>"GRAPH_USE_APP_CREDENTIALS": "true"</b><br/>
+(Optional) Set to `true` to authenticate to Graph using the configured app-registration certificate or client secret instead of managed identity, both locally and in Azure (under `Values` in `local.settings.json` for local functions). Development also uses app-registration authentication, even when the flag is unset or `false`. Managed identity is used for both v1.0 and beta Graph clients only when the host environment is not Development and the flag is unset or `false`. Keep production function apps in Production and use this flag instead of changing their environment.
 
 ### Certificate Configuration
 
@@ -608,15 +599,8 @@ Amount of time to pass before checking that a device is still synced.  For examp
 <b>"CORPID_WARNING_THRESHOLD_PERCENT": "90"</b><br/>
 (Optional) Usage percentage (of `MAX_CORPIDS_ALLOWED`) at which the CorpIDAudit function logs a warning. Valid range is 1-100; values outside the range are clamped. Default is 90.
 
-<b>"ASPNETCORE_ENVIRONMENT": "Development"</b><br/>
-(Local Development Only) This is used to determine how to connect to Graph.  By default, it will use Managed Identity authentication.  
-This setting allows you to authenticate using an AppReg with a cert or secret in environments where MSI is not an option.
-This will only work in local development and not in Azure.
-
-<b>"AZURE_FUNCTIONS_ENVIRONMENT": "Development"</b><br/>
-(Development Azure Only) This is used to determine how to connect to Graph.  By default, it will use Managed Identity authentication.  
-This setting allows you to authenticate using an AppReg with a cert or secret in environments where MSI is not an option.
-This setting only works in Azure and not locally.
+<b>"GRAPH_USE_APP_CREDENTIALS": "true"</b><br/>
+(Optional) Set to `true` to authenticate to Graph using the configured app-registration certificate or client secret instead of managed identity, both locally and in Azure (under `Values` in `local.settings.json` for local functions). Development also uses app-registration authentication, even when the flag is unset or `false`. Managed identity is used for both v1.0 and beta Graph clients only when the host environment is not Development and the flag is unset or `false`. Keep production function apps in Production and use this flag instead of changing their environment.
 
 #### Certificate Configuration
 
