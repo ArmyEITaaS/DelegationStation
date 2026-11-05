@@ -2,7 +2,7 @@
 
 flowchart TD
     Start([Start AddNotSyncingDevicesInEnabledTagsAsync]) --> ReserveCorpIDs["Reserve corpIDs"]
-    ReserveCorpIDs --> GetDevices[Get NotSyncing devices<br/>in enabled tags]
+    ReserveCorpIDs --> GetDevices[Get NonSyncing devices<br/>in enabled tags]
     GetDevices --> AddCorpIDs[Add CorporateIdentifiers]
 
     subgraph LOOP["For each Synced device in disabled tags"]

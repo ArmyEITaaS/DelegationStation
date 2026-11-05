@@ -281,7 +281,7 @@ namespace CorporateIdentifierSync.Services
             string className = GetType().Name;
             string fullMethodName = className + "." + methodName;
 
-            // Only return devices that are in Synced or NotSyncing status
+            // Only return devices that are in Synced or NonSyncing status
             QueryDefinition query = new QueryDefinition("SELECT * FROM c WHERE c.Type = \"Device\" AND NOT (c.Status = @deleting)" +
                 " AND NOT (c.Status = @added) AND c.LastCorpIdentitySync <= @date");
             query.WithParameter("@deleting", DeviceStatus.Deleting);
@@ -345,7 +345,7 @@ namespace CorporateIdentifierSync.Services
                 return new List<Device>();
             }
 
-            _logger.DSLogInformation($"Getting up to {batchSize} NotSyncing devices in {tagIds.Count} enabled tag(s).", fullMethodName);
+            _logger.DSLogInformation($"Getting up to {batchSize} NonSyncing devices in {tagIds.Count} enabled tag(s).", fullMethodName);
 
             string tagFilter = string.Join(" OR ", tagIds.Select((_, i) => $"t = @tag{i}"));
 
@@ -355,7 +355,7 @@ namespace CorporateIdentifierSync.Services
                 "ORDER BY c.ModifiedUTC ASC " +
                 "OFFSET 0 LIMIT @batchSize");
 
-            query.WithParameter("@status", DeviceStatus.NotSyncing);
+            query.WithParameter("@status", DeviceStatus.NonSyncing);
             query.WithParameter("@batchSize", batchSize);
             for (int i = 0; i < tagIds.Count; i++)
             {
@@ -374,7 +374,7 @@ namespace CorporateIdentifierSync.Services
             }
             catch (Exception ex)
             {
-                _logger.DSLogException("Failed to query Cosmos DB for NotSyncing devices in enabled tags.", ex, fullMethodName);
+                _logger.DSLogException("Failed to query Cosmos DB for NonSyncing devices in enabled tags.", ex, fullMethodName);
             }
             return devices;
         }

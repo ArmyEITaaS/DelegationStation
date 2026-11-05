@@ -2,16 +2,18 @@
 
 ## Table of Contents
 - [Overview](#overview)
+- [Usage](#usage)
 - [Dependencies](#dependencies)
 	- [CosmosDB](#cosmosdb)
 	- [Azure AD Configuration](#azure-ad-configuration)
 	  - [Groups and Administrative Units](#groups-and-administrative-units)
+	  - [Managed Identity Setup](#managed-identity-setup)
 	  - [App Registration (Web Application)](#app-registration-web-application)
 	    - [Authentication Blade](#authentication-blade)
-	    - [API Permissions](#api-permissions)
-	    - [Certificates & Secrets](#certificates--secrets)
 	    - [Token Configuration](#token-configuration)
 	    - [Enterprise Application Setup](#enterprise-application-setup)
+	    - [API Permissions](#api-permissions)
+	    - [Certificates & Secrets](#certificates--secrets)
 	  - [App Registration (UpdateDevices Function App)](#app-registration-updatedevices-function-app)
 	    - [Graph Permissions](#graph-permissions-1)
 	    - [Certificates & Secrets](#certificate-based-authentication-1)
@@ -56,7 +58,7 @@ These applications can be deployed into Azure App Services (Windows or Linux) or
 
 Software is currently built on .NET8 and function apps are using isolated worker model.
 
-> **Upgrading an existing deployment?** See [`SPECIAL_INSTRUCTIONS.md`](SPECIAL_INSTRUCTIONS.md) for any one-time migration steps that may be required between releases.
+**Upgrading an existing deployment?** See [`SPECIAL_INSTRUCTIONS.md`](SPECIAL_INSTRUCTIONS.md) for the 2.4 non-managed-identity upgrade steps, [`SPECIAL_INSTRUCTIONS_MANAGED_IDENTITY.md`](SPECIAL_INSTRUCTIONS_MANAGED_IDENTITY.md) to transition an existing deployment to managed identity, and the [`SpecialInstructions`](SpecialInstructions) folder for archived release-specific instructions.
 
 ## Dependencies
 
@@ -65,18 +67,49 @@ Software is currently built on .NET8 and function apps are using isolated worker
 The software utilizes a CosmosDB to maintain application data.  
 * Database Name:  DelegationStationData 
 * Container
-  * Name: DeviceData  
-  * PartitionKey: /PartitionKey
+    - Name: DeviceData  
+    - PartitionKey: /PartitionKey
 
  *Note:  You can use a different  DB and Container name, but you will need to update related configuration values for each of the apps.*
 
  ### Azure AD Configuration
 
  #### Groups and Administrative Units
- * Create a Security Group that will contain all the Adminstrative Users. (The GUID of this group will be used in the configuration of the webapp.)
- * (Optional) Create an Administrative Unit that will contain all the groups that the application will be able to assign devices to.  This supports the most secure configuration.  Alternatives are mentioned below.
+* Create a Security Group that will contain all the Adminstrative Users. (The GUID of this group will be used in the configuration of the webapp.)
+* (Optional) Create an Administrative Unit that will contain all the groups that the application will be able to assign devices to.  This supports the most secure configuration.  Alternatives are mentioned below.
  
 
+#### Managed Identity Setup
+
+The Web Application, UpdateDevices Function App, and CorporateIdentifierSync Function App use their system-assigned managed identities to access Microsoft Graph and Cosmos DB when deployed to Azure. Create and deploy the three Azure resources, and enable a **system-assigned identity** on each, before assigning permissions. The scripts below read the resource names and identity principal IDs from Azure; they do not create the resources or enable their identities.
+
+##### Configure Microsoft Graph permissions
+
+The [`scripts/configureGraphMSIAuth.sh`](scripts/configureGraphMSIAuth.sh) script grants these Microsoft Graph application roles to the deployed identities:
+
+| Identity | Microsoft Graph application roles |
+| --- | --- |
+| Web Application | `AdministrativeUnit.Read.All`, `DeviceManagementManagedDevices.Read.All`, `Group.Read.All` |
+| UpdateDevices Function App | `AdministrativeUnit.ReadWrite.All`, `Device.ReadWrite.All`, `DeviceManagementManagedDevices.PrivilegedOperations.All`, `GroupMember.ReadWrite.All`, `DeviceManagementManagedDevices.Read.All` |
+| CorporateIdentifierSync Function App | `DeviceManagementManagedDevices.ReadWrite.All`, `DeviceManagementServiceConfig.ReadWrite.All` |
+
+The UpdateDevices assignment includes `GroupMember.ReadWrite.All`, a broad tenant-level permission. This is intentional for the development environment where this script is used. Production uses a separate Administrative Unit (AU) configuration; confirm its exact setup before documenting or applying it in production.
+
+Before running the script, edit the resource group and resource names near its top. Sign in with Azure CLI (`az login`), set the matching Azure cloud (`az cloud set`), and select the correct subscription (`az account set`). The signed-in operator must be permitted to grant Microsoft Graph application-role assignments. The script uses `https://graph.microsoft.us` and is configured for Azure US Government; for another cloud, replace every occurrence with that cloud's Microsoft Graph endpoint. Run it from Bash with Azure CLI and `jq` installed. It assigns application roles directly to the existing managed identity service principals; it does not create app registrations. The script is not idempotent, so review current assignments before running it again.
+
+##### Configure Cosmos DB access
+
+The [`scripts/enableCosmosMI.sh.template`](scripts/enableCosmosMI.sh.template) script disables Cosmos DB key-based authentication, then assigns the built-in Cosmos DB Data Contributor role at the **account scope** to the Web Application and both function identities. It also assigns that role to the Azure CLI signed-in user.
+
+Copy the template to a working script, replace the resource group, Cosmos DB account, and app resource names, then run it from Bash with Azure CLI and `jq` installed. Sign in and select the intended subscription first. The resources and system-assigned identities must already exist, and the operator needs permission to change Cosmos DB account settings and create data-plane role assignments.
+
+This script grants broad data access across the Cosmos DB account and disables local/key authentication. Once key authentication is disabled, connection-string authentication stops working; configure `COSMOS_ENDPOINT` for the application and ensure each app uses its managed identity. Review the account scope and existing role assignments before running: the script is not idempotent and can create duplicate role assignments if run repeatedly.
+
+To re-enable Cosmos DB key-based authentication, edit the resource group and account name in [`scripts/disableCosmosMI.sh.template`](scripts/disableCosmosMI.sh.template) and run it with Azure CLI. This only re-enables local authentication; it does not remove the role assignments.
+
+##### Local development
+
+Managed identities are used by the deployed applications in Azure. For Microsoft Graph, the applications use the configured app-registration certificate or client secret when the host environment is Development or `GRAPH_USE_APP_CREDENTIALS` is `true`, both locally and in Azure; see the application configuration sections below. When the environment is not Development and the flag is unset or `false`, Graph authentication uses managed identity. Keep production apps in Production and use `GRAPH_USE_APP_CREDENTIALS=true` to retain app-registration authentication without changing production features. This switch does not change Cosmos DB authentication or interactive user sign-in. For local Cosmos DB development, use `COSMOS_CONNECTION_STRING` unless the development environment has a managed identity endpoint available. The Cosmos setup script's role assignment for the signed-in user grants Cosmos DB data-plane access but does not itself provide managed identity credentials to a local process.
 
 #### App Registration (Web Application)
 
@@ -102,7 +135,29 @@ Select **ID tokens** for the implicit grant and hybrid flows.
 ###### Supported account types
 Select **Accounts in this organizational directory only**
 
+##### Token Configuration
+This application utilizes Entra ID groups for accessing the application through claims. Each group that is assigned a role must be configured to be sent as a claim from the enterprise application.
+Add the following claims to the App registration:
+
+1. Navigate to the Token configuration blade.
+1. Click on **+ Add groups claim**
+1. Select **Security groups** OR **Groups assigned to the application (recommended for large enterprise companies to avoid exceeding the limit on the number of groups a token can emit)**
+1. For each token type (ID, Access, SAML) select:
+   - Group ID
+   - Emit groups as role claims
+
+##### Enterprise Application Setup
+
+The Enterprise Application configuration will allow you to restrict designated users and groups to the application.
+
+- From the AD tenant screen in the Azure Portal, select **Enterprise Applications**
+- Click on the App Registration you just created.
+- Click on **Users and groups**
+- Add any groups or users who need access to the application.
+
 ##### API Permissions
+
+This app registration is still used for interactive user sign-in. The delegated `User.Read` permission below is for user login and is separate from the app's managed identity.
 
 ###### For User Login
 
@@ -110,6 +165,8 @@ Ensure the following Permission is listed under Microsoft.Graph
 - User.Read  (Delegated)
 
 ###### Graph Permissions
+
+When using managed identity, assign the Graph application roles to the Web Application identity as described in [Managed Identity Setup](#managed-identity-setup), rather than to this app registration. Add the following application permissions to this app registration only when the Web Application cannot use managed identity:
 
 Click on **+ Add a permission** 
 Select **Microsoft Graph** 
@@ -122,6 +179,21 @@ Add the following permissions:
 Once done, ensure that you have been Granted Admin Consent for these permissions.
 
 ##### Certificates & Secrets
+
+These credentials are only needed when the Web Application cannot use managed identity for Microsoft Graph authentication.
+
+###### Managed Identity (Federated Credential)
+
+- Click on **Certificates & secrets**
+- Click on **Federated credentials**
+- Click on **+ Add credential**
+- Select scenario **Managed Identity**
+- Click on **Select a managed identity**
+- Choose the subscription
+- Under **Managed identity**, select **App Service**, then choose the identity of the correct DelegationStation web app
+- Click **Select**
+- Under **Credential details**, enter a name, for example `DEV-DSWebApp-MSI`
+- Click **Add**
 
 ###### Certificate-based Authentication
 
@@ -140,29 +212,11 @@ But you will also need a PFX with the private key (and a set pass phrase) to con
 - Click on **+ New client secret**
 - Store the value in a secure location (key vault is recommended).  This will be used in the configuration of the application.  
 
-##### Token Configuration
-This application utilizes Entra ID groups for accessing the application through claims. Each group that is assigned a role must be configured to be sent as a claim from the enterprise application.
-Add the following claims to the App registration:
-
-1. Navigate to the Token configuration blade.
-1. Click on **+ Add groups claim**
-1. Select **Security groups** OR **Groups assigned to the application (recommended for large enterprise companies to avoid exceeding the limit on the number of groups a token can emit)**					
-1. For each token type (ID, Access, SAML) select:
-   - Group ID
-   - Emit groups as role claims
-
-##### Enterprise Application Setup
-
-The Enterprise Application configuration will allow you to restrict designated users and groups to the application.
-
-- From the AD tenant screen in the Azure Portal, select **Enterprise Applications**
-- Click on the App Registration you just created.
-- Click on **Users and groups**
-- Add any groups or users who need access to the application.
-
 
 
 #### App Registration (UpdateDevices Function App)
+
+**Note:** This app registration is only needed when the function cannot use managed identity. When using managed identity, assign the required Microsoft Graph roles to the function identity as described in [Managed Identity Setup](#managed-identity-setup).
 
 From your AzureAD tenant in the Azure portal, add a new app registration.  
 **Name**:  DelegationStation-updatedevices</br>
@@ -218,6 +272,8 @@ Do not make these changes if using reduced permissions to monitor changes but no
 
 #### App Registration (CorporateIdentifier Function App)
 
+**Note:** This app registration is only needed when the function cannot use managed identity. When using managed identity, assign the required Microsoft Graph roles to the function identity as described in [Managed Identity Setup](#managed-identity-setup).
+
 From your AzureAD tenant in the Azure portal, add a new app registration.  
 **Name**:  DelegationStation-corpidsync</br>
 **Supported account types**:  Accounts in this organizational directory only</br>
@@ -254,9 +310,6 @@ But you will also need a PFX with the private key (and a set passphrase) to conf
 - Click on **Client secrets**
 - Click on **+ New client secret**
 - Store the value in a secure location (key vault is recommended).  This will be used in the configuration of the application. 
-
-
-
 ## Application Configurations
 
 ### Web Application Configuration
@@ -318,6 +371,12 @@ Use this setting when using managed-identity based authentication to CosmosDB.  
 <b>"COSMOS_CONTAINER_NAME" : ""</b><br/>
 (Optional) The name of the Cosmos DB container. Default is "DeviceData"
 
+<b>"MAX_CORPIDS_ALLOWED": "10000"</b><br/>
+(Optional) The maximum number of Corporate Identifiers used by the System Status page to display utilization and available capacity. Default is 10000. Set this to the same value configured on the CorporateIdentifierSync Function App.
+
+<b>"APPLICATIONINSIGHTS_CONNECTION_STRING": ""</b><br/>
+The connection string for the Application Insights resource used by the Web App's telemetry. This setting already existed before 2.4.
+
 <b>"DefaultAdminGroupObjectId" : ""</b><br/>
 AzureAD group that contains Administrative users of the application, who can perform additional delegations within the application.
 Can be found in the Azure Portal under Azure Active Directory -> Groups -> Group -> Properties -> Object ID
@@ -333,6 +392,9 @@ For example, "https://graph.microsoft.com/"
 
 <b>"DefaultActionDisable": "false"</b><br/>
 (Optional) Can be set to "true" to disable the device if not found in the database. If set to "false" the device will be allowed to connect if not found in the database.
+
+<b>"GRAPH_USE_APP_CREDENTIALS": "true"</b><br/>
+(Optional) Set to `true` to authenticate to Graph using the configured app-registration certificate or client secret instead of managed identity, both locally and in Azure. Development also uses app-registration authentication, even when the flag is unset or `false`. Visual Studio's existing launch profiles set `ASPNETCORE_ENVIRONMENT=Development`, so no additional variable is required there. Managed identity is used only when the environment is not Development and the flag is unset or `false`. Keep production web apps in Production and use this flag instead of changing their environment.
 
 #### Certificate Configuration
 
@@ -424,6 +486,9 @@ The default is 5, which is the correct value for using the default UpdateDevices
 <b>"MaxStragglerAttempts": "5"</b><br/>
 (Optional)  The number of times the Straggler Handler will re-attempt to process a device if it encounters errors during processing.  Defaults to 5.
 
+<b>"GRAPH_USE_APP_CREDENTIALS": "true"</b><br/>
+(Optional) Set to `true` to authenticate to Graph using the configured app-registration certificate or client secret instead of managed identity, both locally and in Azure (under `Values` in `local.settings.json` for local functions). Development also uses app-registration authentication, even when the flag is unset or `false`. Managed identity is used for both v1.0 and beta Graph clients only when the host environment is not Development and the flag is unset or `false`. Keep production function apps in Production and use this flag instead of changing their environment.
+
 ### Certificate Configuration
 
 This is only needed if you are connecting to Graph using certificates.
@@ -473,9 +538,22 @@ Use this setting when using managed-identity based authentication to CosmosDB.  
 (Optional) The name of the Cosmos DB container. Default is "DeviceData"
 
 
-<b>"ReconcileSyncStateTriggerTime": "0 0 */4 * * *"</b><br/>
-<b>"CorpIDAuditTriggerTime": "0 0 */2 * * *"</b><br/>
-Must be set to a cron expression to set the frequences of each function. 
+The following settings must be set to cron expressions that control the frequency of each function:
+
+<b>"AddDevicesTriggerTime": "0 */5 * * * *"</b><br/>
+Cron for the AddDevices function.
+
+<b>"DeleteDevicesTriggerTime": "0 2-59/5 * * * *"</b><br/>
+Cron for the DeleteDevices function.
+
+<b>"ConfirmSyncTriggerTime": "0 0 */4 * * *"</b><br/>
+Cron for the ConfirmSync function.
+
+<b>"CorpIDAuditTriggerTime": "0 0 */6 * * *"</b><br/>
+Cron for the CorpIDAudit function.
+
+<b>"ReconcileSyncStateTriggerTime": "0 0 */12 * * *"</b><br/>
+Cron for the ReconcileSyncState function, which syncs or unsyncs devices when a tag's "enable sync" setting changes.
 
 <b>"EnableCorpIDSync": "true"</b><br/>
 Set to true to enable the Corporate Identifier Sync function.
@@ -520,6 +598,9 @@ Amount of time to pass before checking that a device is still synced.  For examp
 
 <b>"CORPID_WARNING_THRESHOLD_PERCENT": "90"</b><br/>
 (Optional) Usage percentage (of `MAX_CORPIDS_ALLOWED`) at which the CorpIDAudit function logs a warning. Valid range is 1-100; values outside the range are clamped. Default is 90.
+
+<b>"GRAPH_USE_APP_CREDENTIALS": "true"</b><br/>
+(Optional) Set to `true` to authenticate to Graph using the configured app-registration certificate or client secret instead of managed identity, both locally and in Azure (under `Values` in `local.settings.json` for local functions). Development also uses app-registration authentication, even when the flag is unset or `false`. Managed identity is used for both v1.0 and beta Graph clients only when the host environment is not Development and the flag is unset or `false`. Keep production function apps in Production and use this flag instead of changing their environment.
 
 #### Certificate Configuration
 

@@ -9,7 +9,7 @@ using DelegationStationShared.Enums;
 namespace DelegationStation.Tests.Pages
 {
     [TestClass]
-    public class RoleTests : Bunit.TestContext
+    public class RoleTests : BunitTestContext
     {
         [TestMethod]
         public void RolesShouldRender()
@@ -20,7 +20,7 @@ namespace DelegationStation.Tests.Pages
                 // Add Dependent Services
                 Guid defaultId = Guid.NewGuid();
                 Guid userGroupId = Guid.NewGuid();
-                var authContext = this.AddTestAuthorization();
+                var authContext = this.AddAuthorization();
                 authContext.SetAuthorized("TEST USER");
                 authContext.SetClaims(new System.Security.Claims.Claim("name", "TEST USER"));
                 authContext.SetClaims(new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", defaultId.ToString()));
@@ -66,7 +66,7 @@ namespace DelegationStation.Tests.Pages
 
 
                 // Act
-                var cut = RenderComponent<Roles>();
+                var cut = Render<Roles>();
 
                 // Assert
                 Assert.IsTrue(cut.Markup.Contains("testRole"), $"testRole should be rendered. \\nActual:\\n{cut.Markup}\"");
@@ -90,7 +90,7 @@ namespace DelegationStation.Tests.Pages
                 // Add Dependent Services
                 Guid defaultId = Guid.NewGuid();
                 Guid userGroupId = Guid.NewGuid();
-                var authContext = this.AddTestAuthorization();
+                var authContext = this.AddAuthorization();
                 authContext.SetAuthorized("TEST USER");
                 authContext.SetClaims(new System.Security.Claims.Claim("name", "TEST USER"));
                 authContext.SetClaims(new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", userGroupId.ToString()));
@@ -136,7 +136,7 @@ namespace DelegationStation.Tests.Pages
 
 
                 // Act
-                var cut = RenderComponent<Roles>();
+                var cut = Render<Roles>();
 
                 // Assert
                 Assert.IsTrue(cut.Markup.Contains("Not Authorized"), $"Page should show Not Authorized. \\nActual:\\n{cut.Markup}\"");

@@ -6,7 +6,7 @@ flowchart TD
     subgraph LOOP ["For Each Device"]
         direction TB
 
-        NSS2["Set Status=NotSyncing<br/>LastCorpIdentitySync=Now"]
+        NSS2["Set Status=NonSyncing<br/>LastCorpIdentitySync=Now"]
         NSS2 --> NSU[UpdateDevice]
 
         NSU -->|Success| X[Done processing device.]

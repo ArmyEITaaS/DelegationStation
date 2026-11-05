@@ -1,0 +1,17 @@
+﻿@namespace DelegationStation.Shared
+
+@if (!string.IsNullOrEmpty(Message))
+{
+    <div class="maintenance-banner @ThemeCssClass" role="alert">
+        @if (IsScrolling)
+        {
+            <div class="maintenance-banner-track">
+                <span class="maintenance-banner-text" style="animation-duration:@(ScrollDurationSeconds)s">@Message</span>
+            </div>
+        }
+        else
+        {
+            <span class="maintenance-banner-text">@Message</span>
+        }
+    </div>
+}

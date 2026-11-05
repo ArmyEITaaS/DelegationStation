@@ -75,12 +75,12 @@ public class RemoveSyncedDevicesInDisabledTagsTests
     #region Row1_CorpIDRemoved_DBUpdated
     // ====================================================================
     // Row 1: CorpID Present=Yes, Removed=Yes, DB Updated=Yes
-    // Expected: CorpIDCount -1, Device State=NotSyncing with CorpID cleared
+    // Expected: CorpIDCount -1, Device State=NonSyncing with CorpID cleared
     // ====================================================================
 
     /// <summary>
     /// CorpID successfully deleted from Graph; device successfully updated in Cosmos.
-    /// Expected: counter decremented by 1, device set to NotSyncing with CorpID details removed.
+    /// Expected: counter decremented by 1, device set to NonSyncing with CorpID details removed.
     /// </summary>
     [Fact]
     public async Task Row1_CorpIDRemoved_DBUpdated_DecrementsCounterAndClearsDevice()
@@ -96,7 +96,7 @@ public class RemoveSyncedDevicesInDisabledTagsTests
         // Assert
         Assert.Equal(InitialCorpIDCount - 1, db.Counter.CorpIDCount);
         Assert.Equal(1, db.UpdateDeviceCallCount);
-        Assert.Equal(DeviceStatus.NotSyncing, db.LastUpdatedDevice!.Status);
+        Assert.Equal(DeviceStatus.NonSyncing, db.LastUpdatedDevice!.Status);
         Assert.Equal(string.Empty, db.LastUpdatedDevice.CorporateIdentityID);
         Assert.Equal(string.Empty, db.LastUpdatedDevice.CorporateIdentity);
     }
@@ -131,21 +131,21 @@ public class RemoveSyncedDevicesInDisabledTagsTests
     }
     #endregion
 
-    #region Row3_CorpIDRemoved_DB412_FreshDeviceNullOrDeletingOrNotSyncing
+    #region Row3_CorpIDRemoved_DB412_FreshDeviceNullOrDeletingOrNonSyncing
     // ====================================================================
     // Row 3: CorpID Present=Yes, Removed=Yes, DB Updated=No (412),
-    //         Fresh device is null/Deleting/NotSyncing
+    //         Fresh device is null/Deleting/NonSyncing
     // Expected: CorpIDCount -1, leave device state as-is
     // ====================================================================
 
     /// <summary>
     /// CorpID deleted from Graph; Cosmos 412 on update; fresh device is already in an end state
-    /// (null, Deleting, or NotSyncing). Counter is still decremented because we performed the Graph delete.
+    /// (null, Deleting, or NonSyncing). Counter is still decremented because we performed the Graph delete.
     /// </summary>
     [Theory]
     [InlineData(null)]
     [InlineData(DeviceStatus.Deleting)]
-    [InlineData(DeviceStatus.NotSyncing)]
+    [InlineData(DeviceStatus.NonSyncing)]
     public async Task Row3_CorpIDRemoved_DB412_FreshDeviceInEndState_DecrementsCounterLeavesDevice(DeviceStatus? freshStatus)
     {
         // Arrange
@@ -185,12 +185,12 @@ public class RemoveSyncedDevicesInDisabledTagsTests
     // ====================================================================
     // Row 4: CorpID Present=Yes, Removed=Yes, DB Updated=No (412),
     //         Fresh device is Synced/Added/Failed, Tag still disabled
-    // Expected: CorpIDCount -1, Device State=NotSyncing with CorpID cleared
+    // Expected: CorpIDCount -1, Device State=NonSyncing with CorpID cleared
     // ====================================================================
 
     /// <summary>
     /// CorpID deleted from Graph; Cosmos 412; fresh device is Synced/Added/Failed; tag is still disabled.
-    /// Retry update succeeds. Counter decremented, device set to NotSyncing.
+    /// Retry update succeeds. Counter decremented, device set to NonSyncing.
     /// </summary>
     [Theory]
     [InlineData(DeviceStatus.Synced)]
@@ -227,7 +227,7 @@ public class RemoveSyncedDevicesInDisabledTagsTests
         // Assert
         Assert.Equal(InitialCorpIDCount - 1, db.Counter.CorpIDCount);
         Assert.Equal(2, db.UpdateDeviceCallCount); // first (412) + retry
-        Assert.Equal(DeviceStatus.NotSyncing, db.LastUpdatedDevice!.Status);
+        Assert.Equal(DeviceStatus.NonSyncing, db.LastUpdatedDevice!.Status);
         Assert.Equal(string.Empty, db.LastUpdatedDevice.CorporateIdentityID);
         Assert.Equal(string.Empty, db.LastUpdatedDevice.CorporateIdentity);
     }
@@ -389,12 +389,12 @@ public class RemoveSyncedDevicesInDisabledTagsTests
     #region Row9_CorpIDNotFound_DBUpdated
     // ====================================================================
     // Row 9: CorpID Present=Yes, Removed=No (NotFound), DB Updated=Yes
-    // Expected: CorpIDCount no change, Device State=NotSyncing with CorpID cleared
+    // Expected: CorpIDCount no change, Device State=NonSyncing with CorpID cleared
     // ====================================================================
 
     /// <summary>
     /// CorpID not found in Graph (already gone); device successfully updated in Cosmos.
-    /// Counter unchanged (we didn't perform the actual delete). Device set to NotSyncing.
+    /// Counter unchanged (we didn't perform the actual delete). Device set to NonSyncing.
     /// </summary>
     [Fact]
     public async Task Row9_CorpIDNotFound_DBUpdated_NoCounterChange_ClearsDevice()
@@ -410,7 +410,7 @@ public class RemoveSyncedDevicesInDisabledTagsTests
         // Assert
         Assert.Equal(InitialCorpIDCount, db.Counter.CorpIDCount);
         Assert.Equal(1, db.UpdateDeviceCallCount);
-        Assert.Equal(DeviceStatus.NotSyncing, db.LastUpdatedDevice!.Status);
+        Assert.Equal(DeviceStatus.NonSyncing, db.LastUpdatedDevice!.Status);
         Assert.Equal(string.Empty, db.LastUpdatedDevice.CorporateIdentityID);
         Assert.Equal(string.Empty, db.LastUpdatedDevice.CorporateIdentity);
     }
@@ -449,7 +449,7 @@ public class RemoveSyncedDevicesInDisabledTagsTests
     #region Row11_CorpIDNotFound_DB412_FreshDeviceEndState
     // ====================================================================
     // Row 11: CorpID Present=Yes, Removed=No (NotFound), DB Updated=No (412),
-    //          Fresh device is null/Deleting/NotSyncing
+    //          Fresh device is null/Deleting/NonSyncing
     // Expected: CorpIDCount no change, leave device state
     // ====================================================================
 
@@ -460,7 +460,7 @@ public class RemoveSyncedDevicesInDisabledTagsTests
     [Theory]
     [InlineData(null)]
     [InlineData(DeviceStatus.Deleting)]
-    [InlineData(DeviceStatus.NotSyncing)]
+    [InlineData(DeviceStatus.NonSyncing)]
     public async Task Row11_CorpIDNotFound_DB412_FreshDeviceEndState_NoChange(DeviceStatus? freshStatus)
     {
         // Arrange
@@ -500,7 +500,7 @@ public class RemoveSyncedDevicesInDisabledTagsTests
     // ====================================================================
     // Row 12: CorpID Present=Yes, Removed=No (NotFound), DB Updated=No (412),
     //          Fresh device is Synced/Added/Failed, Tag still disabled
-    // Expected: CorpIDCount no change, Device State=NotSyncing with CorpID cleared
+    // Expected: CorpIDCount no change, Device State=NonSyncing with CorpID cleared
     // ====================================================================
 
     /// <summary>
@@ -542,7 +542,7 @@ public class RemoveSyncedDevicesInDisabledTagsTests
         // Assert
         Assert.Equal(InitialCorpIDCount, db.Counter.CorpIDCount);
         Assert.Equal(2, db.UpdateDeviceCallCount); // first (412) + retry
-        Assert.Equal(DeviceStatus.NotSyncing, db.LastUpdatedDevice!.Status);
+        Assert.Equal(DeviceStatus.NonSyncing, db.LastUpdatedDevice!.Status);
         Assert.Equal(string.Empty, db.LastUpdatedDevice.CorporateIdentityID);
         Assert.Equal(string.Empty, db.LastUpdatedDevice.CorporateIdentity);
     }

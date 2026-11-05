@@ -11,7 +11,7 @@ using DelegationStationShared.Enums;
 namespace DelegationStation.Tests.Pages
 {
     [TestClass]
-    public class TagEditTests : Bunit.TestContext
+    public class TagEditTests : BunitTestContext
     {
         [TestMethod]
         public void TagShouldRender()
@@ -21,7 +21,7 @@ namespace DelegationStation.Tests.Pages
                 // Arrange
                 // Add Dependent Services
                 Guid defaultId = Guid.NewGuid();
-                var authContext = this.AddTestAuthorization();
+                var authContext = this.AddAuthorization();
 
                 authContext.SetAuthorized("TEST USER");
                 authContext.SetClaims(new System.Security.Claims.Claim("name", "TEST USER"));
@@ -31,7 +31,7 @@ namespace DelegationStation.Tests.Pages
                 AddDefaultServices(defaultId.ToString());
 
                 // Act
-                var cut = RenderComponent<TagEdit>(parameters => parameters
+                var cut = Render<TagEdit>(parameters => parameters
                     .Add(p => p.Id, "11111111-1111-1111-1111-111111111111"));
 
                 // Assert
@@ -50,7 +50,7 @@ namespace DelegationStation.Tests.Pages
                 // Add Dependent Services
                 Guid defaultId = Guid.NewGuid();
                 AddDefaultServices(defaultId.ToString());
-                var authContext = this.AddTestAuthorization();
+                var authContext = this.AddAuthorization();
 
                 authContext.SetAuthorized("TEST USER", AuthorizationState.Authorized);
                 authContext.SetClaims(new System.Security.Claims.Claim("name", "TEST USER"));
@@ -58,7 +58,7 @@ namespace DelegationStation.Tests.Pages
                 authContext.SetPolicies("TagView", "TagUpdate");
 
                 // Act
-                var cut = RenderComponent<TagEdit>(parameters => parameters
+                var cut = Render<TagEdit>(parameters => parameters
                     .Add(p => p.Id, Guid.NewGuid().ToString()));
 
                 // Assert
@@ -75,14 +75,14 @@ namespace DelegationStation.Tests.Pages
                 // Arrange
                 // Add Dependent Services
                 Guid defaultId = Guid.NewGuid();
-                var authContext = this.AddTestAuthorization();
+                var authContext = this.AddAuthorization();
                 authContext.SetAuthorized("TEST USER");
                 authContext.SetClaims(new System.Security.Claims.Claim("name", "TEST USER"));
                 authContext.SetClaims(new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", Guid.NewGuid().ToString()));
                 AddDefaultServices(defaultId.ToString());
 
                 // Act
-                var cut = RenderComponent<TagEdit>(parameters => parameters
+                var cut = Render<TagEdit>(parameters => parameters
                     .Add(p => p.Id, "myId"));
 
                 // Assert
@@ -100,7 +100,7 @@ namespace DelegationStation.Tests.Pages
                 // Arrange
                 // Add Dependent Services
                 Guid defaultId = Guid.NewGuid();
-                var authContext = this.AddTestAuthorization();
+                var authContext = this.AddAuthorization();
                 authContext.SetAuthorized("TEST USER");
                 authContext.SetClaims(new System.Security.Claims.Claim("name", "TEST USER"));
                 authContext.SetClaims(new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", defaultId.ToString()));
@@ -108,7 +108,7 @@ namespace DelegationStation.Tests.Pages
                 AddDefaultServices(defaultId.ToString());
 
                 // Act
-                var cut = RenderComponent<TagEdit>(parameters => parameters
+                var cut = Render<TagEdit>(parameters => parameters
                     .Add(p => p.Id, "myId"));
 
                 // Assert
@@ -125,7 +125,7 @@ namespace DelegationStation.Tests.Pages
                 // Arrange
                 // Add Dependent Services
                 Guid defaultId = Guid.NewGuid();
-                var authContext = this.AddTestAuthorization();
+                var authContext = this.AddAuthorization();
                 authContext.SetAuthorized("TEST USER");
                 authContext.SetClaims(new System.Security.Claims.Claim("name", "TEST USER"));
                 authContext.SetClaims(new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", defaultId.ToString()));
@@ -134,7 +134,7 @@ namespace DelegationStation.Tests.Pages
                 AddDefaultServices(defaultId.ToString());
 
                 // Act
-                var cut = RenderComponent<TagEdit>(parameters => parameters
+                var cut = Render<TagEdit>(parameters => parameters
                     .Add(p => p.Id, "myId"));
 
                 // Assert
@@ -151,7 +151,7 @@ namespace DelegationStation.Tests.Pages
                 // Arrange
                 // Add Dependent Services
                 Guid defaultId = Guid.NewGuid();
-                var authContext = this.AddTestAuthorization();
+                var authContext = this.AddAuthorization();
                 authContext.SetAuthorized("TEST USER");
                 authContext.SetClaims(new System.Security.Claims.Claim("name", "TEST USER"));
                 authContext.SetClaims(new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", defaultId.ToString()));
@@ -159,7 +159,7 @@ namespace DelegationStation.Tests.Pages
                 AddDefaultServices(defaultId.ToString());
 
                 // Act
-                var cut = RenderComponent<TagEdit>(parameters => parameters
+                var cut = Render<TagEdit>(parameters => parameters
                     .Add(p => p.Id, "myId"));
 
                 // Assert
@@ -177,7 +177,7 @@ namespace DelegationStation.Tests.Pages
                 // Add Dependent Services
                 Guid defaultId = Guid.NewGuid();
                 Guid userGroup = Guid.NewGuid();
-                var authContext = this.AddTestAuthorization();
+                var authContext = this.AddAuthorization();
                 authContext.SetAuthorized("TEST USER");
                 authContext.SetClaims(new System.Security.Claims.Claim("name", "TEST USER"));
                 authContext.SetClaims(new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", userGroup.ToString()));
@@ -186,7 +186,7 @@ namespace DelegationStation.Tests.Pages
                 AddLimitedRoleServices(defaultId.ToString(), userGroup.ToString());
 
                 // Act
-                var cut = RenderComponent<TagEdit>(parameters => parameters
+                var cut = Render<TagEdit>(parameters => parameters
                     .Add(p => p.Id, "myId"));
 
                 // Assert
@@ -204,7 +204,7 @@ namespace DelegationStation.Tests.Pages
                 // Add Dependent Services
                 Guid defaultId = Guid.NewGuid();
                 Guid userGroup = Guid.NewGuid();
-                var authContext = this.AddTestAuthorization();
+                var authContext = this.AddAuthorization();
                 authContext.SetAuthorized("TEST USER");
                 authContext.SetClaims(new System.Security.Claims.Claim("name", "TEST USER"));
                 authContext.SetClaims(new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", userGroup.ToString()));
@@ -214,7 +214,7 @@ namespace DelegationStation.Tests.Pages
                 AddLimitedRoleServices(defaultId.ToString(), userGroup.ToString());
 
                 // Act
-                var cut = RenderComponent<TagEdit>(parameters => parameters
+                var cut = Render<TagEdit>(parameters => parameters
                     .Add(p => p.Id, "myId"));
 
                 // Assert
@@ -232,7 +232,7 @@ namespace DelegationStation.Tests.Pages
                 // Add Dependent Services
                 Guid defaultId = Guid.NewGuid();
                 Guid userGroup = Guid.NewGuid();
-                var authContext = this.AddTestAuthorization();
+                var authContext = this.AddAuthorization();
                 authContext.SetAuthorized("TEST USER");
                 authContext.SetClaims(new System.Security.Claims.Claim("name", "TEST USER"));
                 authContext.SetClaims(new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", userGroup.ToString()));
@@ -242,7 +242,7 @@ namespace DelegationStation.Tests.Pages
                 AddLimitedRoleServices(defaultId.ToString(), userGroup.ToString());
 
                 // Act
-                var cut = RenderComponent<TagEdit>(parameters => parameters
+                var cut = Render<TagEdit>(parameters => parameters
                     .Add(p => p.Id, "myId"));
 
                 // Assert
@@ -259,16 +259,16 @@ namespace DelegationStation.Tests.Pages
                 // Arrange
                 // Add Dependent Services
                 Guid defaultId = Guid.NewGuid();
-                var authContext = this.AddTestAuthorization();
+                var authContext = this.AddAuthorization();
                 authContext.SetNotAuthorized();
 
                 AddDefaultServices(defaultId.ToString());
 
                 // Act
-                var cut = RenderComponent<TagEdit>();
+                var cut = Render<TagEdit>();
 
                 // Assert
-                string match = @"<h3>Tag Edit</h3>.*";
+                string match = @"<h2>Tag Edit</h2>.*";
                 Assert.IsTrue(Regex.IsMatch(cut.Markup, match), $"Expected Match:\n{match}\nActual:\n{cut.Markup}");
                 match = @"<h3>Not Authorized</h3>";
                 Assert.IsTrue(Regex.IsMatch(cut.Markup, match), $"Expected Match:\n{match}\nActual:\n{cut.Markup}");
@@ -283,7 +283,7 @@ namespace DelegationStation.Tests.Pages
             // Arrange
             Guid defaultId = Guid.NewGuid();
             Guid userGroup = Guid.NewGuid();
-            var authContext = this.AddTestAuthorization();
+            var authContext = this.AddAuthorization();
             authContext.SetAuthorized("TEST USER");
             authContext.SetClaims(new System.Security.Claims.Claim("name", "TEST USER"));
             authContext.SetClaims(new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", userGroup.ToString()));
@@ -292,11 +292,11 @@ namespace DelegationStation.Tests.Pages
             AddDefaultServices(defaultId.ToString());
 
             // Act
-            var cut = RenderComponent<TagEdit>();
+            var cut = Render<TagEdit>();
 
 
             // Assert
-            string match = @"<h3>Tag Edit</h3>.*";
+            string match = @"<h2>Tag Edit</h2>.*";
             Assert.IsTrue(Regex.IsMatch(cut.Markup, match), $"Expected Match:\n{match}\nActual:\n{cut.Markup}");
             match = @"<h3>Error in navigation path</h3>";
             Assert.IsTrue(Regex.IsMatch(cut.Markup, match), $"Expected Match:\n{match}\nActual:\n{cut.Markup}");
@@ -308,7 +308,7 @@ namespace DelegationStation.Tests.Pages
             // Arrange
             Guid defaultId = Guid.NewGuid();
             Guid userGroup = Guid.NewGuid();
-            var authContext = this.AddTestAuthorization();
+            var authContext = this.AddAuthorization();
             authContext.SetAuthorized("TEST USER");
             authContext.SetClaims(new System.Security.Claims.Claim("name", "TEST USER"));
             authContext.SetClaims(new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", userGroup.ToString()));
@@ -318,7 +318,7 @@ namespace DelegationStation.Tests.Pages
             // Act & Assert
             Assert.ThrowsExactly<Bunit.ElementNotFoundException>(() =>
             {
-                var cut = RenderComponent<TagEdit>();
+                var cut = Render<TagEdit>();
                 var buttonElement = cut.Find("#SaveButton");
                 // The following line will not be reached if exception is thrown as expected
                 Assert.IsNull(buttonElement);
@@ -334,7 +334,7 @@ namespace DelegationStation.Tests.Pages
                 // Add Dependent Services
                 Guid defaultId = Guid.NewGuid();
                 Guid userGroup = Guid.NewGuid();
-                var authContext = this.AddTestAuthorization();
+                var authContext = this.AddAuthorization();
                 authContext.SetAuthorized("TEST USER");
                 authContext.SetClaims(new System.Security.Claims.Claim("name", "TEST USER"));
                 authContext.SetClaims(new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", userGroup.ToString()));
@@ -343,7 +343,7 @@ namespace DelegationStation.Tests.Pages
                 AddLimitedRoleServices(defaultId.ToString(), userGroup.ToString());
 
                 // Act
-                var cut = RenderComponent<TagEdit>(parameters => parameters
+                var cut = Render<TagEdit>(parameters => parameters
                     .Add(p => p.Id, "myId"));
                 var buttonElement = cut.Find("#SaveButton");
                 //FIXME:  Do we actually need this to test?
@@ -387,8 +387,8 @@ namespace DelegationStation.Tests.Pages
             devices.Add(device1);
             var fakeDeviceDBService = new DelegationStation.Interfaces.Fakes.StubIDeviceDBService()
             {
-                GetDevicesAsyncIEnumerableOfStringInt32Int32 = (a, c, d) =>
-                    Task.FromResult(devices)
+                GetDevicesAsyncIEnumerableOfStringDeviceInt32Int32 =
+                        (groupIds, searchDevice, pageSize, page) => Task.FromResult(devices)
             };
 
             List<Role> roles = new List<Role>();
@@ -477,8 +477,8 @@ namespace DelegationStation.Tests.Pages
             devices.Add(device1);
             var fakeDeviceDBService = new DelegationStation.Interfaces.Fakes.StubIDeviceDBService()
             {
-                GetDevicesAsyncIEnumerableOfStringInt32Int32 = (a, c, d) =>
-                    Task.FromResult(devices)
+                GetDevicesAsyncIEnumerableOfStringDeviceInt32Int32 =
+                        (groupIds, searchDevice, pageSize, page) => Task.FromResult(devices)
             };
 
 

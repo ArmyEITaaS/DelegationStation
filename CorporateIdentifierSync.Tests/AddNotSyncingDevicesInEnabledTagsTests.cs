@@ -31,7 +31,7 @@ public class AddNotSyncingDevicesInEnabledTagsTests
         SerialNumber = "SN001",
         CorporateIdentityID = string.Empty,
         CorporateIdentity = string.Empty,
-        Status = DeviceStatus.NotSyncing,
+        Status = DeviceStatus.NonSyncing,
         PartitionKey = "pk-1",
         Tags = [TagId],
         OS = DeviceOS.Windows,

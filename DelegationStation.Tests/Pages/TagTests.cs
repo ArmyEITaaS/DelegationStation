@@ -7,7 +7,7 @@ using DelegationStation.Interfaces;
 namespace DelegationStation.Tests.Pages
 {
     [TestClass]
-    public class TagTests : Bunit.TestContext
+    public class TagTests : BunitTestContext
     {
         [TestMethod]
         public void TagsShouldRender()
@@ -17,7 +17,7 @@ namespace DelegationStation.Tests.Pages
                 // Arrange
                 // Add Dependent Services
                 Guid defaultId = Guid.NewGuid();
-                var authContext = this.AddTestAuthorization();
+                var authContext = this.AddAuthorization();
                 authContext.SetAuthorized("TEST USER");
                 authContext.SetClaims(new System.Security.Claims.Claim("name", "TEST USER"));
                 authContext.SetClaims(new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", defaultId.ToString()));
@@ -41,7 +41,9 @@ namespace DelegationStation.Tests.Pages
                     GetDeviceTagCountAsyncIEnumerableOfStringString =
                         (groupIds, name) => Task.FromResult(2),
                     GetDeviceTagsByPageAsyncIEnumerableOfStringInt32Int32String =
-                        (groupIds, pageNumber, pageSize, name) => Task.FromResult(deviceTags)
+                        (groupIds, pageNumber, pageSize, name) => Task.FromResult(deviceTags),
+                    GetDeviceCountByTagIdAsyncString =
+                        (tagId) => Task.FromResult(tagId == deviceTag1.Id.ToString() ? 5 : 7)
                 };
 
                 var myConfiguration = new Dictionary<string, string?>
@@ -62,13 +64,70 @@ namespace DelegationStation.Tests.Pages
 
 
                 // Act
-                var cut = RenderComponent<Tags>();
+                var cut = Render<Tags>();
 
                 // Assert
                 Assert.IsTrue(cut.Markup.Contains("testName1</td>"), $"Tag1 name should be rendered in the table. \\nActual:\\n{cut.Markup}\"");
                 Assert.IsTrue(cut.Markup.Contains("testDescription1</td>"), "Tag1 description should be rendered in the table.");
                 Assert.IsTrue(cut.Markup.Contains("testName2</td>"), "Tag2 name should be rendered in the table.");
                 Assert.IsTrue(cut.Markup.Contains("testDescription2</td>"), "Tag2 description should be rendered in the table.");
+                var row1 = cut.FindAll("tbody tr").Single(r => r.TextContent.Contains("testName1"));
+                var row2 = cut.FindAll("tbody tr").Single(r => r.TextContent.Contains("testName2"));
+                Assert.IsTrue(row1.TextContent.Contains("5"), $"Tag1 device count should be rendered in the table row.\nActual:\n{cut.Markup}");
+                Assert.IsTrue(row2.TextContent.Contains("7"), $"Tag2 device count should be rendered in the table row.\nActual:\n{cut.Markup}");
+            }
+        }
+
+        [TestMethod]
+        public void TagsShouldRenderErrorForFailedDeviceCount()
+        {
+            using (ShimsContext.Create())
+            {
+                // Arrange
+                Guid defaultId = Guid.NewGuid();
+                var authContext = this.AddAuthorization();
+                authContext.SetAuthorized("TEST USER");
+                authContext.SetClaims(new System.Security.Claims.Claim("name", "TEST USER"));
+                authContext.SetClaims(new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", defaultId.ToString()));
+
+                List<DeviceTag> deviceTags = new List<DeviceTag>();
+                DeviceTag deviceTag1 = new DeviceTag();
+                deviceTag1.Name = "testName1";
+                deviceTag1.Description = "testDescription1";
+                deviceTags.Add(deviceTag1);
+
+                var fakeDeviceTagDBService = new DelegationStation.Interfaces.Fakes.StubIDeviceTagDBService()
+                {
+                    CurrentSearchGet = () => new DelegationStation.Services.DeviceTagSearch()
+                        { pageNumber = 1, pageSize = 10, name = string.Empty },
+                    GetDeviceTagsAsyncIEnumerableOfStringString =
+                        (groupIds, name) => Task.FromResult(deviceTags),
+                    GetDeviceTagCountAsyncIEnumerableOfStringString =
+                        (groupIds, name) => Task.FromResult(1),
+                    GetDeviceTagsByPageAsyncIEnumerableOfStringInt32Int32String =
+                        (groupIds, pageNumber, pageSize, name) => Task.FromResult(deviceTags),
+                    GetDeviceCountByTagIdAsyncString =
+                        (tagId) => throw new Exception("Simulated failure")
+                };
+
+                var myConfiguration = new Dictionary<string, string?>
+                {
+                    {"DefaultAdminGroupObjectId", defaultId.ToString()}
+                };
+
+                var configuration = new ConfigurationBuilder()
+                    .AddInMemoryCollection(myConfiguration)
+                    .Build();
+
+                Services.AddSingleton<IDeviceTagDBService>(fakeDeviceTagDBService);
+                Services.AddSingleton<Microsoft.Extensions.Configuration.IConfiguration>(configuration);
+
+                // Act
+                var cut = Render<Tags>();
+
+                // Assert
+                Assert.IsTrue(cut.Markup.Contains("Unable to retrieve device count"),
+                    $"Error text should be rendered when device count retrieval fails.\nActual:\n{cut.Markup}");
             }
         }
 
@@ -80,7 +139,7 @@ namespace DelegationStation.Tests.Pages
                 // Arrange
                 // Add Dependent Services
                 Guid defaultId = Guid.NewGuid();
-                var authContext = this.AddTestAuthorization();
+                var authContext = this.AddAuthorization();
                 authContext.SetNotAuthorized();
 
 
@@ -122,7 +181,7 @@ namespace DelegationStation.Tests.Pages
                 Services.AddSingleton<Microsoft.Extensions.Configuration.IConfiguration>(configuration);
 
                 // Act
-                var cut = RenderComponent<Tags>();
+                var cut = Render<Tags>();
 
                 // Assert
                 cut.MarkupMatches(@"

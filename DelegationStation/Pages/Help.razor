@@ -1,0 +1,128 @@
+@page "/Help"
+@using DelegationStation.Services
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject ProtectedLocalStorage LocalStorage
+@inject HelpNotificationService UpdatesNotification
+@inject IReleaseNotesService ReleaseNotesService
+@inject IFaqService FaqService
+@inject ILogger<Help> logger
+
+<PageTitle>Recent Updates</PageTitle>
+
+<h3>Recent Updates</h3>
+
+<div class="container-fluid px-0">
+    <div class="accordion mb-3">
+        @foreach (var (note, index) in allNotes.Select((n, i) => (n, i)))
+        {
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button @(expandedReleaseIndex == index ? "" : "collapsed")"
+                            type="button"
+                            @onclick="() => ToggleRelease(index)"
+                            aria-expanded="@(expandedReleaseIndex == index)"
+                            aria-controls="@($"release-body-{index}")"
+                            id="@($"release-header-{index}")">
+                        <strong>v@(note.Version) - @note.Title</strong>
+                        <span class="text-muted ms-2">@note.Date</span>
+                    </button>
+                </h2>
+                @if (expandedReleaseIndex == index)
+                {
+                    <div class="accordion-collapse collapse show"
+                         id="@($"release-body-{index}")"
+                         role="region"
+                         aria-labelledby="@($"release-header-{index}")">
+                        <div class="accordion-body">
+                            <ul class="mb-0">
+                                @foreach (var change in note.Changes)
+                                {
+                                    <li>@change</li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <h3 class="mt-5">FAQ - Troubleshooting Tips</h3>
+
+    <div class="accordion">
+        @foreach (var (faq, index) in faqItems.Select((f, i) => (f, i)))
+        {
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button @(expandedIndex == index ? "" : "collapsed")"
+                            type="button"
+                            @onclick="() => ToggleFaq(index)"
+                            aria-expanded="@(expandedIndex == index)"
+                            aria-controls="@($"faq-body-{index}")"
+                            id="@($"faq-header-{index}")">
+                        <strong>@faq.Question</strong>
+                    </button>
+                </h2>
+                @if (expandedIndex == index)
+                {
+                    <div class="accordion-collapse collapse show"
+                         id="@($"faq-body-{index}")"
+                         role="region"
+                         aria-labelledby="@($"faq-header-{index}")">
+                        <div class="accordion-body">
+                            @foreach (var (paragraph, pIndex) in faq.Answers.Select((p, i) => (p, i)))
+                            {
+                                <p class="@(pIndex == faq.Answers.Count - 1 ? "mb-0" : "mb-2")">@paragraph</p>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private int? expandedIndex;
+    private int? expandedReleaseIndex = 0;
+    private List<ReleaseNote> allNotes = new();
+    private IReadOnlyList<FaqItem> faqItems = new List<FaqItem>();
+
+    private void ToggleFaq(int index)
+    {
+        expandedIndex = expandedIndex == index ? null : index;
+    }
+
+    private void ToggleRelease(int index)
+    {
+        expandedReleaseIndex = expandedReleaseIndex == index ? null : index;
+    }
+
+    protected override void OnInitialized()
+    {
+        // Latest release plus the previous four, newest first, each independently expandable.
+        allNotes = ReleaseNotesService.ReleaseNotes.Take(5).ToList();
+        faqItems = FaqService.FaqItems;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                await LocalStorage.SetAsync(HelpVersion.HelpViewedVersionKey, ReleaseNotesService.CurrentVersion);
+                UpdatesNotification.MarkAsViewed();
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("JavaScript interop calls cannot be issued", StringComparison.OrdinalIgnoreCase))
+            {
+                // Blazor Server prerendering (ServerPrerendered) doesn't allow JS interop; this will run again once interactive.
+            }
+            catch (Exception e)
+            {
+                const string errorMessage = "Error encountered while updating recent updates view status.";
+                logger.LogError(e, errorMessage);
+            }
+        }
+    }
+}

@@ -16,7 +16,7 @@
 
 @attribute [Authorize]
 
-<h3>Tag Edit</h3>
+<h2>Tag Edit</h2>
 
 <AuthorizeView Context="authContext" Policy="TagView" Resource="_tag">
     <Authorized>
@@ -29,6 +29,7 @@
             <EditForm Context="OutsideForm" Model="@tag" OnSubmit="Save">
                 <h3>@tag.Name</h3>
                 <h4>@tag.Description</h4>
+                <h4>@(deviceCount > -1 ? $"Device count: {deviceCount}" : "Unable to retrieve device count")</h4>
                 <br />
                 <hr />
                 <AuthorizeView Context="TagUpdateContext" Policy="TagUpdate" Resource="_tag">
@@ -104,7 +105,7 @@
                         <br />
                         <hr />
 
-                        <div class="container">
+                        <div class="container-fluid">
                             <h2>Assigned Groups</h2>
                             <table class="table table-responsive">
                                 <thead>
@@ -211,7 +212,7 @@
 
                 <AuthorizeView Context="TagLimitedUpdateContext" Policy="TagUpdateActions" Resource="_tag">
                     <Authorized>
-                        <div class="container">
+                        <div class="container-fluid">
                             <h2>Actions on Enrollment</h2>
                             <table class="table table-responsive">
                                 <thead>
@@ -423,7 +424,7 @@
                     <p class="text-success">@tagSuccessMessage</p>
                 }
 
-                <p>@(deviceCount > -1 ? $"Device count: {deviceCount}" : "Unable to retrieve device count")</p>
+                
 
                 <DisplayMessage Message=@securityGroupSearchMessage />
 

@@ -15,7 +15,7 @@ permissions:
 
 env:
   CONFIGURATION: Release
-  DOTNET_CORE_VERSION: 8.0.x
+  DOTNET_CORE_VERSION: 10.0.x
   SRC_DIR: .
 
   AZURE_APP_PACKAGE_PATH: .\DelegationStation\published
@@ -60,7 +60,6 @@ jobs:
      - name: Build
        run: |
          msbuild.exe ${{ env.SRC_DIR }}/DelegationStation.sln /p:platform="Any CPU" /p:configuration="Release"
-
 
      - name: Run Tests
        continue-on-error: true 

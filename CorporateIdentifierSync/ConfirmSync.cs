@@ -264,7 +264,7 @@ namespace CorporateIdentifierSync
                 {
                     // Singleton prevents another ConfirmSync instance from racing us.
                     // Legitimate concurrent writers on a Synced row: user marking Deleting via UI,
-                    // or ReconcileSyncState flipping it to NotSyncing after a tag sync-setting change.
+                    // or ReconcileSyncState flipping it to NonSyncing after a tag sync-setting change.
                     if (corpIDFound)
                     {
                         // Only a timestamp update was lost.
@@ -302,7 +302,7 @@ namespace CorporateIdentifierSync
 
                         if (freshDevice is null ||
                             freshDevice.Status == DeviceStatus.Deleting ||
-                            freshDevice.Status == DeviceStatus.NotSyncing)
+                            freshDevice.Status == DeviceStatus.NonSyncing)
                         {
                             _logger.DSLogWarning(
                                 $"Device {device.Make} {device.Model} {device.SerialNumber} is {(freshDevice?.Status.ToString() ?? "deleted")}. " +

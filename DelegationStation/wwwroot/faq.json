@@ -1,0 +1,41 @@
+[
+  {
+    "question": "I can't see my Device Tag.",
+    "answers": [
+      "Make sure you are logged in with the correct account and PIM'd in successfully. If you are trying to view the PAW tag, you must be logged in with an ADM account.",
+      "Verify your account is in the correct group to view that tag."
+    ]
+  },
+  {
+    "question": "I tried to enter a device and the tool returns that it already exists, but I can't find the device when I search for it.",
+    "answers": [
+      "This usually indicates that someone has entered that device under a Device Tag that you don't have access to."
+    ]
+  },
+  {
+    "question": "My device isn't processing correctly on enrollment.",
+    "answers": [
+      "In order for Delegation Station to successfully process your device on enrollment, the Make/Model/Serial Number in the tool must match what Intune reads in from the device.",
+      "The application allows for case-insensitive matching, everything else must be an exact match.",
+      "Things to check are that you have the exact same punctuation and spacing."
+    ]
+  },
+  {
+    "question": "My device is in the failed state. What should I do?",
+    "answers": [
+      "This indicates the device was unable to successfully sync to Corporate Identifiers after several retries and DS will no longer retry.",
+      "One reason this can happen is that there is some issue with the Make, Model, Serial Number that prevents it from being added. The other is that DS attempted to sync it to Corporate Identifiers and we hit the tenant limit unexpectedly.",
+      "In both cases, we recommend deleting it, checking the details and re-entering it again."
+    ]
+  },
+  {
+    "question": "Delegation Station has not renamed my device.",
+    "answers": [
+      "Upon enrollment, if the Tag the device is in is configured for renaming, it will issue that request to Intune.  However, the change may not occur on the device immediately.",
+      "If you see that the host has had groups applied, you should be able to see the status of the request in Intune.",
+      "Once the change shows completed in Intune, you should see the new device name after the next restart.",
+      "The rename functionality only works for corporate devices, so if something caused the device to enroll as a personal device Intune will not accept the renaming request."
+    ]
+  }
+]
+

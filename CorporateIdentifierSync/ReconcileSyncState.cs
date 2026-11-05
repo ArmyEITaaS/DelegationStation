@@ -184,7 +184,7 @@ namespace CorporateIdentifierSync
 
                 if (corpIDAbsent)
                 {
-                    device.Status = DeviceStatus.NotSyncing;
+                    device.Status = DeviceStatus.NonSyncing;
                     device.CorporateIdentityID = string.Empty;
                     device.CorporateIdentity = string.Empty;
                     device.LastCorpIdentitySync = DateTime.UtcNow;
@@ -237,7 +237,7 @@ namespace CorporateIdentifierSync
                         }
                         else if (freshDevice is null ||
                                  freshDevice.Status == DeviceStatus.Deleting ||
-                                 freshDevice.Status == DeviceStatus.NotSyncing)
+                                 freshDevice.Status == DeviceStatus.NonSyncing)
                         {
                             // Already in (or heading toward) the intended end state — no row update needed.
                             // But WE removed the Corp ID from Graph this run, so WE must release its capacity slot;
@@ -253,7 +253,7 @@ namespace CorporateIdentifierSync
                         }
                         else
                         {
-                            // Status is Synced, Added, or Failed. Before overwriting to NotSyncing, re-check
+                            // Status is Synced, Added, or Failed. Before overwriting to NonSyncing, re-check
                             // that the tag is still disabled — the user may have re-enabled sync between our
                             // initial read and the conflict, in which case unsyncing would undo their intent.
                             List<string> currentDisabledTags = null;
@@ -292,7 +292,7 @@ namespace CorporateIdentifierSync
                             else
                             {
                                 // Tag is still disabled — proceed with the unsync against the fresh device.
-                                freshDevice.Status = DeviceStatus.NotSyncing;
+                                freshDevice.Status = DeviceStatus.NonSyncing;
                                 freshDevice.CorporateIdentityID = string.Empty;
                                 freshDevice.CorporateIdentity = string.Empty;
                                 freshDevice.LastCorpIdentitySync = DateTime.UtcNow;
@@ -353,7 +353,7 @@ namespace CorporateIdentifierSync
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
-            _logger.DSLogInformation("--- Section 2: Adding Corp IDs for NotSyncing devices in enabled tags. ---", fullMethodName);
+            _logger.DSLogInformation("--- Section 2: Adding Corp IDs for NonSyncing devices in enabled tags. ---", fullMethodName);
 
             List<string> tagsWithSyncEnabled = await _dbService.GetSyncingDeviceTags();
             _logger.DSLogInformation($"Found {tagsWithSyncEnabled.Count} tags with sync enabled.", fullMethodName);
@@ -389,12 +389,12 @@ namespace CorporateIdentifierSync
 
             List<Device> devicesToSync = await _dbService.GetNotSyncingDevicesInTags(tagsWithSyncEnabled, effectiveBatchSize);
 
-            _logger.DSLogInformation($"Found {devicesToSync.Count} NotSyncing devices in enabled tags to add.", fullMethodName);
+            _logger.DSLogInformation($"Found {devicesToSync.Count} NonSyncing devices in enabled tags to add.", fullMethodName);
 
 
             if (devicesToSync.Count == 0)
             {
-                _logger.DSLogInformation("No NotSyncing devices in enabled tags found. Skipping Section 2 processing.", fullMethodName);
+                _logger.DSLogInformation("No NonSyncing devices in enabled tags found. Skipping Section 2 processing.", fullMethodName);
                 return 0;
             }
 
@@ -495,7 +495,7 @@ namespace CorporateIdentifierSync
                 catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.PreconditionFailed)
                 {
                     // Singleton prevents another ReconcileSyncState instance from racing us.
-                    // No other automated function writes to NotSyncing rows (AddNewDevices handles Added,
+                    // No other automated function writes to NonSyncing rows (AddNewDevices handles Added,
                     // ConfirmSync handles Synced). Legitimate concurrent writers here are DeviceDeletion
                     // (after a user marks Deleting) or direct user UI edits.
                     _logger.DSLogWarning($"Device {device.Make} {device.Model} {device.SerialNumber} was modified concurrently during Corp ID add.", fullMethodName);

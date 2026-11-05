@@ -137,7 +137,7 @@ namespace CorporateIdentifierSync
                 try
                 {
                     _logger.DSLogInformation($"Device {device.Make} {device.Model} {device.SerialNumber} tag {device.Tags[0]} is not enabled for sync.", fullMethodName);
-                    device.Status = DeviceStatus.NotSyncing;
+                    device.Status = DeviceStatus.NonSyncing;
                     device.LastCorpIdentitySync = DateTime.UtcNow;
 
                     // Update the DB entry with the new Corporate Identifier info
