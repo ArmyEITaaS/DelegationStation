@@ -36,7 +36,7 @@ namespace DelegationStationShared.Extensions
 
         public static void DSLogException(this ILogger logger, string message, Exception ex, string methodName = "")
         {
-            logger.LogError("[EXCEPTION] (" + methodName + ") " + message + " " + ex.Message);
+            logger.LogError("[EXCEPTION] (" + methodName + ") " + message + " " + ex.Message + "\nStack Trace \n" + ex.StackTrace);
         }
 
         public static void DSLogAudit(this ILogger logger, string message, string methodName = "")

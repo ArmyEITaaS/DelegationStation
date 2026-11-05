@@ -33,7 +33,7 @@ flowchart TD
         PF1 -- corpIDFound --> PF2[Only timestamp lost.<br/>countCorpIDsFound--]
         PF1 -- corpIDReAddFailed --> PF3[Counter adjustment only.<br/>countCorpIDsReAddFailed--]
         PF1 -- corpIDReAdded --> PF4[Read fresh device state]
-        PF4 -- "null, Deleting,<br/>or NotSyncing" --> PF6[Rollback re-added Corp ID.<br/>countCorpIDsReAdded--]
+        PF4 -- "null, Deleting,<br/>or NonSyncing" --> PF6[Rollback re-added Corp ID.<br/>countCorpIDsReAdded--]
         PF4 -- Other status --> PF7[Unexpected state.<br/>Leave Corp ID in Graph<br/>for downstream reconciliation.]
         PF4 -- Exception --> PF8[Leave Corp ID in Graph.<br/>ReconcileSyncState will reconcile.]
         PF6 --> END

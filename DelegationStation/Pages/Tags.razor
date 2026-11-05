@@ -45,12 +45,14 @@
                 <tr>
                     <th>Tag Name</th>
                     <th>Tag Description</th>
+                    <th>Devices with Tag</th>
                     <th></th>
                 </tr>
                 <tr>
                     <td>
                         <input type="text" @bind="searchTag.Name" class="form-control" placeholder="Tag Name" />
                     </td>
+                    <td></td>
                     <td></td>
                     <td>
                         <button type="button" class="btn btn-primary" @onclick=@(() => GetTagsSearch())>Search</button>
@@ -61,7 +63,7 @@
                 @if (tagsLoading)
                 {
                     <tr>
-                        <td colspan="3">
+                        <td colspan="4">
                             <div class="spinner-border" role="status">
                                 <span class="visually-hidden">Loading...</span>
                             </div>
@@ -71,7 +73,7 @@
                 else if (deviceTags.Count == 0)
                 {
                     <tr>
-                        <td colspan="3">No tags found.</td>
+                        <td colspan="4">No tags found.</td>
                     </tr>
                 }
                 else
@@ -81,6 +83,8 @@
                         <tr>
                             <td class="clickable" @onclick=@(() => nav.NavigateTo($"/TagEdit/{tag.Id}"))>@tag.Name</td>
                             <td class="clickable" @onclick=@(() => nav.NavigateTo($"/TagEdit/{tag.Id}"))>@tag.Description</td>
+                            <td class="clickable" @onclick=@(() => nav.NavigateTo($"/TagEdit/{tag.Id}"))>@(deviceCounts.ContainsKey(tag.Id) ? 
+                                (deviceCounts[tag.Id] > -1 ? deviceCounts[tag.Id].ToString() : "Unable to retrieve device count") : "Loading...")</td>
                             <td>
                                 <button type="button" class="btn btn-primary" @onclick=@(() => nav.NavigateTo($"/TagEdit/{tag.Id}"))>
                                     <span class="oi oi-pencil" aria-hidden="true"></span> Edit

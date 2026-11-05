@@ -6,13 +6,14 @@ name: ds-build-and-test
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   statuses: write
   checks: write
 env:
   CONFIGURATION: Release
-  DOTNET_CORE_VERSION: 8.0.x
+  DOTNET_CORE_VERSION: 10.0.x
   SRC_DIR: .
 
   AZURE_APP_PACKAGE_PATH: .\DelegationStation\published
@@ -60,9 +61,8 @@ jobs:
     - name: Run Tests
       continue-on-error: true
       run: |
-        vstest.console.exe ${{ env.SRC_DIR }}/DelegationStation.Tests/bin/Release/net8.0/DelegationStation.Tests.dll /logger:trx
-        vstest.console.exe ${{ env.SRC_DIR }}/CorporateIdentifierSync.Tests/bin/Release/net8.0/CorporateIdentifierSync.Tests.dll /logger:trx
-
+        vstest.console.exe ${{ env.SRC_DIR }}/DelegationStation.Tests/bin/Release/net10.0/DelegationStation.Tests.dll /logger:trx
+        vstest.console.exe ${{ env.SRC_DIR }}/CorporateIdentifierSync.Tests/bin/Release/net10.0/CorporateIdentifierSync.Tests.dll /logger:trx
        
     #- name: Visualize Results
     #  uses: dorny/test-reporter@v1

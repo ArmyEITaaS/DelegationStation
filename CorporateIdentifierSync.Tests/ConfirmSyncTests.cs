@@ -1162,7 +1162,7 @@ public class ConfirmSyncTests
     /// <summary>
     /// Verifies that when <see cref="ICosmosDbService.UpdateDevice"/> throws
     /// <see cref="HttpStatusCode.PreconditionFailed"/> after a re-add and the re-fetched device
-    /// has <see cref="DeviceStatus.NotSyncing"/> status, the newly created corp ID is rolled back.
+    /// has <see cref="DeviceStatus.NonSyncing"/> status, the newly created corp ID is rolled back.
     /// </summary>
     [Fact]
     public async Task Run_UpdateDevice_ThrowsPreconditionFailed_CorpIDReAdded_FreshDeviceNotSyncing_RollsBack()
@@ -1176,7 +1176,7 @@ public class ConfirmSyncTests
             OnAdd = (_, _) => Task.FromResult(new ImportedDeviceIdentity { Id = "ns-corp-id", ImportedDeviceIdentifier = "ident" }),
         };
         db.OnUpdateDevice = _ => throw new CosmosException("precondition failed", HttpStatusCode.PreconditionFailed, 0, "act", 0.0);
-        db.OnGetDevice = (_, _) => Task.FromResult<Device?>(new Device { Status = DeviceStatus.NotSyncing });
+        db.OnGetDevice = (_, _) => Task.FromResult<Device?>(new Device { Status = DeviceStatus.NonSyncing });
         var sut = CreateSut(db: db, graph: graph);
 
         try
@@ -1596,7 +1596,7 @@ public class ConfirmSyncTests
 
     /// <summary>
     /// CSV row 4: Corp ID confirmed present in Graph (<c>corpIDFound = true</c>); a concurrent
-    /// writer set the device to <see cref="DeviceStatus.NotSyncing"/>, causing
+    /// writer set the device to <see cref="DeviceStatus.NonSyncing"/>, causing
     /// <see cref="ICosmosDbService.UpdateDevice"/> to throw
     /// <see cref="HttpStatusCode.PreconditionFailed"/>.
     /// Expects: no Graph rollback and CorpID counter unchanged.
@@ -1675,7 +1675,7 @@ public class ConfirmSyncTests
 
     /// <summary>
     /// CSV row 14: Corp ID not present in Graph and re-add failed (<c>corpIDReAddFailed = true</c>);
-    /// a concurrent writer set the device to <see cref="DeviceStatus.NotSyncing"/>, causing
+    /// a concurrent writer set the device to <see cref="DeviceStatus.NonSyncing"/>, causing
     /// <see cref="ICosmosDbService.UpdateDevice"/> to throw
     /// <see cref="HttpStatusCode.PreconditionFailed"/>.
     /// The 412 handler decrements <c>countCorpIDsReAddFailed</c> back to zero, so no capacity

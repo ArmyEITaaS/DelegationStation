@@ -3,6 +3,7 @@ using UpdateDevices.Interfaces;
 using DelegationStationShared;
 using DelegationStationShared.Extensions;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graph;
 using Microsoft.Graph.Models;
@@ -25,13 +26,14 @@ namespace UpdateDevices.Services
         private readonly ILogger<GraphService> _logger;
         private GraphServiceClient _graphClient;
 
-        public GraphService(IConfiguration configuration, ILogger<GraphService> logger)
+        public GraphService(IHostEnvironment env, IConfiguration configuration, ILogger<GraphService> logger)
         {
             string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
             this._logger = logger;
+
 
             var azureCloud = configuration.GetSection("AzureEnvironment").Value;
             var graphEndpoint = configuration.GetSection("GraphEndpoint").Value;
@@ -44,43 +46,57 @@ namespace UpdateDevices.Services
             var scopes = new string[] { $"{graphEndpoint}.default" };
             string baseUrl = graphEndpoint + "v1.0";
 
-            var certDN = configuration.GetSection("CertificateDistinguishedName").Value;
 
-            if (!String.IsNullOrEmpty(certDN))
+            if (env.IsDevelopment() || configuration.GetValue<bool>("GRAPH_USE_APP_CREDENTIALS"))
             {
-                _logger.DSLogInformation("Using certificate authentication: ", fullMethodName);
-                _logger.DSLogDebug("AzureCloud: " + azureCloud, fullMethodName);
-                _logger.DSLogDebug("GraphEndpoint: " + graphEndpoint, fullMethodName);
 
-                X509Store store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
-                store.Open(OpenFlags.ReadOnly);
-                _logger.DSLogInformation("Using certificate with Subject Name {0} for Graph service: " + certDN, fullMethodName);
-                var certificate = store.Certificates.Cast<X509Certificate2>().FirstOrDefault(cert => cert.Subject.ToString() == certDN);
+                var certDN = configuration.GetSection("CertificateDistinguishedName").Value;
 
-                var clientCertCredential = new ClientCertificateCredential(
-                    configuration.GetSection("AzureAd:TenantId").Value,
-                    configuration.GetSection("AzureAd:ClientId").Value,
-                    certificate,
-                    options
-                );
-                store.Close();
-                this._graphClient = new GraphServiceClient(clientCertCredential, scopes, baseUrl);
+                if (!String.IsNullOrEmpty(certDN))
+                {
+                    _logger.DSLogInformation("Using certificate authentication: ", fullMethodName);
+                    _logger.DSLogDebug("AzureCloud: " + azureCloud, fullMethodName);
+                    _logger.DSLogDebug("GraphEndpoint: " + graphEndpoint, fullMethodName);
+
+                    X509Store store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
+                    store.Open(OpenFlags.ReadOnly);
+                    _logger.DSLogInformation("Using certificate with Subject Name {0} for Graph service: " + certDN, fullMethodName);
+                    var certificate = store.Certificates.Cast<X509Certificate2>().FirstOrDefault(cert => cert.Subject.ToString() == certDN);
+
+                    var clientCertCredential = new ClientCertificateCredential(
+                        configuration.GetSection("AzureAd:TenantId").Value,
+                        configuration.GetSection("AzureAd:ClientId").Value,
+                        certificate,
+                        options
+                    );
+                    store.Close();
+                    this._graphClient = new GraphServiceClient(clientCertCredential, scopes, baseUrl);
+                }
+                else
+                {
+                    _logger.DSLogInformation("Using Client Secret for Graph service", fullMethodName);
+                    _logger.DSLogDebug("AzureCloud: " + azureCloud, fullMethodName);
+                    _logger.DSLogDebug("GraphEndpoint: " + graphEndpoint, fullMethodName);
+
+
+                    var clientSecretCredential = new ClientSecretCredential(
+                        configuration.GetSection("AzureAd:TenantId").Value,
+                        configuration.GetSection("AzureAd:ClientId").Value,
+                        configuration.GetSection("AzureApp:ClientSecret").Value,
+                        options
+                    );
+
+                    this._graphClient = new GraphServiceClient(clientSecretCredential, scopes, baseUrl);
+                }
             }
-            else
+            else // Use Managed identity in Azure
             {
-                _logger.DSLogInformation("Using Client Secret for Graph service", fullMethodName);
+                _logger.DSLogInformation("Using Managed Identity to authenticate to Graph service", fullMethodName);
                 _logger.DSLogDebug("AzureCloud: " + azureCloud, fullMethodName);
                 _logger.DSLogDebug("GraphEndpoint: " + graphEndpoint, fullMethodName);
 
-
-                var clientSecretCredential = new ClientSecretCredential(
-                    configuration.GetSection("AzureAd:TenantId").Value,
-                    configuration.GetSection("AzureAd:ClientId").Value,
-                    configuration.GetSection("AzureApp:ClientSecret").Value,
-                    options
-                );
-
-                this._graphClient = new GraphServiceClient(clientSecretCredential, scopes, baseUrl);
+                ManagedIdentityCredential managedIdentityCredential = new ManagedIdentityCredential(options: options);
+                this._graphClient = new GraphServiceClient(managedIdentityCredential, scopes, baseUrl);
             }
         }
 
@@ -315,14 +331,14 @@ namespace UpdateDevices.Services
         }
 
 
-
+        //NOTE: Method not currently in use, but do not delete as it may be useful in the future
         public async Task<ManagedDevice> GetManagedDevice(string make, string model, string serialNum)
         {
             string methodName = ExtensionHelper.GetMethodName() ?? "";
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
-            ManagedDevice result = null;
+            ManagedDevice? result = null;
             try
             {
                 var devices = await _graphClient.DeviceManagement.ManagedDevices.GetAsync((requestConfiguration) =>
@@ -354,7 +370,7 @@ namespace UpdateDevices.Services
             string className = this.GetType().Name;
             string fullMethodName = className + "." + methodName;
 
-            ManagedDevice result = null;
+            ManagedDevice? result = null;
 
             try
             {

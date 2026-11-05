@@ -366,5 +366,6 @@ FodyWeavers.xsd
 # Local developer configuration
 **/Properties/serviceDependencies*
 /DelegationStation/appsettings.json
+/DelegationStation/wwwroot/maintenance-banner.txt
 /UpdatePreferredHostnames/Properties/launchSettings.json
-/CorporateIdentifierSyncs/local.settings.json
+**/local.settings.json

@@ -45,8 +45,8 @@
                                             case DeviceStatus.Synced:
                                                 result = result + "<span class=\"badge rounded-pill bg-success\">" + status.Key.ToString() + "</span>" + ": " + status.Value.ToString() + "<div/>";
                                                 break;
-                                            case DeviceStatus.NotSyncing:
-                                                result = result + "<span class=\"badge rounded-pill bg-light text-dark\">" + "Added" + "</span>" + ": " + status.Value.ToString() + "<div/>";
+                                            case DeviceStatus.NonSyncing:
+                                                result = result + "<span class=\"badge rounded-pill bg-light text-dark\">" + "Non-Syncing" + "</span>" + ": " + status.Value.ToString() + "<div/>";
                                                 break;
                                             case DeviceStatus.Deleting:
                                                 result = result + "<span class=\"badge rounded-pill bg-dark\">" + status.Key.ToString() + "</span>" + ": " + status.Value.ToString() + "<div/>";
@@ -93,8 +93,18 @@
                                     <td>
                                         <input type="text" @bind="searchDevice.PreferredHostname" class="form-control" placeholder="Preferred Hostname" />
                                     </td>
-                                    <td></td>
-                                    <td></td>
+                                    <td>
+                                        <input type="text" @bind="currentDeviceSearchTag" class="form-control" placeholder="Tag" />
+                                    </td>
+                                    <td>
+                                        <select @bind="searchStatus" class="form-select" id="State">
+                                            <option value="">Select State</option>
+                                            @foreach (var status in Enum.GetValues(typeof(DeviceStatus)))
+                                            {
+                                                <option value=@status>@(status is DeviceStatus.NonSyncing ? "Non-Syncing" : status.ToString())</option>
+                                            }
+                                        </select>
+                                    </td>
                                     <td align="center">
                                         <button type="button" class="btn btn-primary" @onclick=@(() => GetDevicesSearch())>Search</button>
                                     </td>
@@ -140,9 +150,9 @@
                                 {
                                     <span class="badge rounded-pill bg-success" data-bas-toggle="tooltip" data-bs-placement="top" title="Last Sync: @device.LastCorpIdentitySync">@device.Status</span>
                                 }
-                                else if (@device.Status == @DeviceStatus.NotSyncing)
+                                else if (@device.Status == @DeviceStatus.NonSyncing)
                                 {
-                                    <span class="badge rounded-pill bg-light text-dark" data-bas-toggle="tooltip" data-bs-placement="top" title="Device in Tag Not Set to Sync. Last confirmed: @device.LastCorpIdentitySync">Added</span>
+                                    <span class="badge rounded-pill bg-light text-dark" data-bas-toggle="tooltip" data-bs-placement="top" title="Device in Tag Not Set to Sync. Last confirmed: @device.LastCorpIdentitySync">Non-Syncing</span>
                                 }
                                 else if (@device.Status == @DeviceStatus.Deleting)
                                 {
@@ -167,37 +177,36 @@
                             </td>
                         </tr>
                     }
-                    @* <tr>
-                        <td colspan="3">
-                            <nav aria-label="Page navigation example">
+                    @* Pagination navigation controls for lazy loading *@
+                    <tr>
+                        <td colspan="8">
+                            <nav aria-label="Device page navigation">
                                 <ul class="pagination justify-content-center">
                                     <li class="page-item">
-                                        <a class="page-link" href="" aria-label="First" @onclick="FirstPage">
+                                        <a class="page-link" href="/" aria-label="First" @onclick="FirstPage">
                                             <span aria-hidden="true">&laquo;</span>
                                         </a>
                                     </li>
                                     <li class="page-item">
-                                        <a class="page-link" href="" aria-label="First" @onclick="PreviousPage">
+                                        <a class="page-link" href="/" aria-label="Previous" @onclick="PreviousPage">
                                             <span aria-hidden="true">&lsaquo;</span>
                                         </a>
                                     </li>
-
-                                    <li class="page-item"><a class="page-link"> @PageNumber of @TotalPages</a></li>
+                                    <li class="page-item"><a class="page-link">@PageNumber of @(TotalPages > 0 ? TotalPages : 1)</a></li>
                                     <li class="page-item">
-                                        <a class="page-link" href="" aria-label="First" @onclick="NextPage">
+                                        <a class="page-link" href="/" aria-label="Next" @onclick="NextPage">
                                             <span aria-hidden="true">&rsaquo;</span>
                                         </a>
                                     </li>
-
                                     <li class="page-item">
-                                        <a class="page-link" href="" aria-label="Last" @onclick="LastPage">
+                                        <a class="page-link" href="/" aria-label="Last" @onclick="LastPage">
                                             <span aria-hidden="true">&raquo;</span>
                                         </a>
                                     </li>
                                 </ul>
                             </nav>
                         </td>
-                    </tr> *@
+                    </tr>
                 }
             </tbody>
         </table>
@@ -282,8 +291,6 @@
         <p>Not Authorized</p>
     </NotAuthorized>
 </AuthorizeView>
-
-
 
 
 

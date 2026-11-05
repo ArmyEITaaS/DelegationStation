@@ -1,9 +1,5 @@
-﻿
-public abstract class BunitTestContext : TestContextWrapper
+﻿public abstract class BunitTestContext : BunitContext
 {
-    [TestInitialize]
-    public void Setup() => TestContext = new Bunit.TestContext();
-
     [TestCleanup]
-    public void TearDown() => TestContext?.Dispose();
+    public void TearDown() => Dispose();
 }

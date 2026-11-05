@@ -19,7 +19,7 @@ namespace DelegationStation.Tests.Pages
     /// integration tests against a real or emulated Cosmos DB instance.
     /// </summary>
     [TestClass]
-    public class DevicesAddDeviceTests : Bunit.TestContext
+    public class DevicesAddDeviceTests : BunitTestContext
     {
         private const string DuplicateSerialErrorMessage = "A non-Windows device with this Serial Number already exists.";
 
@@ -49,7 +49,7 @@ namespace DelegationStation.Tests.Pages
             if (string.IsNullOrEmpty(defaultAdminGroupId))
                 defaultAdminGroupId = Guid.NewGuid().ToString();
 
-            var authContext = this.AddTestAuthorization();
+            var authContext = this.AddAuthorization();
             authContext.SetAuthorized("TEST USER");
             authContext.SetClaims(
                 new System.Security.Claims.Claim("name", "TEST USER"),
@@ -70,9 +70,10 @@ namespace DelegationStation.Tests.Pages
 
             var fakeDeviceDBService = new DelegationStation.Interfaces.Fakes.StubIDeviceDBService()
             {
-                GetDevicesAsyncIEnumerableOfStringInt32Int32 =
-                    (groupIds, pageSize, currentPage) => Task.FromResult(new List<Device>()),
+                GetDevicesAsyncIEnumerableOfStringDeviceInt32Int32 =
+                    (groupIds, searchDevice, pageSize, currentPage) => Task.FromResult(new List<Device>()),
                 AddOrUpdateDeviceAsyncDevice = device => addOrUpdateStub(device)
+
             };
 
             var config = new ConfigurationBuilder()
@@ -90,7 +91,7 @@ namespace DelegationStation.Tests.Pages
             // after AddTestAuthorization() so this is the resolved instance.
             Services.AddSingleton<IAuthorizationService>(new AlwaysAllowAuthorizationService());
 
-            return RenderComponent<Devices>();
+            return Render<Devices>();
         }
 
         /// <summary>

@@ -49,7 +49,7 @@ namespace DelegationStation.Services
             if (!string.IsNullOrEmpty(cosmosEndpoint))
             {
                 logger.LogInformation("Using Managed Identity to connect to CosmosDB");
-                TokenCredential credential = new ManagedIdentityCredential();
+                TokenCredential credential = new ManagedIdentityCredential(ManagedIdentityId.SystemAssigned);
                 client = new CosmosClient(cosmosEndpoint, credential);
             }
             else

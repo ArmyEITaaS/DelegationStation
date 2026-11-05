@@ -1018,7 +1018,7 @@ namespace CorporateIdentifierSync.Tests.AddNewDevicesTests
         /// Expected behavior:  no corpID created, no increase in count, changes status to not syncing
         /// </summary>
         [Fact]
-        public async Task Run_NonSyncingDevice_SetsStatusToNotSyncing()
+        public async Task Run_NonSyncingDevice_SetsStatusToNonSyncing()
         {
             // Arrange
             SetSyncEnabled();
@@ -1032,7 +1032,7 @@ namespace CorporateIdentifierSync.Tests.AddNewDevicesTests
                 await sut.Run(new TimerInfo());
 
                 // Assert
-                Assert.Equal(DeviceStatus.NotSyncing, device.Status);
+                Assert.Equal(DeviceStatus.NonSyncing, device.Status);
             }
             finally
             {

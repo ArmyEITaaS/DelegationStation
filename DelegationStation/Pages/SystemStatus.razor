@@ -1,0 +1,183 @@
+@page "/SystemStatus"
+@using DelegationStation.Interfaces;
+@using DelegationStationShared.Models;
+
+@inject IDeviceTagDBService deviceTagDBService
+@inject IDeviceDBService deviceDBService
+@inject ICorpIdDBService corpIdDBService
+@inject ILogger<SystemStatus> logger
+@inject IAuthorizationService authorizationService
+@inject IConfiguration configuration
+
+@attribute [Authorize]
+
+<h3>System Status</h3>
+
+<div class="card mb-3">
+    <div class="card-header fw-bold">
+        Corporate Identifier Status
+    </div>
+    <div class="card-body">
+        @if (loading)
+        {
+            <p>Loading...</p>
+        }
+        else if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger" role="alert">
+                @errorMessage
+            </div>
+        }
+        else
+        {
+            <dl class="row mb-0">
+                <dt class="col-sm-4 d-flex align-items-center">Utilization</dt>
+                <dd class="col-sm-8">
+                    <span class="@UtilizationCssClass fs-4">@DisplayPercentage.ToString("0.##")%</span>
+                </dd>
+
+                <dt class="col-sm-4">In Use</dt>
+                <dd class="col-sm-8">@DisplayCount</dd>
+
+                <dt class="col-sm-4">Available</dt>
+                <dd class="col-sm-8">@AvailableCorpIDSlots</dd>
+
+                <dt class="col-sm-4">Total Allowed</dt>
+                <dd class="col-sm-8">@MaxCorpIDsAllowed</dd>
+            </dl>
+        }
+        <AuthorizeView Context="authContext">
+            <Authorized>
+                <hr class="mt-4 mb-4" />
+                <h4 class="h6 fw-bold mb-4">Corporate Identifiers by Tag</h4>
+                <form class="row g-2 mb-4" @onsubmit="SearchTags" @onsubmit:preventDefault>
+                    <div class="col-sm-6 col-lg-4">
+                        <label class="visually-hidden" for="tag-search">Tag name</label>
+                        <input id="tag-search"
+                               type="search"
+                               class="form-control"
+                               placeholder="Search tags by name"
+                               @bind="tagSearchName" />
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary">Search</button>
+                    </div>
+                    @if (!string.IsNullOrEmpty(activeTagSearchName))
+                    {
+                        <div class="col-auto">
+                            <button type="button" class="btn btn-secondary" @onclick="ClearTagSearch">Clear</button>
+                        </div>
+                    }
+                </form>
+                <table class="table table-responsive mb-0">
+                    <thead>
+                        <tr>
+                            <th>Tag</th>
+                            <th>Sync Enabled</th>
+                            <th>Synced Devices</th>
+                            <th>Unsynced Devices</th>
+                            <th>% of Total CorpIDs In Use</th>
+                            <th>% of Overall CorpID Capacity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (tagsLoading)
+                        {
+                            <tr>
+                                <td colspan="6">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else if (deviceTags.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="6">No tags found.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (DeviceTag tag in deviceTags)
+                            {
+                                <tr>
+                                    <td>@tag.Name</td>
+                                    <td>
+                                        @if (tag.CorpIDSyncEnabled)
+                                        {
+                                            <span class="text-success fw-bold" aria-label="Enabled">✓</span>
+                                        }
+                                    </td>
+                                    <td>@(corpIDCounts.ContainsKey(tag.Id) ?
+                                            (corpIDCounts[tag.Id] > -1 ? corpIDCounts[tag.Id].ToString() : "Unable to retrieve device count") : "Loading...")
+                                    </td>
+                                    <td>@(unsyncedCounts.ContainsKey(tag.Id) ?
+                                            (unsyncedCounts[tag.Id] > -1 ? unsyncedCounts[tag.Id].ToString() : "Unable to retrieve device count") : "Loading...")
+                                    </td>
+                                    <td>
+                                        @GetTagShareOfInUseDisplay(tag.Id)
+                                    </td>
+                                    <td>
+                                        @GetTagPercentageDisplay(tag.Id)
+                                    </td>
+
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+
+                @if (!tagsLoading && deviceTags.Count > 0)
+                {
+                    <nav class="mt-3" aria-label="Page navigation example">
+                        <ul class="pagination justify-content-center mb-0">
+                            <li class="page-item">
+                                <a class="page-link" href="SystemStatus" aria-label="First" @onclick="FirstPage">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="SystemStatus" aria-label="Previous" @onclick="PreviousPage">
+                                    <span aria-hidden="true">&lsaquo;</span>
+                                </a>
+                            </li>
+
+                            <li class="page-item"><a class="page-link"> @PageNumber of @TotalPages</a></li>
+                            <li class="page-item">
+                                <a class="page-link" href="SystemStatus" aria-label="First" @onclick="NextPage">
+                                    <span aria-hidden="true">&rsaquo;</span>
+                                </a>
+                            </li>
+
+                            <li class="page-item">
+                                <a class="page-link" href="SystemStatus" aria-label="Last" @onclick="LastPage">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                }
+
+                @if (!string.IsNullOrEmpty(userMessage))
+                {
+                    @if (userMessage.ToLower().Contains("error"))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            @userMessage
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-success" role="alert">
+                            @userMessage
+                        </div>
+                    }
+                }
+            </Authorized>
+            <NotAuthorized>
+                <p>Not Authorized</p>
+            </NotAuthorized>
+        </AuthorizeView>
+    </div>
+</div>

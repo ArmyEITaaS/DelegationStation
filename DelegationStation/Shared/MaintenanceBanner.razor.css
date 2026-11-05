@@ -1,0 +1,66 @@
+﻿.maintenance-banner {
+    padding: 0.5rem 1rem;
+    font-weight: 700;
+    overflow: hidden;
+    text-align: center;
+}
+
+.maintenance-banner-default,
+.maintenance-banner-amber {
+    background-color: #fff3cd;
+    color: #664d03;
+    border-bottom: 1px solid #ffe69c;
+}
+
+.maintenance-banner-red {
+    background-color: #f8d7da;
+    color: #58151c;
+    border-bottom: 1px solid #f1aeb5;
+}
+
+.maintenance-banner-green {
+    background-color: #d1e7dd;
+    color: #0a3622;
+    border-bottom: 1px solid #a3cfbb;
+}
+
+.maintenance-banner-blue {
+    background-color: #cfe2ff;
+    color: #052c65;
+    border-bottom: 1px solid #9ec5fe;
+}
+
+.maintenance-banner-text {
+    display: inline-block;
+}
+
+.maintenance-banner-track {
+    width: 100%;
+    overflow: hidden;
+}
+
+    .maintenance-banner-track .maintenance-banner-text {
+        white-space: nowrap;
+        padding-left: 100%;
+        animation-name: maintenance-banner-scroll;
+        animation-timing-function: linear;
+        animation-iteration-count: infinite;
+    }
+
+@keyframes maintenance-banner-scroll {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .maintenance-banner-track .maintenance-banner-text {
+        animation: none;
+        padding-left: 0;
+        white-space: normal;
+    }
+}

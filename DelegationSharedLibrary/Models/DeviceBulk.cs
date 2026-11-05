@@ -7,15 +7,15 @@ namespace DelegationStationShared.Models
     public class DeviceBulk
     {
         [Required(AllowEmptyStrings = false, ErrorMessage = "Make is a required field.")]
-        [RegularExpression(@"^[a-zA-Z0-9\-_.,&\(\)\s]+$", ErrorMessage = "For make, only use letters, numbers, or the following special characters: -_&().,")]
+        [RegularExpression(@"^[a-zA-Z0-9\-_.,&\(\) ]+$", ErrorMessage = "For make, only use letters, numbers, spaces, or the following special characters: -_&().,")]
         public string Make { get; set; }
 
         [Required(AllowEmptyStrings = false, ErrorMessage = "Model is a required field.")]
-        [RegularExpression(@"^[a-zA-Z0-9\-_.,&\(\)+\s]+$", ErrorMessage = "For model, only use letters, numbers, or the following special characters: -_&().+,")]
+        [RegularExpression(@"^[a-zA-Z0-9\-_.,&\(\)+ ]+$", ErrorMessage = "For model, only use letters, numbers, spaces, or the following special characters: -_&().+,")]
         public string Model { get; set; }
 
         [Required(AllowEmptyStrings = false, ErrorMessage = "Serial Number is a required field")]
-        [RegularExpression(@"^[a-zA-Z0-9\-_.\s]+$", ErrorMessage = "Only use letters, numbers, -, _, or . for SerialNumber value.")]
+        [RegularExpression(@"^[a-zA-Z0-9\-_. ]+$", ErrorMessage = "Only use letters, numbers, spaces, -, _, or . for SerialNumber value.")]
         public string SerialNumber { get; set; }
 
         // Validation applicable to all devices done here

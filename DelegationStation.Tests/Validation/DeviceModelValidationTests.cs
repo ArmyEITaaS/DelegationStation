@@ -1,358 +1,119 @@
 using System.ComponentModel.DataAnnotations;
 using DelegationStationShared.Enums;
 
-
 namespace DelegationStation.Tests.Validation
 {
     [TestClass]
     public class DeviceModelValidationTests
     {
-
         [TestMethod]
-        public void VerifyMakeIsRequired()
+        [DynamicData(nameof(ValidationCases))]
+        public void SharedFieldsFollowTheSameValidationContract(
+            string modelKind, string propertyName, object? value, bool expectedValid)
         {
-            var device = new Device
-            {
-                Make = "",
-                Model = "Model",
-                SerialNumber = "99999",
-                PreferredHostname = "hostname",
-                OS = DeviceOS.Windows
-            };
+            object device = modelKind == nameof(Device)
+                ? new Device
+                {
+                    Make = "Make",
+                    Model = "Model",
+                    SerialNumber = "12345",
+                    PreferredHostname = "hostname",
+                    OS = DeviceOS.Windows
+                }
+                : new DeviceBulk
+                {
+                    Make = "Make",
+                    Model = "Model",
+                    SerialNumber = "12345",
+                    PreferredHostname = "hostname",
+                    OS = DeviceOS.Windows,
+                    Action = Enum.Parse<DeviceBulkAction>(modelKind)
+                };
 
-            Assert.IsTrue(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("Required")));
+            var property = device.GetType().GetProperty(propertyName);
+            Assert.IsNotNull(property);
+            property.SetValue(device, value);
+
+            var results = new List<ValidationResult>();
+            bool actualValid = Validator.TryValidateObject(
+                device, new ValidationContext(device), results, validateAllProperties: true);
+
+            Assert.AreEqual(expectedValid, actualValid,
+                $"{modelKind}.{propertyName}: {string.Join("; ", results.Select(r => r.ErrorMessage))}");
+            if (!expectedValid)
+            {
+                Assert.IsTrue(results.Any(r => r.MemberNames.Contains(propertyName)),
+                    $"Expected a validation error for {modelKind}.{propertyName}.");
+            }
         }
 
-        [TestMethod]
-        public void VerifyModelIsRequired()
+        public static IEnumerable<object?[]> ValidationCases()
         {
-            var device = new Device
+            foreach (string modelKind in new[] { nameof(Device), nameof(DeviceBulkAction.add), nameof(DeviceBulkAction.remove) })
             {
-                Make = "Make",
-                Model = "",
-                SerialNumber = "99999",
-                PreferredHostname = "hostname",
-                OS = DeviceOS.Windows
-            };
-
-            Assert.IsTrue(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("Required")));
+                foreach (var (property, value, valid) in SharedFieldCases())
+                {
+                    yield return new object?[] { modelKind, property, value, valid };
+                }
+            }
         }
 
-        [TestMethod]
-        public void VerifySNIsRequired()
+        private static IEnumerable<(string Property, object? Value, bool Valid)> SharedFieldCases()
         {
-            var device = new Device
+            foreach (string property in new[] { nameof(Device.Make), nameof(Device.Model), nameof(Device.SerialNumber) })
             {
-                Make = "Make",
-                Model = "Model",
-                SerialNumber = "",
-                PreferredHostname = "hostname",
-                OS = DeviceOS.Windows
-            };
+                yield return (property, null, false);
+                yield return (property, "", false);
+                yield return (property, " ", false);
+                yield return (property, "   ", false);
+                yield return (property, "Valid123", true);
+                yield return (property, " Valid 123 ", true);
 
-            Assert.IsTrue(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("Required")));
-        }
+                string allowedPunctuation = property == nameof(Device.SerialNumber)
+                    ? "-_."
+                    : property == nameof(Device.Model) ? "-_.,&()+" : "-_.,&()";
 
-        [TestMethod]
-        [DataRow("ValidMake123")]
-        [DataRow("ValidMake123-")]
-        [DataRow("ValidMake123_")]
-        [DataRow("ValidMake123.")]
-        [DataRow("ValidMake123,")]
-        [DataRow("ValidMake123&")]
-        [DataRow("ValidMake123(")]
-        [DataRow("ValidMake123)")]
-        public void VerifyValidMakeAllowed(string make)
-        {
-            var device = new Device
+                foreach (char punctuation in "-_.,&()+!@#$%^*={}[]\\ /|?<>~'\"`")
+                {
+                    yield return (property, $"Valid123{punctuation}",
+                        punctuation == ' ' || allowedPunctuation.Contains(punctuation));
+                }
+            }
+
+            yield return (nameof(Device.PreferredHostname), null, true);
+            yield return (nameof(Device.PreferredHostname), "", true);
+            foreach (string hostname in new[] { "a", "1", "ValidHostname12", "123456789012345", "valid-hostname", "valid-host-name" })
             {
-                Make = make,
-                Model = "Model",
-                SerialNumber = "00000",
-                PreferredHostname = "hostname",
-                OS = DeviceOS.Windows
-            };
-            Assert.IsFalse(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("Only use")));
-
-        }
-
-        [TestMethod]
-        [DataRow("InvalidMake123!")]
-        [DataRow("InvalidMake123@")]
-        [DataRow("InvalidMake123#")]
-        [DataRow("InvalidMake123$")]
-        [DataRow("InvalidMake123%")]
-        [DataRow("InvalidMake123^")]
-        [DataRow("InvalidMake123*")]
-        [DataRow("InvalidMake123+")]
-        [DataRow("InvalidMake123=")]
-        [DataRow("InvalidMake123{")]
-        [DataRow("InvalidMake123}")]
-        [DataRow("InvalidMake123[")]
-        [DataRow("InvalidMake123]")]
-        [DataRow("InvalidMake123\\")]
-        [DataRow("InvalidMake123/")]
-        [DataRow("InvalidMake123|")]
-        [DataRow("InvalidMake123?")]
-        [DataRow("InvalidMake123<")]
-        [DataRow("InvalidMake123>")]
-        [DataRow("InvalidMake123~")]
-        [DataRow("InvalidMake123'")]
-        [DataRow("InvalidMake123\"")]
-        [DataRow("InvalidMake123`")]
-        public void VerifyInvalidMakeNotAllowed(string make)
-        {
-            var device = new Device
+                yield return (nameof(Device.PreferredHostname), hostname, true);
+            }
+            foreach (string hostname in new[] { " ", "-hostname", "hostname-", "1234567890123456" })
             {
-                Make = make,
-                Model = "Model",
-                SerialNumber = "00000",
-                PreferredHostname = "hostname",
-                OS = DeviceOS.Windows
-            };
-            Assert.IsTrue(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("Only use")));
-
-        }
-
-        [TestMethod]
-        [DataRow("ValidModel123")]
-        [DataRow("ValidModel123-")]
-        [DataRow("ValidModel123_")]
-        [DataRow("ValidModel123.")]
-        [DataRow("ValidModel123,")]
-        [DataRow("ValidModel123&")]
-        [DataRow("ValidModel123(")]
-        [DataRow("ValidModel123)")]
-        [DataRow("ValidModel123+")]
-        public void VerifyValidModelAllowed(string model)
-        {
-            var device = new Device
+                yield return (nameof(Device.PreferredHostname), hostname, false);
+            }
+            foreach (char punctuation in "_.,&()+!@#$%^*={}[]\\ /|?<>~'\"`")
             {
-                Make = "Make",
-                Model = model,
-                SerialNumber = "00000",
-                PreferredHostname = "hostname",
-                OS = DeviceOS.Windows
-            };
-            Assert.IsFalse(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("Only use")));
+                yield return (nameof(Device.PreferredHostname), $"host{punctuation}name", false);
+            }
 
-        }
-
-
-        [TestMethod]
-        [DataRow("InvalidModel123!")]
-        [DataRow("InvalidModel123@")]
-        [DataRow("InvalidModel123#")]
-        [DataRow("InvalidModel123$")]
-        [DataRow("InvalidModel123%")]
-        [DataRow("InvalidModel123^")]
-        [DataRow("InvalidModel123*")]
-        [DataRow("InvalidModel123=")]
-        [DataRow("InvalidModel123{")]
-        [DataRow("InvalidModel123}")]
-        [DataRow("InvalidModel123[")]
-        [DataRow("InvalidModel123]")]
-        [DataRow("InvalidModel123\\")]
-        [DataRow("InvalidModel123/")]
-        [DataRow("InvalidModel123|")]
-        [DataRow("InvalidModel123?")]
-        [DataRow("InvalidModel123<")]
-        [DataRow("InvalidModel123>")]
-        [DataRow("InvalidModel123~")]
-        [DataRow("InvalidModel123'")]
-        [DataRow("InvalidModel123\"")]
-        [DataRow("InvalidModel123`")]
-        public void VerifyInvalidModelNotAllowed(string model)
-        {
-            var device = new Device
+            // Exercise every .NET whitespace character, including Unicode, in each position.
+            foreach (char whitespace in Enumerable.Range(char.MinValue, char.MaxValue + 1)
+                .Select(value => (char)value).Where(c => char.IsWhiteSpace(c) && c != ' '))
             {
-                Make = "Make",
-                Model = model,
-                SerialNumber = "00000",
-                PreferredHostname = "hostname",
-                OS = DeviceOS.Windows
-            };
-            Assert.IsTrue(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("Only use")));
+                foreach (string property in new[]
+                {
+                    nameof(Device.Make), nameof(Device.Model),
+                    nameof(Device.SerialNumber), nameof(Device.PreferredHostname)
+                })
+                {
+                    yield return (property, $"{whitespace}Value", false);
+                    yield return (property, $"Val{whitespace}ue", false);
+                    yield return (property, $"Value{whitespace}", false);
+                    yield return (property, whitespace.ToString(), false);
+                }
+            }
 
-        }
-
-        [TestMethod]
-        [DataRow("ValidSN123")]
-        [DataRow("ValidSN123-")]
-        [DataRow("ValidSN123_")]
-        [DataRow("ValidSN123.")]
-        public void VerifyValidSerialNumberAllowed(string serialNumber)
-        {
-            var device = new Device
-            {
-                Make = "Make",
-                Model = "Model",
-                SerialNumber = serialNumber,
-                PreferredHostname = "hostname",
-                OS = DeviceOS.Windows
-            };
-            Assert.IsFalse(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("Only use")));
-
-        }
-
-        [TestMethod]
-        [DataRow("InvalidSN123,")]
-        [DataRow("InvalidSN123&")]
-        [DataRow("InvalidSN123(")]
-        [DataRow("InvalidSN123)")]
-        [DataRow("InvalidSN123+")]
-        [DataRow("InvalidSN123!")]
-        [DataRow("InvalidSN123@")]
-        [DataRow("InvalidSN123#")]
-        [DataRow("InvalidSN123$")]
-        [DataRow("InvalidSN123%")]
-        [DataRow("InvalidSN123^")]
-        [DataRow("InvalidSN123*")]
-        [DataRow("InvalidSN123=")]
-        [DataRow("InvalidSN123{")]
-        [DataRow("InvalidSN123}")]
-        [DataRow("InvalidSN123[")]
-        [DataRow("InvalidSN123]")]
-        [DataRow("InvalidSN123\\")]
-        [DataRow("InvalidSN123/")]
-        [DataRow("InvalidSN123|")]
-        [DataRow("InvalidSN123?")]
-        [DataRow("InvalidSN123<")]
-        [DataRow("InvalidSN123>")]
-        [DataRow("InvalidSN123~")]
-        [DataRow("InvalidSN123'")]
-        [DataRow("InvalidSN123\"")]
-        [DataRow("InvalidSN123`")]
-        public void VerifyInvalidSNNotAllowed(string serialNumber)
-        {
-            var device = new Device
-            {
-                Make = "Make",
-                Model = "Model",
-                SerialNumber = serialNumber,
-                PreferredHostname = "hostname",
-                OS = DeviceOS.Windows
-            };
-            Assert.IsTrue(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("Only use")));
-
-        }
-
-        [TestMethod]
-        [DataRow("")]
-        [DataRow("ValidHostname123")]
-        [DataRow("valid-hostname")]
-        [DataRow("valid-host-name")]
-        public void VerifyValidHostnameAllowed(string hostname)
-        {
-            var device = new Device
-            {
-                Make = "Make",
-                Model = "Model",
-                SerialNumber = "12345",
-                PreferredHostname = hostname,
-                OS = DeviceOS.Windows
-
-            };
-            Assert.IsFalse(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("Only use")));
-
-        }
-
-        [TestMethod]
-        [DataRow("InvalidHostname123,")]
-        [DataRow("InvalidHostname123&")]
-        [DataRow("InvalidHostname123(")]
-        [DataRow("InvalidHostname123)")]
-        [DataRow("InvalidHostname123+")]
-        [DataRow("InvalidHostname123!")]
-        [DataRow("InvalidHostname123@")]
-        [DataRow("InvalidHostname123#")]
-        [DataRow("InvalidHostname123$")]
-        [DataRow("InvalidHostname123%")]
-        [DataRow("InvalidHostname123^")]
-        [DataRow("InvalidHostname123*")]
-        [DataRow("InvalidHostname123=")]
-        [DataRow("InvalidHostname123{")]
-        [DataRow("InvalidHostname123}")]
-        [DataRow("InvalidHostname123[")]
-        [DataRow("InvalidHostname123]")]
-        [DataRow("InvalidHostname123\\")]
-        [DataRow("InvalidHostname123/")]
-        [DataRow("InvalidHostname123|")]
-        [DataRow("InvalidHostname123?")]
-        [DataRow("InvalidHostname123<")]
-        [DataRow("InvalidHostname123>")]
-        [DataRow("InvalidHostname123~")]
-        [DataRow("InvalidHostname123'")]
-        [DataRow("InvalidHostname123\"")]
-        [DataRow("InvalidHostname123`")]
-        [DataRow("-InvalidHostname123")]
-        [DataRow("InvalidHostname123-")]
-        public void VerifyInvalidHostnameNotAllowed(string hostname)
-        {
-            var device = new Device
-            {
-                Make = "Make",
-                Model = "Model",
-                SerialNumber = "12345",
-                PreferredHostname = hostname,
-                OS = DeviceOS.Windows
-            };
-
-            // Only testing regex in this test
-            Assert.IsTrue(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("Only use")));
-
-        }
-
-        [TestMethod]
-        [DataRow("HostnameTooLong1")]
-        public void VerifyHostnameLengthValidation(string hostname)
-        {
-            var device = new Device
-            {
-                Make = "Make",
-                Model = "Model",
-                SerialNumber = "12345",
-                PreferredHostname = hostname,
-                OS = DeviceOS.Windows
-            };
-            // Only testing length in this test
-            Assert.IsTrue(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("cannot exceed 15")));
-        }
-
-        [TestMethod]
-        public void VerifyOSIsRequired()
-        {
-            var device = new Device
-            {
-                Make = "Make",
-                Model = "Model",
-                SerialNumber = "12345",
-                PreferredHostname = "hostname"
-            };
-
-            Assert.IsTrue(ValidateModel(device).Any(
-                v => (v.ErrorMessage ?? "").Contains("required")));
-        }
-
-
-        private IList<ValidationResult> ValidateModel(object model)
-        {
-            var validationResults = new List<ValidationResult>();
-            var ctx = new ValidationContext(model, null, null);
-            Validator.TryValidateObject(model, ctx, validationResults, true);
-            return validationResults;
+            yield return (nameof(Device.OS), null, false);
+            yield return (nameof(Device.OS), DeviceOS.Windows, true);
         }
     }
 }
